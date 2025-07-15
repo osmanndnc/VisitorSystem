@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+                  <img src="{{ asset('images/ata_icon.png') }}" alt="Ata Logo" style="width: 200px; height: 60px;" class="mx-auto my-4" />
                     </a>
                 </div>
 
