@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('visitor_id');
             $table->dateTime('entry_time');
+            //$table->dateTime('exit_time')->nullable();
             $table->string('person_to_visit');
             $table->string('purpose')->nullable();
             $table->timestamps();
