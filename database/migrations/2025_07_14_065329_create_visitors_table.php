@@ -13,14 +13,13 @@ return new class extends Migration
     {
         Schema::create('visitors', function (Blueprint $table) {
             $table->id();
-             $table->string('name');
+            $table->string('name');
             $table->string('tc_no')->unique();
             $table->string('phone');
             $table->string('plate')->nullable();
             $table->unsignedBigInteger('approved_by');
             $table->timestamps();
-
-              $table->foreign('approved_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('approved_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
