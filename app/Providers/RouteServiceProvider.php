@@ -19,6 +19,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     public const HOME = '/dashboard';
 
+
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
      */
@@ -38,6 +39,8 @@ class RouteServiceProvider extends ServiceProvider
 
     /**
      * Configure the rate limiters for the application.
+     */    /**
+     * Configure the rate limiters for the application.
      */
     protected function configureRateLimiting(): void
     {
@@ -45,4 +48,7 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
     }
+
+
+    
 }
