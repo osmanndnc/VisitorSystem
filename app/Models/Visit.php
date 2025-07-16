@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class visit extends Model
+class Visit extends Model
 {
     use HasFactory;
 
-    //Tablonun adı visits olmadığı için visit olarak belirtildi. Aksi takdirde laravel otomatik olarak Visits sanıp tabloyu bulamıyor.
-     protected $table = 'visit';
+    // Tablonun adı tekil olduğu için belirtildi
+    protected $table = 'visit';
 
     public function visitor()
     {

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,10 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+
+Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+
+Route::post('/admin/fields', [AdminController::class, 'fields'])->name('admin.fields');
 
 
 
