@@ -21,7 +21,7 @@
             vertical-align: middle;
         }
         .center-box {
-            max-width: 950px;
+            max-width: 1100px;
             margin: 32px auto;
             background: #fff;
             border-radius: 16px;
@@ -48,10 +48,13 @@
             border-bottom: 1px solid #e1e4e8;
             text-align: left;
         }
+        tr {
+            height: 48px;
+        }
         th {
             background: #f7f7f7;
             color: #444;
-            font-weight: 600;
+            font-weight: 800;
             font-size: 1rem;
             letter-spacing: 0.2px;
         }
@@ -71,7 +74,6 @@
             height: 15px;
             cursor: pointer;
             accent-color: #232a36;
-            vertical-align: middle;
         }
         button {
             background: #232a36;
@@ -87,9 +89,22 @@
             letter-spacing: 1px;
             box-shadow: 0 2px 8px rgba(35,42,54,0.08);
         }
-        button:hover {
+        .report-buttn {
+            padding: 8px 22px;
+            font-size: 15px;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        button:hover, .report-buttn:hover {
             background: #1a1d2e;
             box-shadow: 0 4px 16px rgba(35,42,54,0.16);
+        }
+        .report-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 18px;
+            margin-top: 24px;
         }
     </style>
 </head>
@@ -99,59 +114,88 @@
 </div>
 <div class="center-box">
     <h2>Ziyaretçi Listesi</h2>
+    <form method="GET" action="">
+        
+    @php
+    $fieldsList = [
+        'entry_time' => 'Giriş Tarihi',
+        'name' => 'Ad-Soyad',
+        'tc_no' => 'TC',
+        'phone' => 'Telefon Numarası',
+        'plate' => 'Plaka',
+        'purpose' => 'Ziyaret Sebebi',
+        'person_to_visit' => 'Ziyaret Edilen Kişi',
+        'approved_by' => 'Onaylayan'
+    ];
+@endphp
 
-    <form method="POST" action="{{ route('admin.fields') }}">
-        @csrf
-        <table>
+<form method="GET" action="">
+    <table>
+        <thead>
             <tr>
                 <th>ID</th>
-                <th>
-                    <label>
-                        Ad-Soyad
-                        <input type="checkbox" name="fields[]" value="name" {{ !empty($fields) && in_array('name', $fields) ? 'checked' : '' }}>
-                    </label>
-                </th>
-                <th>
-                    <label>
-                        TC
-                        <input type="checkbox" name="fields[]" value="tc_no" {{ !empty($fields) && in_array('tc_no', $fields) ? 'checked' : '' }}>
-                    </label>
-                </th>
-                <th>
-                    <label>
-                        Telefon Numarası
-                        <input type="checkbox" name="fields[]" value="phone" {{ !empty($fields) && in_array('phone', $fields) ? 'checked' : '' }}>
-                    </label>
-                </th>
-                <th>
-                    <label>
-                        Plaka
-                        <input type="checkbox" name="fields[]" value="plate" {{ !empty($fields) && in_array('plate', $fields) ? 'checked' : '' }}>
-                    </label>
-                </th>
-                <th>
-                    <label>
-                        Onaylayan
-                        <input type="checkbox" name="fields[]" value="approved_by" {{ !empty($fields) && in_array('approved_by', $fields) ? 'checked' : '' }}>
-                    </label>
-                </th>
-            </tr>
-            @if(isset($visitors) && count($visitors))
-                @foreach($visitors as $visitor)
-                    <tr>
-                        <td>{{ $visitor->id }}</td>
-                        @if(empty($fields) || in_array('name', $fields))<td>{{ $visitor->name }}</td>@endif
-                        @if(empty($fields) || in_array('tc_no', $fields))<td>{{ $visitor->tc_no }}</td>@endif
-                        @if(empty($fields) || in_array('phone', $fields))<td>{{ $visitor->phone }}</td>@endif
-                        @if(empty($fields) || in_array('plate', $fields))<td>{{ $visitor->plate }}</td>@endif
-                        @if(empty($fields) || in_array('approved_by', $fields))
-                            <td>{{ $visitor->approver ? $visitor->approver->name : '-' }}</td>
-                        @endif
-                    </tr>
+                @foreach($fieldsList as $field => $label)
+                    <th>
+                        <label>
+                            {{ $label }}
+                            <input type="checkbox" name="fields[]" value="{{ $field }}" {{ (is_array($fields) && in_array($field, $fields)) ? 'checked' : '' }}>
+                        </label>
+                    </th>
                 @endforeach
-            @endif
-        </table>
-        <button type="submit">Göster</button>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($visits as $visit)
+                <tr>
+                    <td>{{ $visit->id }}</td>
+                    @foreach(array_keys($fieldsList) as $field)
+                        @if(empty($fields) || in_array($field, $fields))
+                            <td>
+                                @switch($field)
+                                    @case('entry_time')
+                                        {{ $visit->entry_time }}
+                                        @break
+                                    @case('name')
+                                        {{ $visit->visitor->name ?? '-' }}
+                                        @break
+                                    @case('tc_no')
+                                        {{ $visit->visitor->tc_no ?? '-' }}
+                                        @break
+                                    @case('phone')
+                                        {{ $visit->visitor->phone ?? '-' }}
+                                        @break
+                                    @case('plate')
+                                        {{ $visit->visitor->plate ?? '-' }}
+                                        @break
+                                    @case('purpose')
+                                        {{ $visit->purpose }}
+                                        @break
+                                    @case('person_to_visit')
+                                        {{ $visit->person_to_visit }}
+                                        @break
+                                    @case('approved_by')
+                                        {{ $visit->approver->name ?? '-' }}
+                                        @break
+                                @endswitch
+                            </td>
+                        @else
+                            <td></td>
+                        @endif
+                    @endforeach
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+    <button type="submit">Göster</button>
+    <div class="report-buttons">
+        <button type="submit" name="report" value="daily" class="report-buttn">Günlük Rapor</button>
+        <button type="submit" name="report" value="monthly" class="report-buttn">Aylık Rapor</button>
+        <button type="submit" name="report" value="yearly" class="report-buttn">Yıllık Rapor</button>
+    </div>
+</form>
+  
+            
+        
     </form>
 </div>
 </body>

@@ -15,9 +15,9 @@ return new class extends Migration
             $table->string('email')->unique()->after('username');
     });
 
-        Schema::table('visit', function (Blueprint $table) {
+        /*Schema::table('visit', function (Blueprint $table) {
             $table->dropColumn('exit_time');
-        });
+        })*/
     }
 
     /**

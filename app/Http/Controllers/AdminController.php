@@ -9,19 +9,27 @@ use App\Models\Visit;
 
 class AdminController extends Controller
 {
-    
-    public function index()
+    public function index(Request $request)
     {
-        $visitors = Visitor::all();
-        $fields = []; // İlk açılışta tüm sütunlar gözüksün, checkboxlar boş gelsin
-        return view('admin.index', compact('visitors', 'fields'));
-    }
+        // Tüm alanlar
+        $allFields = [
+            'entry_time',
+            'name',
+            'tc_no',
+            'phone',
+            'plate',
+            'purpose',
+            'person_to_visit',
+            'approved_by'
+        ];
 
-    // Filtreli tablo için (checkbox ile seçim sonrası)
-    public function fields(Request $request)
-    {
+        // Checkboxlar işaretli gelmesin, sadece formdan gelirse dolsun
         $fields = $request->input('fields', []);
-        $visitors = Visitor::all();
-        return view('admin.index', compact('visitors', 'fields'));
+
+        // İlişkili verilerle birlikte tüm ziyaretleri çek
+        $visits = Visit::with(['visitor', 'approver'])->get();
+
+        // allFields'ı da blade'e gönder
+        return view('admin.index', compact('visits', 'fields', 'allFields'));
     }
-}
+}  

@@ -8,12 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Visit extends Model
 {
     use HasFactory;
-
-    // Tablonun adı tekil olduğu için belirtildi
+    
     protected $table = 'visit';
 
     public function visitor()
     {
         return $this->belongsTo(Visitor::class);
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }
