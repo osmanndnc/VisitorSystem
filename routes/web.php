@@ -37,6 +37,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::post('/admin/fields', [AdminController::class, 'fields'])->name('admin.fields');
+    Route::get('/admin/reports',[AdminController::class,'reports'])->name('admin.reports');
 });
 
 require __DIR__.'/auth.php';

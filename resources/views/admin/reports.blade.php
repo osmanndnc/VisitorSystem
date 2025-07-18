@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ziyaretçi Listesi</title>
+    <title>Ziyaretçi Raporları</title>
     <style>
         body {
             background: #f4f5f7;
@@ -89,7 +89,23 @@
             letter-spacing: 1px;
             box-shadow: 0 2px 8px rgba(35,42,54,0.08);
         }
-    
+        .report-buttn {
+            padding: 8px 22px;
+            font-size: 15px;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        button:hover, .report-buttn:hover {
+            background: #1a1d2e;
+            box-shadow: 0 4px 16px rgba(35,42,54,0.16);
+        }
+        .report-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 18px;
+            margin-top: 24px;
+        }
     </style>
 </head>
 <body>
@@ -97,7 +113,7 @@
     <img src="/images/ata_icon.png" alt="Atatürk Üniversitesi">
 </div>
 <div class="center-box">
-    <h2>Ziyaretçi Listesi</h2>
+    <h2>Ziyaretçi Raporları</h2>
     @php
     $fieldsList = [
         'entry_time' => 'Giriş Tarihi',
@@ -169,7 +185,11 @@
             </tbody>
         </table>
         <button type="submit">Göster</button>
-        
+        <div class="report-buttons">
+            <button type="submit" name="report" value="daily" class="report-buttn">Günlük Rapor</button>
+            <button type="submit" name="report" value="monthly" class="report-buttn">Aylık Rapor</button>
+            <button type="submit" name="report" value="yearly" class="report-buttn">Yıllık Rapor</button>
+        </div>
     </form>
 </div>
 </body>
