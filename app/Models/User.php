@@ -41,4 +41,14 @@ class User extends Authenticatable
     protected $casts = [
         //'email_verified_at' => 'datetime', 
     ];
+
+    public function approvedVisitors()
+    {
+        return $this->hasMany(Visitor::class, 'approved_by');
+    }
+
+    public function hasRole($role)
+    {
+        return $this->role === $role;
+    }
 }

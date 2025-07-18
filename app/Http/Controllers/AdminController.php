@@ -9,10 +9,15 @@ use App\Models\Visit;
 
 class AdminController extends Controller
 {
-    
+    // public function index()
+    // {
+    //     $visits = Visit::with('visitor')->latest()->get();
+    //     return view('admin.index', compact('visits'));
+    // }
     public function index()
     {
         $visitors = Visitor::all();
+        //$visitors = Visitor::with(['visit', 'approver'])->get();
         $fields = []; // İlk açılışta tüm sütunlar gözüksün, checkboxlar boş gelsin
         return view('admin.index', compact('visitors', 'fields'));
     }

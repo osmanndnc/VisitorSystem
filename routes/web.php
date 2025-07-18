@@ -19,6 +19,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::get('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -30,12 +36,21 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+//Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
 
-Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+//Güvenlik için
+Route::middleware(['auth'])->group(function () {
+    Route::get('/security/create', [SecurityController::class, 'create'])->name('security.create');
+    Route::post('/security/store', [SecurityController::class, 'store'])->name('security.store');
+});
+// Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
 
-Route::post('/admin/fields', [AdminController::class, 'fields'])->name('admin.fields');
+// Route::post('/admin/fields', [AdminController::class, 'fields'])->name('admin.fields');
 
-
+//Admin için
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::post('/admin/fields', [AdminController::class, 'fields'])->name('admin.fields');
+});
 
 require __DIR__.'/auth.php';    
