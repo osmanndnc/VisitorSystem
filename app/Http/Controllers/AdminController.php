@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Visitor;
-use App\Models\User;
 use App\Models\Visit;
 
 class AdminController extends Controller
@@ -32,4 +30,4 @@ class AdminController extends Controller
         // allFields'ı da blade'e gönder
         return view('admin.index', compact('visits', 'fields', 'allFields'));
     }
-}  
+}

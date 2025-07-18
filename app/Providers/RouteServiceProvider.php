@@ -19,7 +19,16 @@ class RouteServiceProvider extends ServiceProvider
      */
     public const HOME = '/dashboard';
 
+    public static function redirectToBasedOnRole()
+    {
+        $role = auth()->user()->role;
 
+        return match ($role) {
+            'security' => route('security.create'),
+            'admin' => route('admin.index'),
+            default => '/',
+        };
+    }
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
      */

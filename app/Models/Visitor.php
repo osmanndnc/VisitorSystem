@@ -10,6 +10,22 @@ class Visitor extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'tc_no',
+        'phone',
+        'plate',
+        'entry_time',
+        'person_to_visit',
+        'visit_reason',
+        'approved_by',
+    ];
+
+    public function visits()
+    {
+        return $this->hasMany(Visit::class);
+    }
+
     // Ziyaretçiyi onaylayan kullanıcı ile ilişki
     public function approver()
     {
