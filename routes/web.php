@@ -5,6 +5,8 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\ReportExportController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -40,4 +42,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/reports',[AdminController::class,'reports'])->name('admin.reports');
 });
 
+// Admin Raporları
+    Route::get('/report', [AdminReportController::class, 'index'])->name('admin.report.index');
+    Route::post('/report/generate', [AdminReportController::class, 'generateReport'])->name('admin.report.generate');
+
+    Route::get('/report/export', [ReportExportController::class, 'export'])->name('report.export');
+    Route::post('/admin/report', [AdminReportController::class, 'generateReport'])->name('admin.report');
+    
 require __DIR__.'/auth.php';

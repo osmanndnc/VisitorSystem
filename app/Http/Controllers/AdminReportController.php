@@ -7,52 +7,99 @@ use App\Models\Visit;
 
 class AdminReportController extends Controller
 {
+    public function index(Request $request)
+    {
+        $visits = Visit::with('visitor', 'approver')->get();
+        $fields = $request->old('fields', []);
+
+        return view('report.index', compact('visits', 'fields'));
+    }
+
     public function generateReport(Request $request)
     {
-        $fields = $request->input('fields', []); // Arayüzden seçilen alanlar
-        $visits = Visit::with('visitor')->get();
+        $allFields = [
+            'entry_time',
+            'name',
+            'tc_no',
+            'phone',
+            'plate',
+            'purpose',
+            'person_to_visit',
+            'approved_by'
+        ];
+        $selectedFields = $request->input('fields', []);
 
-        $data = $visits->map(function ($visit) use ($fields) {
+        $visits = Visit::with('visitor', 'approver')->get();
+
+        $data = $visits->map(function ($visit) use ($selectedFields) {
             $visitor = $visit->visitor;
+            $row = [];
 
-            return [
-                'name' => in_array('name', $fields) ? $this->maskName($visitor->name) : $this->fullMask($visitor->name),
-                'tc_no' => in_array('tc_no', $fields) ? $this->partialMask($visitor->tc_no, 1, 2) : $this->fullMask($visitor->tc_no),
-                'phone' => in_array('phone', $fields) ? $this->partialMask($visitor->phone, 0, 2) : $this->fullMask($visitor->phone),
-                'plate' => in_array('plate', $fields) ? $this->maskPlate($visitor->plate) : $this->fullMask($visitor->plate),
-                'approved_by' => in_array('approved_by', $fields) ? $visit->approved_by : '*****',
-                'person_to_visit' => in_array('person_to_visit', $fields) ? $visit->person_to_visit : '*****',
-                'purpose' => in_array('purpose', $fields) ? $visit->purpose : '*****',
-                'entry_time' => $visit->entry_time->format('Y-m-d H:i:s'),
-            ];
+            $row['id'] = $visit->id;
+            $row['approved_by'] = $visit->approver->name ?? '-';
+
+            if (in_array('entry_time', $selectedFields)) {
+                $row['entry_time'] = $visit->entry_time->format('Y-m-d H:i:s');
+            }
+            if (in_array('name', $selectedFields)) {
+                $row['name'] = $this->maskName($visitor->name ?? '');
+            }
+            if (in_array('tc_no', $selectedFields)) {
+                $row['tc_no'] = $this->partialMask($visitor->tc_no ?? '', 1, 2);
+            }
+            if (in_array('phone', $selectedFields)) {
+                $row['phone'] = $this->partialMask($visitor->phone ?? '', 0, 2);
+            }
+            if (in_array('plate', $selectedFields)) {
+                $row['plate'] = $this->maskPlate($visitor->plate ?? '');
+            }
+            if (in_array('purpose', $selectedFields)) {
+                $row['purpose'] = $visit->purpose;
+            }
+            if (in_array('person_to_visit', $selectedFields)) {
+                $row['person_to_visit'] = $this->maskName($visit->person_to_visit ?? '');
+            }
+
+            return $row;
         });
 
-        return view('report-result', compact('data'));
+        $fieldsForBlade = array_values(array_filter($selectedFields, function($field) {
+            return !in_array($field, ['id', 'approved_by']);
+        }));
+
+        return view('admin.reports', compact('data', 'fieldsForBlade'));
     }
 
-    private function fullMask($text)
+
+    //Sadece ilk karakteri gösterecek şekilde maskeleme foksiyonu:
+    public function partialMask($text, $visibleStart = 1, $visibleEnd = 1)
     {
-        return str_repeat('*', strlen($text));
+        if (!$text) return '';
+        $length = mb_strlen($text);
+        if ($length <= $visibleStart + $visibleEnd) {
+            return str_repeat('*', $length);
+        }
+        $start = mb_substr($text, 0, $visibleStart);
+        $end = mb_substr($text, -$visibleEnd);
+        $middle = str_repeat('*', $length - $visibleStart - $visibleEnd);
+        return $start . $middle . $end;
     }
 
-    private function partialMask($text, $visibleStart = 1, $visibleEnd = 1)
+    //Girilen İsimleri Maskeleme Fonksiyonu:
+    public function maskName($fullName)
     {
-        $start = substr($text, 0, $visibleStart);
-        $end = substr($text, -$visibleEnd);
-        $middleLength = strlen($text) - $visibleStart - $visibleEnd;
-        return $start . str_repeat('*', max($middleLength, 0)) . $end;
-    }
-
-    private function maskName($fullName)
-    {
+        if (!$fullName) return '';
         $parts = explode(' ', $fullName);
-        return implode(' ', array_map(function ($part) {
-            return mb_substr($part, 0, 1) . str_repeat('*', max(0, mb_strlen($part) - 1));
-        }, $parts));
+        $maskedParts = array_map(function ($part) {
+            return mb_substr($part, 0, 1) . str_repeat('*', max(mb_strlen($part) - 1, 0));
+        }, $parts);
+        return implode(' ', $maskedParts);
     }
 
-    private function maskPlate($plate)
+    //Plaka Maskeleme Fonksiyonu:
+    public function maskPlate($plate)
     {
+        if (!$plate) return '';
         if (preg_match('/^(\d{2})\s*(\D+)\s*(\d+)$/', $plate, $matches)) {
             return $matches[1] . ' *** ' . str_repeat('*', strlen($matches[3]));
         }

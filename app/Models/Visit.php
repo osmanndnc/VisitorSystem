@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Visit extends Model
 {
     use HasFactory;
-
+    //entry_time'ı string değil de datetime formatında almak için.
+    protected $casts = [
+        'entry_time' => 'datetime', 
+    ];
 
     protected $fillable = [
         'visitor_id',
