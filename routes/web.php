@@ -12,6 +12,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+
 Route::get('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();

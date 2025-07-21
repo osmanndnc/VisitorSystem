@@ -47,6 +47,7 @@ class SecurityController extends Controller
             //'exit_time' => null,
             'person_to_visit' => $request->person_to_visit,
             'purpose' => $request->purpose,
+            'approved_by' => $securityId,//ekledim
         ]);
 
         return redirect()->route('security.create')->with('success', 'Ziyaretçi başarıyla kaydedildi.');

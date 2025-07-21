@@ -19,6 +19,7 @@ class Visit extends Model
         'exit_time',
         'person_to_visit',
         'purpose',
+        'approved_by',
     ];
     protected $table = 'visit';
 

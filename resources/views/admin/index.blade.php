@@ -89,7 +89,6 @@
             letter-spacing: 1px;
             box-shadow: 0 2px 8px rgba(35,42,54,0.08);
         }
-    
     </style>
 </head>
 <body>
@@ -156,7 +155,11 @@
                                             {{ $visit->person_to_visit }}
                                             @break
                                         @case('approved_by')
-                                            {{ $visit->approver->name ?? '-' }}
+                                            @if(isset($visit->approver) && !empty($visit->approver->name))
+                                                {{ $visit->approver->name }}
+                                            @elseif(!empty($visit->approved_by))
+                                                {{ $visit->approved_by }}
+                                            @endif
                                             @break
                                     @endswitch
                                 </td>
@@ -169,7 +172,6 @@
             </tbody>
         </table>
         <button type="submit">Göster</button>
-        
     </form>
 </div>
 </body>

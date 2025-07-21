@@ -26,7 +26,6 @@ class AdminController extends Controller
         $visits = Visit::with(['visitor', 'approver'])->get();
 
         return view('admin.index', compact('visits', 'fields', 'allFields'));
-
     }
 
     public function reports(Request $request)
@@ -42,7 +41,6 @@ class AdminController extends Controller
             'approved_by'
         ];
 
-        
         $selectedFields = $request->input('fields', []); // Request'ten gelen alanlar
 
         $fieldsForBlade = []; 
@@ -51,8 +49,7 @@ class AdminController extends Controller
             // ID ve Onaylayan Blade tarafında zaten manuel olarak gösteriliyor.
             $fieldsForBlade = [];
         } else {
-             
-             $fieldsForBlade = array_values(array_filter($selectedFields, function($field) {
+            $fieldsForBlade = array_values(array_filter($selectedFields, function($field) {
                 return !in_array($field, ['id', 'approved_by']);
             }));
         }
@@ -60,14 +57,21 @@ class AdminController extends Controller
         $visits = Visit::with(['visitor', 'approver'])->get();
 
         $adminReportController = new AdminReportController();
-        //Fonksiyon çağrılmaları AdminReportController sayfasında da yapıldı. Veri aktarım hataları oluşması engellendi.
 
         $data = $visits->map(function ($visit) use ($selectedFields, $adminReportController) {
             $visitor = $visit->visitor;
             $row = [];
 
             $row['id'] = $visit->id;
-            $row['approved_by'] = $visit->approver->name ?? '-';
+
+            // ONAYLAYAN KISMI: isim varsa isim, yoksa id, o da yoksa boş
+            if ($visit->approver && !empty($visit->approver->name)) {
+                $row['approved_by'] = $visit->approver->name;
+            } elseif (!empty($visit->approved_by)) {
+                $row['approved_by'] = $visit->approved_by;
+            } else {
+                $row['approved_by'] = '';
+            }
 
             if (in_array('entry_time', $selectedFields)) {
                 $row['entry_time'] = $visit->entry_time->format('Y-m-d H:i:s');
