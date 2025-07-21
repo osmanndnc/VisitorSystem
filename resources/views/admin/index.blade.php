@@ -1,3 +1,7 @@
+<x-app-layout>
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Fazladan beyaz panel kaldırıldı, sadece asıl içerik kutusu kaldı -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -11,15 +15,7 @@
             margin: 0;
             min-height: 100vh;
         }
-        .logo-area {
-            text-align: center;
-            margin-top: 48px;
-            margin-bottom: 12px;
-        }
-        .logo-area img {
-            width: 300px;
-            vertical-align: middle;
-        }
+
         .center-box {
             max-width: 1100px;
             margin: 32px auto;
@@ -92,9 +88,6 @@
     </style>
 </head>
 <body>
-<div class="logo-area">
-    <img src="/images/ata_icon.png" alt="Atatürk Üniversitesi">
-</div>
 <div class="center-box">
     <h2>Ziyaretçi Listesi</h2>
     @php
@@ -176,3 +169,6 @@
 </div>
 </body>
 </html>
+        </div>
+    </div>
+</x-app-layout>
