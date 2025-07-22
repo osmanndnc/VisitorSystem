@@ -36,6 +36,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/security/create', [SecurityController::class, 'create'])->name('security.create');
     Route::post('/security/store', [SecurityController::class, 'store'])->name('security.store');
 });
+
+Route::get('/security/{id}/edit', [SecurityController::class, 'edit'])->name('security.edit');
+Route::put('/security/{id}', [SecurityController::class, 'update'])->name('security.update');
+Route::delete('/security/{id}', [SecurityController::class, 'destroy'])->name('security.destroy');
+
 // Admin işlemleri (sadece admin rolüne sahip ve giriş yapmış kullanıcılar)
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
