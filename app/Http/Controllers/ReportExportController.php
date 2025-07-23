@@ -11,8 +11,9 @@ class ReportExportController extends Controller
     public function export(Request $request)
     {
         $fields = explode(',', $request->get('fields', ''));
+        $dateFilter = $request->get('date_filter', '');
+        $sortOrder = $request->get('sort_order', 'desc');
 
-
-        return Excel::download(new ReportExport($fields), 'rapor.xlsx');
+        return Excel::download(new ReportExport($fields, $dateFilter, $sortOrder), 'rapor.xlsx');
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Visit;
-use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\AdminReportController; // maskeleme fonksiyonları için
 
 class AdminController extends Controller
 {
@@ -31,22 +31,16 @@ class AdminController extends Controller
     public function reports(Request $request)
     {
         $allFields = [
-            'entry_time',
-            'name',
-            'tc_no',
-            'phone',
-            'plate',
-            'purpose',
-            'person_to_visit',
-            'approved_by'
+            'entry_time', 'name', 'tc_no', 'phone', 'plate',
+            'purpose', 'person_to_visit', 'approved_by'
         ];
 
-        $selectedFields = $request->input('fields', []); // Request'ten gelen alanlar
+        $selectedFields = $request->input('fields', []);
+        $dateFilter = $request->input('date_filter', ''); // Varsayılan: Tüm Kayıtlar
+        $sortOrder = $request->input('sort_order', 'desc'); // Varsayılan: Yeniden Esikiyee
 
         $fieldsForBlade = []; 
-
         if (empty($selectedFields)) {
-            // ID ve Onaylayan Blade tarafında zaten manuel olarak gösteriliyor.
             $fieldsForBlade = [];
         } else {
             $fieldsForBlade = array_values(array_filter($selectedFields, function($field) {
@@ -54,7 +48,25 @@ class AdminController extends Controller
             }));
         }
 
-        $visits = Visit::with(['visitor', 'approver'])->get();
+        $visitsQuery = Visit::with(['visitor', 'approver']);
+        if (!empty($dateFilter)) {
+            if ($dateFilter === 'daily') {
+                $visitsQuery->whereDate('entry_time', today());
+            } elseif ($dateFilter === 'monthly') {
+                $visitsQuery->whereMonth('entry_time', today()->month)
+                            ->whereYear('entry_time', today()->year);
+            } elseif ($dateFilter === 'yearly') {
+                $visitsQuery->whereYear('entry_time', today()->year);
+            }
+        }
+        
+        if ($sortOrder === 'asc') {
+            $visitsQuery->orderBy('entry_time', 'asc'); 
+        } else {
+            $visitsQuery->orderBy('entry_time', 'desc');
+        }
+        
+        $visits = $visitsQuery->get();
 
         $adminReportController = new AdminReportController();
 
@@ -64,19 +76,18 @@ class AdminController extends Controller
 
             $row['id'] = $visit->id;
 
-            // ONAYLAYAN KISMI: isim varsa isim, yoksa id, o da yoksa boş
             if ($visit->approver && !empty($visit->approver->name)) {
                 $row['approved_by'] = $visit->approver->name;
             } elseif (!empty($visit->approved_by)) {
                 $row['approved_by'] = $visit->approved_by;
             } else {
-                $row['approved_by'] = '';
+                $row['approved_by'] = '-';
             }
 
             if (in_array('entry_time', $selectedFields)) {
-                $row['entry_time'] = $visit->entry_time->format('Y-m-d H:i:s');
+                $row['entry_time'] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-';
             }
-
+            //AdminReportController'da tanımlanan fonksiyonlar
             if (in_array('name', $selectedFields)) {
                 $row['name'] = $adminReportController->maskName($visitor->name ?? '');
             }
@@ -104,6 +115,7 @@ class AdminController extends Controller
             return $row;
         });
 
-        return view('admin.reports', compact('data', 'fieldsForBlade'));
+
+        return view('admin.reports', compact('data', 'fieldsForBlade', 'dateFilter', 'sortOrder'));
     }
 }

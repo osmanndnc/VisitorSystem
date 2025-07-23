@@ -21,6 +21,7 @@ class Visit extends Model
         'purpose',
         'approved_by',
     ];
+    //Varsayılan olarak visits arandığı için visit olarak belirtildi
     protected $table = 'visit';
 
     public function visitor()
@@ -30,6 +31,6 @@ class Visit extends Model
 
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by','id');
     }
 }
