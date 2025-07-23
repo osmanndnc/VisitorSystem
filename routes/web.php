@@ -21,7 +21,8 @@ Route::get('/logout', function () {
 })->name('logout');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    //return view('dashboard');
+    return redirect(\App\Providers\RouteServiceProvider::redirectToBasedOnRole());
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Profil işlemleri (sadece giriş yapmış kullanıcılar)
@@ -37,9 +38,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/security/store', [SecurityController::class, 'store'])->name('security.store');
 });
 
-Route::get('/security/{id}/edit', [SecurityController::class, 'edit'])->name('security.edit');
-Route::put('/security/{id}', [SecurityController::class, 'update'])->name('security.update');
-Route::delete('/security/{id}', [SecurityController::class, 'destroy'])->name('security.destroy');
+    Route::get('/security/{id}/edit', [SecurityController::class, 'edit'])->name('security.edit');
+    Route::put('/security/{id}', [SecurityController::class, 'update'])->name('security.update');
+    Route::delete('/security/{id}', [SecurityController::class, 'destroy'])->name('security.destroy');
 
 // Admin işlemleri (sadece admin rolüne sahip ve giriş yapmış kullanıcılar)
 Route::middleware(['auth', 'role:admin'])->group(function () {

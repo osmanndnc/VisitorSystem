@@ -1,4 +1,9 @@
 <x-guest-layout>
+    <!-- @push('head')
+        <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
+    @endpush -->
     <div class="mb-6 text-center">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Hoş Geldiniz!</h2>
         <p class="text-gray-500 dark:text-gray-300 text-sm mt-1">Lütfen giriş bilgilerinizi girin</p>
@@ -61,4 +66,23 @@
             </x-primary-button>
         </div>
     </form>
+<script>
+    // if (window.history.replaceState) {
+    //     window.history.replaceState(null, null, window.location.href);
+    // }
+
+    // window.onload = function() {
+    //     if (performance.navigation.type === 2) {
+    //         // Tarayıcı geri tuşu ile gelindiyse login sayfasına yönlendir
+    //         window.location.href = "{{ route('login') }}";
+    //     }
+    // };
+    // Sayfa yüklendiğinde geçmişteki login olmayan sayfayı sil
+    if (window.history && window.history.pushState) {
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+            window.location.href = "{{ route('login') }}";
+        };
+    }
+</script>
 </x-guest-layout>

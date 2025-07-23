@@ -32,6 +32,8 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(RouteServiceProvider::redirectToBasedOnRole());
+        //return redirect(RouteServiceProvider::redirectToBasedOnRole());
+
 
         // return redirect()->intended(RouteServiceProvider::HOME);
     }
@@ -47,6 +49,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        //return redirect('/');
+        return redirect()->route('login')->with('status', 'Oturum kapatıldı.');
+
     }
 }

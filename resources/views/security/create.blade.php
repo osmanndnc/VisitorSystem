@@ -8,15 +8,19 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
 
-                <form method="POST" action="{{ route('security.store') }}">
+                <form method="POST" action="{{ isset($editVisit) ? route('security.update', $editVisit->id) : route('security.store') }}">
                     @csrf
+                    @if(isset($editVisit))
+                        @method('PUT')
+                    @endif
 
                     <h3 class="text-lg font-medium mb-4">Ziyaretçi Bilgileri</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-input-label for="name" :value="'Ad Soyad'" />
-                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" required />
+                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                                value="{{ isset($editVisit) ? $editVisit->visitor->name : old('name') }}" required />
                         </div>
 
                         <div>
@@ -24,7 +28,8 @@
                              <x-text-input id="tc_no" name="tc_no" type="text" 
                                 maxlength="11" pattern="[0-9]{11}" 
                                 class="mt-1 block w-full" required 
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11)" />
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11)"
+                                value="{{ isset($editVisit) ? $editVisit->visitor->tc_no : old('tc_no') }}" />
                         </div>
 
                         <div>
@@ -32,16 +37,26 @@
                              <x-text-input id="phone" name="phone" type="text" 
                                 class="mt-1 block w-full" required 
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\d{4})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4').slice(0, 14)" 
-                                placeholder="0500 000 00 00" />
+                                placeholder="0500 000 00 00"
+                                value="{{ isset($editVisit) ? $editVisit->visitor->phone : old('phone') }}" />
                         </div>
 
                         <div>
                             <x-input-label for="plate" :value="'Plaka'" />
-
                             <div class="flex gap-2">
-                                <x-text-input id="plate_city" name="plate_city" type="text" class="mt-1 w-16 uppercase" maxlength="6" required />
-                                <x-text-input id="plate_letters" name="plate_letters" type="text" class="mt-1 w-20 uppercase" maxlength="6" required />
-                                <x-text-input id="plate_number" name="plate_number" type="text" class="mt-1 w-24 uppercase" maxlength="10" required />
+                                @php
+                                    $plate = isset($editVisit) ? $editVisit->visitor->plate : '';
+                                    $plateParts = array_pad(explode(' ', $plate), 3, '');
+                                @endphp
+
+                                <x-text-input id="plate_city" name="plate_city" type="text" class="mt-1 w-16 uppercase"
+                                    maxlength="6" required value="{{ old('plate_city', $plateParts[0]) }}" />
+
+                                <x-text-input id="plate_letters" name="plate_letters" type="text" class="mt-1 w-20 uppercase"
+                                    maxlength="6" required value="{{ old('plate_letters', $plateParts[1]) }}" />
+
+                                <x-text-input id="plate_number" name="plate_number" type="text" class="mt-1 w-24 uppercase"
+                                    maxlength="10" required value="{{ old('plate_number', $plateParts[2]) }}" />
                             </div>
                         </div>
                     </div>
@@ -53,22 +68,29 @@
                             <x-input-label for="entry_time" :value="'Giriş Saati'" />
                             <x-text-input id="entry_time" name="entry_time" type="datetime-local" 
                                 class="mt-1 block w-full" 
-                                :value="now()->format('Y-m-d\\TH:i')" 
+                                value="{{ isset($editVisit) ? $editVisit->entry_time : now()->format('Y-m-d\TH:i') }}" 
                                 readonly />
                         </div>
                         <div>
                             <x-input-label for="person_to_visit" :value="'Ziyaret Edilen Kişi'" />
-                            <x-text-input id="person_to_visit" name="person_to_visit" type="text" class="mt-1 block w-full" required />
+                            <x-text-input id="person_to_visit" name="person_to_visit" type="text" class="mt-1 block w-full"
+                                value="{{ isset($editVisit) ? $editVisit->person_to_visit : old('person_to_visit') }}" required />
                         </div>
 
                         <div class="mt-4">
                             <label for="purpose" class="block font-medium text-sm text-gray-700">Ziyaret Sebebi</label>
-                            <textarea name="purpose" id="purpose" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                            <textarea name="purpose" id="purpose" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ isset($editVisit) ? $editVisit->purpose : old('purpose') }}</textarea>
                         </div>
                     </div>
 
-                    <div class="mt-6">
-                        <x-primary-button>KAYDET</x-primary-button>
+                    <div class="mt-6 flex items-center gap-4">
+                        <x-primary-button>
+                            {{ isset($editVisit) ? 'GÜNCELLE' : 'KAYDET' }}
+                        </x-primary-button>
+
+                        @if(isset($editVisit))
+                            <a href="{{ route('security.create') }}" class="text-blue-500 hover:underline">İptal</a>
+                        @endif
                     </div>
                 </form>
 
