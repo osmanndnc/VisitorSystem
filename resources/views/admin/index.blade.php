@@ -1,86 +1,339 @@
 <x-app-layout>
+    <style>
+        body { background: #f1f5f9; }
+        .center-box {
+            position: relative;
+            width: 90%;
+            max-width: 1500px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+        }
+        .page-title {
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #003366; /* Atatürk Üniversitesi koyu mavi */
+            margin-bottom: 2rem;
+        }
+        .modern-btn {
+            background: linear-gradient(135deg, #003366 0%, #00509e 100%);
+            color: white;
+            padding: 0.5rem 2rem;
+            border-radius: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 6px 15px rgba(0, 80, 158, 0.5);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.35s ease;
+        }
+        .modern-btn:hover {
+            background: linear-gradient(135deg, #00509e 0%, #003366 100%);
+            box-shadow: 0 8px 20px rgba(0, 80, 158, 0.7);
+            transform: scale(1.07);
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 3rem;
+            left: 0;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            width: 250px;
+            z-index: 50;
+            padding: 1rem;
+        }
+        .dropdown-menu.active { display: block; }
+        .dropdown-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .dropdown-menu li {
+            padding: 0.4rem 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            user-select: none;
+        }
+        .dropdown-menu li:hover {
+            background: #f3f4f6;
+        }
+        .filter-option.selected {
+            background-color: #d1e7ff; /* Açık mavi ton */
+            color: #003366;
+            font-weight: 700;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        table th {
+            background: #f9fafb;
+            font-weight: 600;
+        }
+        table tr:hover {
+            background: #f3f4f6;
+        }
+        .svg-button {
+            background-color: #ffffff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 0.6rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            margin-left: 0.75rem;
+            vertical-align: middle;
+        }
+        .svg-button:hover {
+            background-color: #f0f0f0;
+        }
+        .svg-path {
+            transition: stroke-width 0.3s;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 0;
+            stroke: #003366; /* koyu mavi stroke */
+        }
+        .svg-button:hover .svg-path {
+            stroke-width: 2;
+            animation: draw 500ms ease-in forwards;
+        }
+        @keyframes draw {
+            0% { stroke-dashoffset: 100; }
+            100% { stroke-dashoffset: 0; }
+        }
+        /* Inputlar filtre alanlarının içine */
+        .filter-option input {
+            width: 100%;
+            margin-top: 0.3rem;
+            padding: 0.3rem 0.4rem;
+            font-size: 0.9rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.3rem;
+            display: none;
+            box-sizing: border-box;
+        }
+        .filter-option.selected input {
+            display: block;
+        }
+    </style>
+
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="center-box bg-white rounded-2xl shadow-md p-8 overflow-x-auto">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Ziyaretçi Listesi</h2>
+        <div class="center-box">
+            <h2 class="page-title">Ziyaretçi Listesi</h2>
 
-                @php
-                $fieldsList = [
-                    'entry_time' => 'Giriş Tarihi',
-                    'name' => 'Ad-Soyad',
-                    'tc_no' => 'TC',
-                    'phone' => 'Telefon Numarası',
-                    'plate' => 'Plaka',
-                    'purpose' => 'Ziyaret Sebebi',
-                    'person_to_visit' => 'Ziyaret Edilen Kişi',
-                    'approved_by' => 'Onaylayan'
-                ];
-                @endphp
+            <div class="flex justify-between items-center mb-6 relative" style="display:flex; justify-content: space-between; align-items: center;">
+                <div class="relative">
+                    <button id="filterBtn" type="button" class="modern-btn">Filtreleme Yap</button>
+                    <div id="filterMenu" class="dropdown-menu">
+                        <ul id="filterOptions">
+                            <li class="filter-option" data-field="id">ID
+                                <input type="text" id="id_value" placeholder="ID ara" value="{{ request('id_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="entry_time">Giriş Tarihi
+                                <input type="text" id="entry_time_value" placeholder="Giriş Tarihi ara" value="{{ request('entry_time_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="name">Ad Soyad
+                                <input type="text" id="name_value" placeholder="Ad Soyad ara" value="{{ request('name_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="tc_no">TC Kimlik No
+                                <input type="text" id="tc_no_value" placeholder="TC Kimlik No ara" value="{{ request('tc_no_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="phone">Telefon
+                                <input type="text" id="phone_value" placeholder="Telefon ara" value="{{ request('phone_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="plate">Plaka
+                                <input type="text" id="plate_value" placeholder="Plaka ara" value="{{ request('plate_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="purpose">Ziyaret Sebebi
+                                <input type="text" id="purpose_value" placeholder="Ziyaret Sebebi ara" value="{{ request('purpose_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="person_to_visit">Ziyaret Edilen Kişi
+                                <input type="text" id="person_to_visit_value" placeholder="Ziyaret Edilen Kişi ara" value="{{ request('person_to_visit_value') }}">
+                            </li>
+                            <li class="filter-option" data-field="approved_by">Ekleyen
+                                <input type="text" id="approved_by_value" placeholder="Ekleyen ara" value="{{ request('approved_by_value') }}">
+                            </li>
+                        </ul>
+                        <div class="p-2">
+                            <button id="applyFilters" class="w-full rounded-lg font-semibold modern-btn hover:brightness-110 transition" style="padding: 0.4rem 1.5rem; font-size: 1rem;">
+                                Filtreyi Uygula
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                <form method="GET" action="{{ route('admin.reports') }}">
-                    <table class="w-full min-w-[600px] text-sm text-left border-collapse bg-white">
-                        <thead class="bg-gray-100 text-gray-700 font-semibold">
-                            <tr>
-                                <th class="py-2 px-4">ID</th>
-                                @foreach($fieldsList as $field => $label)
-                                    <th class="py-2 px-4">
-                                        <label class="flex items-center gap-2 cursor-pointer">
-                                            {{ $label }}
-                                            <input type="checkbox" name="fields[]" value="{{ $field }}" {{ (is_array($fields) && in_array($field, $fields)) ? 'checked' : '' }} class="w-4 h-4 accent-gray-800">
-                                        </label>
-                                    </th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-800">
-                            @foreach($visits as $visit)
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-2 px-4">{{ $visit->id }}</td>
-                                    @foreach(array_keys($fieldsList) as $field)
-                                        @if(empty($fields) || in_array($field, $fields))
-                                            <td class="py-2 px-4">
-                                                @switch($field)
-                                                    @case('entry_time')
-                                                        {{ $visit->entry_time }}
-                                                        @break
-                                                    @case('name')
-                                                        {{ $visit->visitor->name ?? '-' }}
-                                                        @break
-                                                    @case('tc_no')
-                                                        {{ $visit->visitor->tc_no ?? '-' }}
-                                                        @break
-                                                    @case('phone')
-                                                        {{ $visit->visitor->phone ?? '-' }}
-                                                        @break
-                                                    @case('plate')
-                                                        {{ $visit->visitor->plate ?? '-' }}
-                                                        @break
-                                                    @case('purpose')
-                                                        {{ $visit->purpose }}
-                                                        @break
-                                                    @case('person_to_visit')
-                                                        {{ $visit->person_to_visit }}
-                                                        @break
-                                                    @case('approved_by')
-                                                        @if(isset($visit->approver) && !empty($visit->approver->name))
-                                                            {{ $visit->approver->name }}
-                                                        @elseif(!empty($visit->approved_by))
-                                                            {{ $visit->approved_by }}
-                                                        @endif
-                                                        @break
-                                                @endswitch
-                                            </td>
-                                        @endif
-                                    @endforeach
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    <button type="submit" class="mt-6 px-6 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
-                        Göster
+                <div class="relative" style="display: flex; align-items: center;">
+                    <button id="reportBtn" type="button" class="modern-btn">Raporla</button>
+                    <button id="refreshBtn" class="svg-button" aria-label="Yenile" title="Yenile">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                            stroke="#003366" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path class="svg-path" d="M21 12a9 9 0 1 1-2.64-6.36" />
+                            <polyline class="svg-path" points="21 3 21 9 15 9" />
+                        </svg>
                     </button>
-                </form>
+                    <div id="reportMenu" class="dropdown-menu" style="left:auto; right:0;">
+                        <ul>
+                            <li data-type="daily">Günlük</li>
+                            <li data-type="monthly">Aylık</li>
+                            <li data-type="yearly">Yıllık</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        @foreach($fields as $field)
+                            <th>
+                                @switch($field)
+                                    @case('id') ID @break
+                                    @case('entry_time') Giriş Tarihi @break
+                                    @case('name') Ad Soyad @break
+                                    @case('tc_no') TC Kimlik No @break
+                                    @case('phone') Telefon @break
+                                    @case('plate') Plaka @break
+                                    @case('purpose') Ziyaret Sebebi @break
+                                    @case('person_to_visit') Ziyaret Edilen Kişi @break
+                                    @case('approved_by') Ekleyen @break
+                                    @default {{ $field }}
+                                @endswitch
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($visits as $visit)
+                        <tr>
+                            @foreach($fields as $field)
+                                <td>
+                                    @switch($field)
+                                        @case('id') {{ $visit->id ?? '-' }} @break
+                                        @case('entry_time') {{ $visit->entry_time ?? '-' }} @break
+                                        @case('name') {{ $visit->visitor->name ?? '-' }} @break
+                                        @case('tc_no') {{ $visit->visitor->tc_no ?? '-' }} @break
+                                        @case('phone') {{ $visit->visitor->phone ?? '-' }} @break
+                                        @case('plate') {{ $visit->visitor->plate ?? '-' }} @break
+                                        @case('purpose') {{ $visit->purpose ?? '-' }} @break
+                                        @case('person_to_visit') {{ $visit->person_to_visit ?? '-' }} @break
+                                        @case('approved_by') {{ $visit->approver->username ?? $visit->approved_by ?? '-' }} @break
+                                        @default {{ $visit->$field ?? '-' }}
+                                    @endswitch
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
+
+    <script>
+        const filterBtn = document.getElementById('filterBtn');
+        const filterMenu = document.getElementById('filterMenu');
+        const reportBtn = document.getElementById('reportBtn');
+        const reportMenu = document.getElementById('reportMenu');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        filterBtn.addEventListener('click', () => filterMenu.classList.toggle('active'));
+        reportBtn.addEventListener('click', () => reportMenu.classList.toggle('active'));
+
+        // Rapor menüsündeki tıklamalar
+        document.querySelectorAll('#reportMenu li').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+                window.location.href = `/admin/reports?date_filter=${type}`;
+            });
+        });
+
+        refreshBtn.addEventListener('click', () => {
+            window.location.href = '/admin?date_filter=daily';
+        });
+
+        // Filtre alanlarını seçme & input gösterme/gizleme
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                // Input içine tıklanırsa toggle kapatma
+                if (e.target.tagName.toLowerCase() === 'input') return;
+
+                option.classList.toggle('selected');
+                const input = option.querySelector('input');
+                if (input) {
+                    input.style.display = option.classList.contains('selected') ? 'block' : 'none';
+                    if (!option.classList.contains('selected')) {
+                        input.value = '';
+                    }
+                }
+            });
+        });
+
+        // Sayfa yüklendiğinde request'deki filtre alanlarını seç ve inputları göster
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const filterParam = urlParams.get('filter');
+            if (filterParam) {
+                const filters = filterParam.split(',');
+                filters.forEach(f => {
+                    const opt = document.querySelector(`.filter-option[data-field="${f}"]`);
+                    if (opt) {
+                        opt.classList.add('selected');
+                        const input = opt.querySelector('input');
+                        if (input) {
+                            input.style.display = 'block';
+                        }
+                    }
+                });
+            }
+        });
+
+        // Filtreyi uygula butonu
+        document.getElementById('applyFilters').addEventListener('click', () => {
+            const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
+            if (selectedOptions.length === 0) {
+                alert('Lütfen en az bir filtre seçiniz.');
+                return;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+
+            // Seçilen filtreler
+            const selectedFields = selectedOptions.map(opt => opt.getAttribute('data-field'));
+            params.set('filter', selectedFields.join(','));
+
+            // Her seçilen filtre için input değerini ekle (boşsa sil)
+            selectedOptions.forEach(opt => {
+                const field = opt.getAttribute('data-field');
+                const input = opt.querySelector('input');
+                if (input && input.value.trim() !== '') {
+                    params.set(field + '_value', input.value.trim());
+                } else {
+                    params.delete(field + '_value');
+                }
+            });
+
+            window.location.href = window.location.pathname + '?' + params.toString();
+        });
+
+        // Menü dışına tıklayınca kapat
+        document.addEventListener('click', e => {
+            if (!filterBtn.contains(e.target) && !filterMenu.contains(e.target)) {
+                filterMenu.classList.remove('active');
+            }
+            if (!reportBtn.contains(e.target) && !reportMenu.contains(e.target)) {
+                reportMenu.classList.remove('active');
+            }
+        });
+    </script>
 </x-app-layout>
