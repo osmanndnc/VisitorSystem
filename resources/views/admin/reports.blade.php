@@ -1,5 +1,15 @@
 <x-app-layout>
     <div class="container py-5" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        @php
+            $reportTitle = '';
+            switch ($dateFilter ?? '') {
+                case 'daily': $reportTitle = 'Günlük'; break;
+                case 'monthly': $reportTitle = 'Aylık'; break;
+                case 'yearly': $reportTitle = 'Yıllık'; break;
+                default: $reportTitle = 'Tüm'; break;
+            }
+        @endphp
+
         <h2 class="mb-4 text-center" style="
             font-family: 'Times New Roman', Times, serif;
             font-weight: bold;
@@ -8,41 +18,10 @@
             text-shadow: none;
             font-style: normal;
             margin-bottom: 2rem;
-        ">Ziyaretçi Raporu</h2>
+        ">
+            {{ $reportTitle }} Ziyaretçi Raporu
+        </h2>
 
-        {{-- Filtreleme ve Sıralama Formu --}}
-        <div class="d-flex justify-content-center mb-4 print-hidden"> {{-- print-hidden sınıfı eklendi --}}
-            <form id="reportFilterForm" action="{{ route('admin.reports') }}" method="GET" class="d-flex flex-wrap align-items-center justify-content-center gap-3 p-3 border rounded shadow-sm" style="background-color: #f8f9fa;"> {{-- Tasarım iyileştirmeleri --}}
-                
-                <div class="d-flex align-items-center gap-2">
-                    <label for="date_filter" class="form-label mb-0">Rapor Dönemi:</label>
-                    <select name="date_filter" id="date_filter" class="form-select w-auto">
-                        <option value="" {{ ($dateFilter ?? '') === '' ? 'selected' : '' }}>Tüm Kayıtlar</option>
-                        <option value="daily" {{ ($dateFilter ?? '') === 'daily' ? 'selected' : '' }}>Günlük</option>
-                        <option value="monthly" {{ ($dateFilter ?? '') === 'monthly' ? 'selected' : '' }}>Aylık</option>
-                        <option value="yearly" {{ ($dateFilter ?? '') === 'yearly' ? 'selected' : '' }}>Yıllık</option>
-                    </select>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <label for="sort_order" class="form-label mb-0">Sıralama: </label>
-                    <select name="sort_order" id="sort_order" class="form-select w-auto">
-                        <option value="desc" {{ ($sortOrder ?? 'desc') === 'desc' ? 'selected' : '' }}>Yeniden Eskiye</option>
-                        <option value="asc" {{ ($sortOrder ?? 'desc') === 'asc' ? 'selected' : '' }}>Eskiden Yeniye</option>
-                    </select>
-                </div>
-                
-                {{-- Alan seçim hidden inputları --}}
-                @if (!empty($fieldsForBlade))
-                    @foreach ($fieldsForBlade as $field)
-                        <input type="hidden" name="fields[]" value="{{ $field }}">
-                    @endforeach
-                @endif
-                
-                {{-- "Göster" butonu kaldırıldı, JavaScript ile otomatik submit yapılacak --}}
-            </form>
-        </div>
-        
         @if ($data->isEmpty())
             <div class="alert alert-warning text-center" role="alert">
                 Gösterilecek veri bulunamadı.
@@ -54,7 +33,7 @@
                         <thead style="background-color: #003366; color: #ffffff;">
                             <tr>
                                 <th class="text-center" style="min-width: 80px;">ID</th>
-                                <th class="text-center" style="min-width: 150px;">Onaylayan</th>
+                                <th class="text-center" style="min-width: 150px;">Ekleyen</th>
                                 @foreach ($fieldsForBlade as $field)
                                     <th class="text-center" style="min-width: 150px;">
                                         @switch($field)
@@ -74,10 +53,10 @@
                         <tbody>
                             @foreach ($data as $row)
                                 <tr>
-                                    <td class="text-center" style="white-space: normal; min-width: 80px;">{{ $row['id'] ?? '-' }}</td>
-                                    <td class="text-center" style="white-space: normal; min-width: 150px;">{{ $row['approved_by'] ?? '-' }}</td>
+                                    <td class="text-center">{{ $row['id'] ?? '-' }}</td>
+                                    <td class="text-center">{{ $row['approved_by'] ?? '-' }}</td>
                                     @foreach ($fieldsForBlade as $field)
-                                        <td class="text-center" style="white-space: normal; min-width: 150px;">{{ $row[$field] ?? '-' }}</td>
+                                        <td class="text-center">{{ $row[$field] ?? '-' }}</td>
                                     @endforeach
                                 </tr>
                             @endforeach
@@ -91,7 +70,8 @@
                        style="background-color: #28a745; color: #ffffff; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
                         <i class="bi bi-file-earmark-excel me-2"></i> Excel'e Aktar
                     </a>
-                    <button onclick="window.print()"
+
+                    <button id="printReportBtn"
                             class="btn shadow-sm d-flex align-items-center ms-3"
                             style="background-color: #003366; color: #ffffff; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
                         <i class="bi bi-printer me-2"></i> Yazdır
@@ -103,34 +83,89 @@
 
     <style>
         @media print {
-            .print-hidden {
-                display: none !important;
-            }
-            body {
-                background-color: #fff !important;
-            }
-            .container {
-                box-shadow: none !important;
-            }
+            .print-hidden { display: none !important; }
+            body { background-color: #fff !important; }
+            .container { box-shadow: none !important; }
             thead[style] {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
-            }
-            .print-hidden a, .print-hidden button {
-                display: none !important;
             }
         }
     </style>
 
     <script>
-        // Sıralama seçeneği değiştiğinde formu otomatik gönder
-        document.getElementById('sort_order').addEventListener('change', function() {
-            document.getElementById('reportFilterForm').submit();
-        });
+        document.getElementById('printReportBtn').addEventListener('click', () => {
+            const table = document.querySelector('table');
+            if (!table) {
+                alert('Yazdırılacak tablo bulunamadı.');
+                return;
+            }
 
-        // Rapor Dönemi seçeneği değiştiğinde formu otomatik gönder
-        document.getElementById('date_filter').addEventListener('change', function() {
-            document.getElementById('reportFilterForm').submit();
+            const originalHTML = document.body.innerHTML;
+
+            let printHTML = '<html><head><title>Yazdır - Ziyaretçi Raporu</title>';
+
+            document.querySelectorAll('style').forEach(style => {
+                printHTML += style.outerHTML;
+            });
+
+            document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+                printHTML += link.outerHTML;
+            });
+
+            printHTML += `
+                <style>
+                    body { margin: 1cm; font-family: Arial, sans-serif; }
+                    h2.page-title {
+                        text-align: center;
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #003366;
+                        margin-bottom: 20px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                        word-wrap: break-word;
+                    }
+                    th, td {
+                        padding: 5px;
+                        border: 1px solid #ccc;
+                        font-size: 10px;
+                        vertical-align: top;
+                    }
+                    thead th {
+                        background-color: #003366;
+                        color: #ffffff;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    @page {
+                        margin: 1cm;
+                    }
+                </style>
+            </head><body>`;
+
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('tr-TR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            printHTML += `<div style="text-align:right; font-size:10px; margin-bottom:5px;">${dateStr}</div>`;
+            printHTML += `<h2 class="page-title">{{ $reportTitle }} Ziyaretçi Raporu</h2>`;
+            printHTML += `<div style="margin-top:20px;">${table.outerHTML}</div>`;
+            printHTML += '</body></html>';
+
+            document.body.innerHTML = printHTML;
+            window.print();
+
+            setTimeout(() => {
+                document.body.innerHTML = originalHTML;
+                window.location.reload();
+            }, 500);
         });
     </script>
 </x-app-layout>

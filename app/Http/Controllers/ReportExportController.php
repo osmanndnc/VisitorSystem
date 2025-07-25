@@ -10,10 +10,17 @@ class ReportExportController extends Controller
 {
     public function export(Request $request)
     {
-        $fields = explode(',', $request->get('fields', ''));
+        $fields = $request->input('fields', []); 
+        
+        if (is_string($fields)) { 
+            $fields = explode(',', $fields);
+        }
+        $fields = array_filter($fields); // Boş elemanları temizle
+
         $dateFilter = $request->get('date_filter', '');
         $sortOrder = $request->get('sort_order', 'desc');
+        $unmasked = $request->boolean('unmasked');
 
-        return Excel::download(new ReportExport($fields, $dateFilter, $sortOrder), 'rapor.xlsx');
+        return Excel::download(new ReportExport($fields, $dateFilter, $sortOrder, $unmasked), 'rapor.xlsx');
     }
 }

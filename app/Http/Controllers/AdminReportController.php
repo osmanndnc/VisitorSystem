@@ -4,44 +4,84 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Visit;
+use Carbon\Carbon;
 
 class AdminReportController extends Controller
 {
     public function index(Request $request)
     {
-        $visits = Visit::with('visitor', 'approver')->get();
+        $visits = collect(); 
         $fields = $request->old('fields', []);
         $dateFilter = $request->input('date_filter', '');
         $sortOrder = $request->input('sort_order', 'desc');
 
-        return view('report.index', compact('visits', 'fields', 'dateFilter', 'sortOrder'));
+        $fieldsForBlade = [
+            'entry_time', 'name', 'tc_no', 'phone', 'plate',
+            'purpose', 'person_to_visit'
+        ];
+        
+        if ($request->has('fields') && !empty($request->input('fields'))) {
+            $fieldsForBlade = array_values(array_filter($request->input('fields'), function($field) {
+                return !in_array($field, ['id', 'approved_by']);
+            }));
+        }
+
+        return view('admin.reports', compact('visits', 'fieldsForBlade', 'dateFilter', 'sortOrder'));
     }
 
     public function generateReport(Request $request)
     {
         $allFields = [
-            'entry_time', 'name', 'tc_no', 'phone', 'plate',
-            'purpose', 'person_to_visit', 'approved_by'
+            'id',
+            'entry_time',
+            'name',
+            'tc_no',
+            'phone',
+            'plate',
+            'purpose',
+            'person_to_visit',
+            'approved_by'
         ];
+        
         $selectedFields = $request->input('fields', []);
+
+        // Eğer hiçbir alan seçilmemişse, tüm alanları kullan
+        if (empty($selectedFields)) {
+            $selectedFields = $allFields;
+        }
+
         $dateFilter = $request->input('date_filter', '');
         $sortOrder = $request->input('sort_order', 'desc');
 
         $visitsQuery = Visit::with(['visitor', 'approver']);
 
-        
-        if (!empty($dateFilter)) {
-            if ($dateFilter === 'daily') {
-                $visitsQuery->whereDate('entry_time', today());
-            } elseif ($dateFilter === 'monthly') {
-                $visitsQuery->whereMonth('entry_time', today()->month)
-                            ->whereYear('entry_time', today()->year);
-            } elseif ($dateFilter === 'yearly') {
-                $visitsQuery->whereYear('entry_time', today()->year);
+        // TARİH FİLTRELEME
+        if ($dateFilter === 'daily') {
+            $visitsQuery->whereDate('entry_time', today());
+        } elseif ($dateFilter === 'monthly') {
+            $visitsQuery->whereMonth('entry_time', now()->month)
+                        ->whereYear('entry_time', now()->year);
+        } elseif ($dateFilter === 'yearly') {
+            $visitsQuery->whereYear('entry_time', now()->year);
+        }
+
+        foreach ($allFields as $field) {
+            $searchValue = $request->input($field . '_value');
+            if ($searchValue) {
+                if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
+                    $visitsQuery->whereHas('visitor', function ($query) use ($field, $searchValue) {
+                        $query->where($field, 'like', "%{$searchValue}%");
+                    });
+                } elseif ($field === 'approved_by') {
+                    $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
+                        $query->where('username', 'like', "%{$searchValue}%");
+                    });
+                } else {
+                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
+                }
             }
         }
 
-    
         if ($sortOrder === 'asc') {
             $visitsQuery->orderBy('entry_time', 'asc');
         } else {
@@ -54,18 +94,43 @@ class AdminReportController extends Controller
             $visitor = $visit->visitor;
             $row = [];
 
+            // ID ve Onaylayan her zaman gösterilecek
             $row['id'] = $visit->id;
-            $row['approved_by'] = $visit->approver->name ?? '-';
+            $row['approved_by'] = $visit->approver->username ?? $visit->approved_by ?? '-';
 
-            if (in_array('entry_time', $selectedFields)) {
-                $row['entry_time'] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-';
+            // Sadece seçilen alanları doldur
+            foreach ($selectedFields as $field) {
+                if (in_array($field, ['id', 'approved_by'])) { // id ve approved_by zaten eklendi
+                    continue;
+                }
+
+                switch ($field) {
+                    case 'entry_time':
+                        $row['entry_time'] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-';
+                        break;
+                    case 'name':
+                        $row['name'] = $this->maskName($visitor->name ?? '');
+                        break;
+                    case 'tc_no':
+                        $row['tc_no'] = $this->partialMask($visitor->tc_no ?? '', 1, 2);
+                        break;
+                    case 'phone':
+                        $row['phone'] = $this->partialMask($visitor->phone ?? '', 0, 2);
+                        break;
+                    case 'plate':
+                        $row['plate'] = $this->maskPlate($visitor->plate ?? '');
+                        break;
+                    case 'purpose':
+                        $row['purpose'] = $visit->purpose ?? '-';
+                        break;
+                    case 'person_to_visit':
+                        $row['person_to_visit'] = $this->maskName($visit->person_to_visit ?? '');
+                        break;
+                    default:
+                        $row[$field] = $visit->$field ?? '-';
+                        break;
+                }
             }
-            if (in_array('name', $selectedFields)) { $row['name'] = $this->maskName($visitor->name ?? ''); }
-            if (in_array('tc_no', $selectedFields)) { $row['tc_no'] = $this->partialMask($visitor->tc_no ?? '', 1, 2); }
-            if (in_array('phone', $selectedFields)) { $row['phone'] = $this->partialMask($visitor->phone ?? '', 0, 2); }
-            if (in_array('plate', $selectedFields)) { $row['plate'] = $this->maskPlate($visitor->plate ?? ''); }
-            if (in_array('purpose', $selectedFields)) { $row['purpose'] = $visit->purpose; }
-            if (in_array('person_to_visit', $selectedFields)) { $row['person_to_visit'] = $this->maskName($visit->person_to_visit ?? ''); }
 
             return $row;
         });
@@ -77,9 +142,14 @@ class AdminReportController extends Controller
         return view('admin.reports', compact('data', 'fieldsForBlade', 'dateFilter', 'sortOrder'));
     }
 
+    public function fullMask($text)
+    {
+        return str_repeat('*', mb_strlen($text));
+    }
+
     public function partialMask($text, $visibleStart = 1, $visibleEnd = 1)
     {
-        if (!is_string($text) || empty($text)) return '';
+        if (!$text) return '';
         $length = mb_strlen($text);
         if ($length <= $visibleStart + $visibleEnd) {
             return str_repeat('*', $length);
@@ -92,8 +162,7 @@ class AdminReportController extends Controller
 
     public function maskName($fullName)
     {
-        // UNDEFINED VARIABLE $PARTS HATASINI ÇÖZMEK İÇİN GÜNCELLENDİ
-        if (!is_string($fullName) || empty($fullName)) return '';
+        if (!$fullName) return '';
         $parts = explode(' ', $fullName);
         $maskedParts = array_map(function ($part) {
             return mb_substr($part, 0, 1) . str_repeat('*', max(mb_strlen($part) - 1, 0));
@@ -103,15 +172,10 @@ class AdminReportController extends Controller
 
     public function maskPlate($plate)
     {
-        if (!is_string($plate) || empty($plate)) return ''; 
+        if (!$plate) return '';
         if (preg_match('/^(\d{2})\s*(\D+)\s*(\d+)$/', $plate, $matches)) {
-            return $matches[1] . ' *** ' . str_repeat('*', strlen($matches[3]));
+            return $matches[1] . ' ' . str_repeat('*', mb_strlen($matches[2])) . ' ' . str_repeat('*', mb_strlen($matches[3]));
         }
         return $this->partialMask($plate, 2, 2);
-    }
-    public function fullMask($text)//Olası veri değişikliği için fullMask eklendi.
-    {
-        if (!is_string($text) || empty($text)) return '';
-        return str_repeat('*', mb_strlen($text));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Visit;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -38,11 +39,26 @@ class AdminController extends Controller
             }
         }
 
-        // Sorgu (sadece bugünün kayıtları)
-        $visitsQuery = Visit::with(['visitor', 'approver'])
-            ->whereDate('entry_time', today());
+        // Sorgu başlat
+        $visitsQuery = Visit::with(['visitor', 'approver']);
 
-        // Filtreleri uygula
+        // Günlük, Aylık, Yıllık filtrelemeyi ekle
+        $dateFilter = $request->input('date_filter', 'daily'); // Varsayılan
+
+        switch ($dateFilter) {
+            case 'daily':
+                $visitsQuery->whereDate('entry_time', Carbon::today());
+                break;
+            case 'monthly':
+                $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
+                            ->whereYear('entry_time', Carbon::now()->year);
+                break;
+            case 'yearly':
+                $visitsQuery->whereYear('entry_time', Carbon::now()->year);
+                break;
+        }
+
+        // Diğer filtreleri uygula
         foreach ($filters as $field => $value) {
             if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
                 $visitsQuery->whereHas('visitor', function ($query) use ($field, $value) {
