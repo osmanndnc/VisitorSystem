@@ -1,6 +1,11 @@
 <x-app-layout>
     <style>
-        body { background: #f1f5f9; }
+        html {
+            zoom: 80%;
+        }
+        body {
+            background: #f1f5f9;
+        }
         .center-box {
             position: relative;
             width: 90%;

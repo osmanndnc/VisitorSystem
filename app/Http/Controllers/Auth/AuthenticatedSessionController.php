@@ -29,6 +29,15 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        
+        // Kullanıcı doğrulandıktan hemen sonra kontrol edelim:
+        if (!auth()->user()->is_active) {
+            auth()->logout(); // Oturumu kapat
+            return redirect()->route('login')->withErrors([
+                'username' => 'Şu an aktif bir kullanıcı değilsiniz.'
+            ]);
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(RouteServiceProvider::redirectToBasedOnRole());
@@ -53,4 +62,5 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('login')->with('status', 'Oturum kapatıldı.');
 
     }
+
 }

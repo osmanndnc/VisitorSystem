@@ -25,6 +25,7 @@ class RouteServiceProvider extends ServiceProvider
 
         return match ($role) {
             'security' => route('security.create'),
+            'super_admin' => route('admin.index'),
             'admin' => route('admin.index'),
             default => '/',
         };
