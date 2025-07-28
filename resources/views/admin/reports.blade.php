@@ -22,8 +22,8 @@
             font-weight: bold;
             font-size: 2.8rem;
             color: #003366;
-            text-shadow: none; /* Mevcut hali korundu */
-            font-style: normal; /* Mevcut hali korundu */
+            text-shadow: none;
+            font-style: normal;
             margin-bottom: 2rem;
         ">
             {{ $reportTitle }} Ziyaretçi Raporu
@@ -119,20 +119,18 @@
     </div>
 
     <style>
-        /* HTML ve Body için sıfırlama ve arka plan rengi */
         html {
-            zoom: 80%; /* Diğer sayfadaki zoom değeri */
-            height: 100%; /* Sayfanın tüm yüksekliğini kaplamasını sağlar */
+            zoom: 80%; 
+            height: 100%;
         }
         body {
-            margin: 0; /* Tarayıcının varsayılan margin'lerini kaldırır */
-            padding: 0; /* Tarayıcının varsayılan padding'lerini kaldırır */
-            min-height: 100%; /* Body'nin en az HTML kadar yüksek olmasını sağlar */
-            /* Arka plan rengini diğer sayfadaki center-box'ın box-shadow'una benzer bir gri tonu yaparak tüm sayfayı kaplamasını sağlıyoruz */
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
             background-color: rgba(0,0,0,0.08); 
         }
 
-        /* Diğer stilleriniz */
+       
         @media print {
             .print-hidden { display: none !important; }
             body { background-color: #fff !important; }
@@ -225,7 +223,7 @@
             }, 500);
         });
 
-        // GRAFİK İÇİN JAVASCRIPT KODU
+        // GRAFİK İÇİN 
         document.getElementById('showChartBtn').addEventListener('click', () => {
             const chartContainer = document.getElementById('reportChartContainer');
             const downloadPdfBtn = document.getElementById('downloadPdfBtn');
