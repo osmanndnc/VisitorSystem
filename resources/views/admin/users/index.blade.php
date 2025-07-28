@@ -3,22 +3,27 @@
         html {
             zoom: 80%;
         }
+
         body {
             background: #f1f5f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
+        /* === Toggle Switch === */
         .toggle-switch {
-            position: relative;
             width: 80px;
             height: 36px;
-            background: linear-gradient(90deg, #ccc, #e0e0e0);
-            border-radius: 50px;
+            background: #cbd5e1;
+            border-radius: 999px;
             border: none;
             cursor: pointer;
+            position: relative;
             transition: background 0.4s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .toggle-switch.active {
-            background: linear-gradient(90deg, #00ff3cb9, #038521ea);
+            background: linear-gradient(90deg, #22c55e, #16a34a);
         }
 
         .toggle-switch .circle {
@@ -30,6 +35,7 @@
             background-color: white;
             border-radius: 50%;
             transition: left 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
 
         .toggle-switch.active .circle {
@@ -38,27 +44,36 @@
 
         .toggle-switch .label {
             position: absolute;
-            top: 8px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
             font-size: 12px;
             color: white;
-            font-weight: bold;
+            font-weight: 600;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+            pointer-events: none;
+            z-index: 1;
         }
 
+        /* === KAYDET BUTONU - DOKUNMA === */
         .submit-animated {
             width: 200px;
             height: 50px;
             border-radius: 50px;
-            background: #fff;
-            border: 3px solid #6fb07f;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            border: none;
             position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
-            color: #6fb07f;
+            color: white;
             cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 80, 160, 0.2);
+        }
+
+        .submit-animated:hover {
+            background: #1746c1;
         }
 
         .submit-animated:focus {
@@ -75,8 +90,8 @@
 
         .submit-animated img {
             position: absolute;
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -85,8 +100,8 @@
 
         @keyframes extend {
             0% { width: 200px; height: 50px; border-radius: 50px; }
-            50% { background: #6fb07f; }
-            100% { width: 60px; height: 60px; border-radius: 50%; background: #6fb07f; }
+            50% { background: #22c55e; }
+            100% { width: 60px; height: 60px; border-radius: 50%; background: #22c55e; }
         }
 
         @keyframes disappear {
@@ -98,47 +113,81 @@
             0% { opacity: 0; }
             100% { opacity: 1; }
         }
-        
+
+        /* === Kullanıcı Ekle Butonu === */
         .btn-style905 {
-            position: relative;
-            background-color: #716eef;
-            border: 5px solid #716eef;
-            color: #fff;
-            padding: 10px 20px;
-            font-size: 14px;
+            background-color: #1d4ed8;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .btn-style905::before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 120%;
-            height: 155%;
-            border: 1px solid #3936af;
-            border-radius: 20px;
-            transform: translate(-50%, -50%) scale(1.1);
-            opacity: 0;
-            transition: all 0.25s;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
         .btn-style905:hover {
-            background-color: #3936af;
-            border-color: #716eef;
-            border-style: inset;
-            border-radius: 20px;
+            background-color: #1746c1;
+            transform: translateY(-2px);
         }
 
-        .btn-style905:hover::before {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+        /* === MODERN DÜZENLE BUTONU === */
+        a.text-blue-600 {
+            display: inline-block;
+            padding: 8px 18px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px;
+            color: #1d4ed8;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(59,130,246,0.1);
+            transition: all 0.25s ease-in-out;
+            backdrop-filter: blur(6px);
         }
+
+        a.text-blue-600:hover {
+            transform: translateY(-1px) scale(1.04);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 6px 15px rgba(37,99,235,0.2);
+        }
+
+        /* === FORM ALANLARI === */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            padding: 10px 12px;
+            font-size: 14px;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: #2563eb;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        /* === PASİF KULLANICI SATIRI (grileşme) === */
+        tr.passive-row {
+            opacity: 0.55;
+            background-color: #f9fafb !important;
+            /* pointer-events: none; */
+            transition: opacity 0.3s ease;
+        }
+
     </style>
+
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -198,7 +247,7 @@
             </thead>
             <tbody>
                 @foreach($users as $index => $user)
-                    <tr class="border-t">
+                    <tr class="border-t {{ !$user->is_active ? 'passive-row' : '' }}">
                         <td class="px-4 py-2">{{ $index + 1 }}</td>
                         <td class="px-4 py-2">{{ $user->username }}</td>
                         <td class="px-4 py-2">{{ $user->email }}</td>

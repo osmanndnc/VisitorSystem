@@ -1,4 +1,12 @@
 <x-app-layout>
+    <style>
+        html {
+            zoom: 80%;
+        }
+        body {
+            background: #f1f5f9;
+        }
+    </style>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Profile') }}

@@ -1,4 +1,12 @@
 <x-app-layout>
+    <style>
+        html {
+            zoom: 80%;
+        }
+        body {
+            background: #f1f5f9;
+        }
+    </style>
     <div class="max-w-3xl mx-auto py-6">
         <h2 class="text-xl font-bold mb-4">Kullanıcıyı Düzenle</h2>
 

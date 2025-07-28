@@ -5,8 +5,80 @@
 @endif
 
 <x-app-layout>
-    <div class="py-8">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+    <style>
+        html {
+            zoom: 80%;
+        }
+        body {
+            background: #f1f5f9;
+        }
+        .edit-button {
+            display: inline-block;
+            padding: 8px 18px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px;
+            color: #1d4ed8;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(59,130,246,0.1);
+            transition: all 0.25s ease-in-out;
+            backdrop-filter: blur(6px);
+        }
+
+        .edit-button:hover {
+            transform: translateY(-1px) scale(1.04);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 6px 15px rgba(37,99,235,0.2);
+        }
+        .center-box label,
+        .center-box input,
+        .center-box textarea,
+        .center-box select {
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .center-box h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .center-box {
+            position: relative;
+            width: 90%;
+            max-width: 1500px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+
+            
+            /* YAZIYI BÜYÜTÜYORUZ VE DENGELİ HALE GETİRİYORUZ */
+            font-size: 1.05rem;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .center-box table {
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .page-title {
+            font-size: 2.8rem; /* zaten büyük */
+            font-weight: 800;
+            color: #003366;
+            margin-bottom: 2rem;
+        }
+
+    </style>
+    <div class="py-6">
+        <div class="center-box">
 
             <!-- Sağ üstte Kayıt Ekle butonu -->
             <div class="flex justify-end mb-4">
@@ -120,11 +192,10 @@
                                 <td class="px-4 py-2">{{ \Carbon\Carbon::parse($visit->entry_time)->format('Y-m-d H:i') }}</td>
                                 <td class="px-4 py-2">{{ $visit->purpose }}</td>
                                 <td class="px-4 py-2">{{ $visit->person_to_visit }}</td>
-                                <td class="px-4 py-2 text-sm text-right whitespace-nowrap">
-                                    <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition">
-                                        <a href="{{ route('security.edit', $visit->id) }}" class="text-blue-600 hover:underline">Düzenle</a>
-                                    </div>
+                                <td class="px-4 py-2 text-center">
+                                    <a href="{{ route('security.edit', $visit->id) }}" class="edit-button">Düzenle</a>
                                 </td>
+
                             </tr>
                         @empty
                             <tr><td colspan="8" class="px-4 py-2 text-center">Bugün kayıtlı ziyaretçi yok.</td></tr>
