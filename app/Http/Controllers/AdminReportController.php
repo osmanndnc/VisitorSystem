@@ -26,7 +26,10 @@ class AdminReportController extends Controller
             }));
         }
 
-        return view('admin.reports', compact('visits', 'fieldsForBlade', 'dateFilter', 'sortOrder'));
+        // İlk yüklemede grafik verisi boş olabilir, bu yüzden boş bir array gönderelim
+        $chartData = [];
+
+        return view('admin.reports', compact('visits', 'fieldsForBlade', 'dateFilter', 'sortOrder', 'chartData'));
     }
 
     public function generateReport(Request $request)
@@ -139,7 +142,67 @@ class AdminReportController extends Controller
             return !in_array($field, ['id', 'approved_by']);
         }));
 
-        return view('admin.reports', compact('data', 'fieldsForBlade', 'dateFilter', 'sortOrder'));
+        // GRAFİK VERİLERİNİ HAZIRLA
+        $chartData = $this->prepareChartData($visits, $dateFilter);
+
+        return view('admin.reports', compact('data', 'fieldsForBlade', 'dateFilter', 'sortOrder', 'chartData'));
+    }
+
+    /**
+     * Ziyaret verilerini grafik için hazırlar.
+     */
+    protected function prepareChartData($visits, $dateFilter)
+    {
+        $chartData = [];
+
+        if ($dateFilter === 'daily') {
+            // Günlük rapor: saatlere göre ziyaretçi sayısı
+            $hourlyCounts = $visits->groupBy(function($visit) {
+                return $visit->entry_time->format('H'); // Saati al (00, 01, ..., 23)
+            })->map->count();
+
+            for ($i = 0; $i < 24; $i++) {
+                $hour = str_pad($i, 2, '0', STR_PAD_LEFT);
+                $chartData[] = ['label' => $hour, 'count' => $hourlyCounts[$hour] ?? 0];
+            }
+        } elseif ($dateFilter === 'monthly') {
+            // Aylık rapor: günlere göre ziyaretçi sayısı
+            $dailyCounts = $visits->groupBy(function($visit) {
+                return $visit->entry_time->format('d'); // Günü al (01, 02, ..., 31)
+            })->map->count();
+            
+            $daysInMonth = Carbon::now()->daysInMonth; // Geçerli ayın gün sayısı
+
+            for ($i = 1; $i <= $daysInMonth; $i++) {
+                $day = str_pad($i, 2, '0', STR_PAD_LEFT);
+                $chartData[] = ['label' => (int)$day, 'count' => $dailyCounts[$day] ?? 0];
+            }
+        } elseif ($dateFilter === 'yearly') {
+            // Yıllık rapor: aylara göre ziyaretçi sayısı
+            $monthlyCounts = $visits->groupBy(function($visit) {
+                return $visit->entry_time->format('n'); // Ay numarasını al (1, 2, ..., 12)
+            })->map->count();
+
+            for ($i = 1; $i <= 12; $i++) {
+                $chartData[] = ['label' => $i, 'count' => $monthlyCounts[$i] ?? 0];
+            }
+        } else {
+            // Tüm raporlar veya varsayılan: yıllara göre ziyaretçi sayısı (Örnek)
+            $yearlyCounts = $visits->groupBy(function($visit) {
+                return $visit->entry_time->format('Y'); // Yılı al
+            })->map->count();
+
+            // Yıl aralığını belirleyip boş yıllar için 0 ekleyelim
+            if ($visits->isNotEmpty()) {
+                $minYear = $visits->min('entry_time')->year;
+                $maxYear = $visits->max('entry_time')->year;
+                for ($year = $minYear; $year <= $maxYear; $year++) {
+                    $chartData[] = ['label' => $year, 'count' => $yearlyCounts[$year] ?? 0];
+                }
+            }
+        }
+
+        return array_values($chartData); // Index'leri sıfırla
     }
 
     public function fullMask($text)

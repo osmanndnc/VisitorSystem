@@ -389,7 +389,7 @@
             if (dateFilterParam) {
                 const reportTypeElement = document.querySelector(`#reportMenu li[data-type="${dateFilterParam}"]`);
                 if (reportTypeElement) {
-                    reportBtn.textContent = reportTypeElement.textContent + ' Kayıtları';
+                    reportBtn.textContent = reportTypeElement.textContent + ' Kayıtlar';
                 }
             }
         });
