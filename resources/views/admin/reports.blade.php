@@ -1,5 +1,13 @@
 <x-app-layout>
-    <div class="container py-5" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+    <div class="container py-5" style="
+        background-color: #ffffff;
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        width: 90%;
+        max-width: 1500px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+    ">
         @php
             $reportTitle = '';
             switch ($dateFilter ?? '') {
@@ -11,12 +19,11 @@
         @endphp
 
         <h2 class="mb-4 text-center" style="
-            font-family: 'Times New Roman', Times, serif;
             font-weight: bold;
             font-size: 2.8rem;
             color: #003366;
-            text-shadow: none;
-            font-style: normal;
+            text-shadow: none; /* Mevcut hali korundu */
+            font-style: normal; /* Mevcut hali korundu */
             margin-bottom: 2rem;
         ">
             {{ $reportTitle }} Ziyaretçi Raporu
@@ -112,6 +119,20 @@
     </div>
 
     <style>
+        /* HTML ve Body için sıfırlama ve arka plan rengi */
+        html {
+            zoom: 80%; /* Diğer sayfadaki zoom değeri */
+            height: 100%; /* Sayfanın tüm yüksekliğini kaplamasını sağlar */
+        }
+        body {
+            margin: 0; /* Tarayıcının varsayılan margin'lerini kaldırır */
+            padding: 0; /* Tarayıcının varsayılan padding'lerini kaldırır */
+            min-height: 100%; /* Body'nin en az HTML kadar yüksek olmasını sağlar */
+            /* Arka plan rengini diğer sayfadaki center-box'ın box-shadow'una benzer bir gri tonu yaparak tüm sayfayı kaplamasını sağlıyoruz */
+            background-color: rgba(0,0,0,0.08); 
+        }
+
+        /* Diğer stilleriniz */
         @media print {
             .print-hidden { display: none !important; }
             body { background-color: #fff !important; }
@@ -204,7 +225,7 @@
             }, 500);
         });
 
-        // GRAFİK
+        // GRAFİK İÇİN JAVASCRIPT KODU
         document.getElementById('showChartBtn').addEventListener('click', () => {
             const chartContainer = document.getElementById('reportChartContainer');
             const downloadPdfBtn = document.getElementById('downloadPdfBtn');
@@ -225,7 +246,7 @@
 
             let labels = [];
             let counts = [];
-            let chartTitle = '';
+            let chartTitle = ''; // Chart.js'in kendi başlığı için kullanılacak değişken
             let xAxisLabel = '';
 
             if (reportType === 'daily') {
@@ -324,7 +345,7 @@
             });
         }
 
-        //GRAFİK İÇİN PDF İNDİRME
+        // PDF İNDİRME İŞLEVİ
         document.getElementById('downloadPdfBtn').addEventListener('click', () => {
             const chartCanvas = document.getElementById('reportChart');
 
