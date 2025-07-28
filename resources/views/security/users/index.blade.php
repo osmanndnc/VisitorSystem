@@ -220,7 +220,7 @@
                             </form>
                         </td>
                         <td class="px-4 py-2">
-                            @if(auth()->user()->role === 'super_admin')
+                            @if(auth()->user()->hasAnyRole(['admin', 'super_admin']))
                                 <a href="{{ route('security.users.edit', $user->id) }}" class="text-blue-600">Düzenle</a>
                             @else
                                 <span class="text-gray-400 cursor-not-allowed">Düzenle</span>
