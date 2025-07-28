@@ -72,11 +72,41 @@
                     </a>
 
                     <button id="printReportBtn"
-                            class="btn shadow-sm d-flex align-items-center ms-3"
+                            class="btn shadow-sm d-flex align-items-center me-3"
                             style="background-color: #003366; color: #ffffff; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
                         <i class="bi bi-printer me-2"></i> Yazdır
                     </button>
+
+                    <button id="showChartBtn"
+                            class="btn shadow-sm d-flex align-items-center me-3"
+                            style="background-color: #ffc107; color: #343a40; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
+                        <i class="bi bi-graph-up-arrow me-2"></i> Grafik Göster
+                    </button>
                 </div>
+
+                <div id="reportChartContainer" class="mt-5" style="width: 90%; display: none; position: relative;">
+                    <canvas id="reportChart"></canvas>
+
+                    <button id="downloadPdfBtn"
+                            style="
+                                background-color: #dc3545;
+                                color: white;
+                                border-radius: 8px;
+                                padding: 0.5rem 1rem;
+                                font-size: 1rem;
+                                font-weight: bold;
+                                height: 40px;
+                                display: none;
+                                position: absolute;
+                                bottom: -20px;
+                                right: 5px;
+                                z-index: 10;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                            ">
+                        <i class="bi bi-file-earmark-pdf me-2"></i> Grafik PDF İndir
+                    </button>
+                </div>
+
             </div>
         @endif
     </div>
@@ -92,6 +122,12 @@
             }
         }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         document.getElementById('printReportBtn').addEventListener('click', () => {
@@ -166,6 +202,184 @@
                 document.body.innerHTML = originalHTML;
                 window.location.reload();
             }, 500);
+        });
+
+        // GRAFİK
+        document.getElementById('showChartBtn').addEventListener('click', () => {
+            const chartContainer = document.getElementById('reportChartContainer');
+            const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+            if (chartContainer.style.display === 'none') {
+                chartContainer.style.display = 'block';
+                downloadPdfBtn.style.display = 'flex';
+                drawChart();
+            } else {
+                chartContainer.style.display = 'none';
+                downloadPdfBtn.style.display = 'none';
+            }
+        });
+
+        function drawChart() {
+            const ctx = document.getElementById('reportChart').getContext('2d');
+            let chartData = @json($chartData ?? []);
+            let reportType = "{{ $dateFilter ?? 'all' }}";
+
+            let labels = [];
+            let counts = [];
+            let chartTitle = '';
+            let xAxisLabel = '';
+
+            if (reportType === 'daily') {
+                chartTitle = 'Günlük Ziyaretçi Sayıları (Saatlere Göre)';
+                xAxisLabel = 'Saat';
+                labels = chartData.map(item => `${item.label}:00`);
+                counts = chartData.map(item => item.count);
+            } else if (reportType === 'monthly') {
+                chartTitle = 'Aylık Ziyaretçi Sayıları (Günlere Göre)';
+                xAxisLabel = 'Gün';
+                labels = chartData.map(item => item.label);
+                counts = chartData.map(item => item.count);
+            } else if (reportType === 'yearly') {
+                chartTitle = 'Yıllık Ziyaretçi Sayıları (Aylara Göre)';
+                xAxisLabel = 'Ay';
+                labels = chartData.map(item => {
+                    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                    return monthNames[item.label - 1];
+                });
+                counts = chartData.map(item => item.count);
+            } else {
+                chartTitle = 'Tüm Zamanların Ziyaretçi Sayıları (Yıllara Göre)';
+                xAxisLabel = 'Yıl';
+                labels = chartData.map(item => item.label);
+                counts = chartData.map(item => item.count);
+            }
+
+            if (window.myReportChart) {
+                window.myReportChart.destroy();
+            }
+
+            window.myReportChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ziyaretçi Sayısı',
+                        data: counts,
+                        backgroundColor: 'rgba(0, 51, 102, 0.7)',
+                        borderColor: 'rgba(0, 51, 102, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            },
+                            color: '#003366'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: xAxisLabel,
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Ziyaretçi Sayısı',
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        //GRAFİK İÇİN PDF İNDİRME
+        document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+            const chartCanvas = document.getElementById('reportChart');
+
+            if (!chartCanvas || !window.myReportChart) {
+                alert('Grafik henüz oluşturulmadı veya bulunamadı!');
+                return;
+            }
+
+            html2canvas(chartCanvas, {
+                scale: 2
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = doc.internal.pageSize.getHeight();
+                const margin = 15;
+                const imgWidth = pdfWidth - (2 * margin);
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+
+                let currentY = margin;
+
+                const today = new Date();
+                const dateStr = today.toLocaleDateString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Rapor Tarihi: ${dateStr}`, pdfWidth - margin, currentY, { align: 'right' });
+                currentY += 15;
+
+                if (imgHeight > pdfHeight - currentY - margin) {
+                    doc.addPage();
+                    currentY = margin;
+                }
+                doc.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+
+                let reportTypeForFileName = "{{ $dateFilter ?? 'all' }}";
+                let fileNamePrefix = '';
+                switch (reportTypeForFileName) {
+                    case 'daily': fileNamePrefix = 'Gunluk-Ziyaretci-Grafigi'; break;
+                    case 'monthly': fileNamePrefix = 'Aylik-Ziyaretci-Grafigi'; break;
+                    case 'yearly': fileNamePrefix = 'Yillik-Ziyaretci-Grafigi'; break;
+                    default: fileNamePrefix = 'Tum-Ziyaretci-Grafigi'; break;
+                }
+                doc.save(`${fileNamePrefix}-${today.toISOString().slice(0,10)}.pdf`);
+            }).catch(error => {
+                console.error('Grafik PDF olarak indirilirken hata oluştu:', error);
+                alert('Grafik PDF olarak indirilirken bir hata oluştu.');
+            });
         });
     </script>
 </x-app-layout>
