@@ -25,7 +25,6 @@
             justify-content: center;
             font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             position: relative;
-            /* Arka plan resmini daha keskin ve canlı yapmak için */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
             image-rendering: pixelated;
@@ -33,12 +32,10 @@
         body::before {
             content: '';
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            /* Overlay'i daha şeffaf yaparak arka planın daha görünür olmasını sağlıyoruz */
             background: rgba(34, 49, 63, 0.5);
             z-index: 1;
         }
-        /* Arka plan resmini daha canlı yapmak için ek katman */
+
         body::after {
             content: '';
             position: fixed;
@@ -145,7 +142,7 @@
             align-items: center;
             gap: 0.2em;
         }
-        /* Modern SVG Circle Checkbox */
+
         .checkbox-wrapper-31 {
             position: relative;
             display: inline-block;
@@ -217,7 +214,6 @@
             color: var(--color-bright);
         }
 
-        /* Sol altta sosyal medya ve telif - animasyonlu */
         #footer-contact-info {
             position: fixed;
             left: 18px;
@@ -332,11 +328,11 @@
             <h2>Giriş Yap</h2>
             <div class="input-group">
                 <i class="fa-solid fa-user"></i>
-                <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus autocomplete="username" placeholder="Kullanıcı Adı">
+                <input type="text" id="username" name="username" value="{{ old('username', \Illuminate\Support\Facades\Cookie::get('remember_username')) }}" required autofocus autocomplete="username" placeholder="Kullanıcı Adı">
             </div>
             <div class="input-group">
                 <i class="fa-solid fa-lock"></i>
-                <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Şifre">
+                <input type="password" id="password" name="password" value="{{ \Illuminate\Support\Facades\Cookie::get('remember_password') }}" required autocomplete="current-password" placeholder="Şifre">
             </div>
             <div class="options">
                 <div class="remember-section">
@@ -393,4 +389,19 @@
       <div class="footer-social-copyright">
         © Atatürk Üniversitesi Bilgisayar Bilimleri Araştırma ve Uygulama Merkezi
       </div>
-    </div
+    </div>
+
+    {{-- Beni Hatırla checkbox'ının durumunu çereze göre ayarlayan JavaScript --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rememberCheckbox = document.getElementById('cbx');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            if (usernameInput.value !== '' || passwordInput.value !== '') {
+                rememberCheckbox.checked = true;
+            }
+        });
+    </script>
+</body>
+</html>

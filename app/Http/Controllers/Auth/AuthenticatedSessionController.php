@@ -9,8 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-//use App\Providers\RouteServiceProvider;
-
+use Illuminate\Support\Facades\Cookie;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -29,22 +28,28 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        
-        // Kullanıcı doğrulandıktan hemen sonra kontrol edelim:
+        // Kullanıcı doğrulandıktan hemen sonra aktiflik durumunu kontrol edelim:
         if (!auth()->user()->is_active) {
-            auth()->logout(); // Oturumu kapat
+            auth()->logout();
             return redirect()->route('login')->withErrors([
                 'username' => 'Şu an aktif bir kullanıcı değilsiniz.'
             ]);
         }
 
+        // Beni Hatırla seçeneği işaretliyse kullanıcı adı ve şifreyi çereze kaydet
+        if ($request->boolean('remember')) {
+            // Çerez 1 hafta geçerli olacak
+            Cookie::queue('remember_username', $request->input('username'), 60 * 24 * 7);
+            Cookie::queue('remember_password', $request->input('password'), 60 * 24 * 7);
+        } else {
+            // Beni Hatırla seçeneği işaretli değilse çerezleri sil
+            Cookie::queue(Cookie::forget('remember_username'));
+            Cookie::queue(Cookie::forget('remember_password'));
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(RouteServiceProvider::redirectToBasedOnRole());
-        //return redirect(RouteServiceProvider::redirectToBasedOnRole());
-
-
-        // return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
@@ -58,9 +63,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        //return redirect('/');
         return redirect()->route('login')->with('status', 'Oturum kapatıldı.');
-
     }
-
 }
