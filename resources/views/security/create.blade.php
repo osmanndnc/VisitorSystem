@@ -3,80 +3,241 @@
         {{ session('success') }}
     </div>
 @endif
-
 <x-app-layout>
     <style>
         html {
             zoom: 80%;
         }
+
         body {
-            background: #f1f5f9;
-        }
-        .edit-button {
-            display: inline-block;
-            padding: 8px 18px;
-            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
-            border: 1px solid rgba(59,130,246,0.3);
-            border-radius: 12px;
-            color: #1d4ed8;
-            font-weight: 600;
-            font-size: 14px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(59,130,246,0.1);
-            transition: all 0.25s ease-in-out;
-            backdrop-filter: blur(6px);
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom right, #f3f4f6, #e2e8f0);
+            background-attachment: fixed;
+            background-size: cover;
         }
 
-        .edit-button:hover {
-            transform: translateY(-1px) scale(1.04);
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: #fff;
-            border-color: transparent;
-            box-shadow: 0 6px 15px rgba(37,99,235,0.2);
+        .center-box {
+            max-width: 1300px;
+            margin: 3rem auto;
+            padding: 2.8rem 3rem;
+            border-radius: 2rem;
+            background: rgba(255, 255, 255, 0.65); /* cam efekti açık ton */
+            backdrop-filter: blur(30px) saturate(160%);
+            -webkit-backdrop-filter: blur(30px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
         }
-        .center-box label,
+
+        .center-box h2,
+        .center-box h3 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            margin-bottom: 1.8rem;
+            color: #0f172a;
+        }
+
+        .center-box label {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
         .center-box input,
         .center-box textarea,
         .center-box select {
-            font-size: 1.05rem;
-            line-height: 1.6;
+            width: 100%;
+            padding: 0.9rem 1.3rem;
+            margin-top: 0.4rem;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            background: #f5f5f5; /* açık gri */
+            color: #1e293b;       /* koyu mavi gri yazı */
+            border: 1px solid #d1d5db;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
         }
 
-        .center-box h3 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
+        .center-box input::placeholder,
+        .center-box textarea::placeholder {
+            color: #94a3b8;
         }
-        .center-box {
-            position: relative;
-            width: 90%;
-            max-width: 1500px;
-            margin: 2rem auto;
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            padding: 2.5rem;
 
-            
-            /* YAZIYI BÜYÜTÜYORUZ VE DENGELİ HALE GETİRİYORUZ */
-            font-size: 1.05rem;
-            line-height: 1.7;
-            font-weight: 500;
+        .center-box input:focus,
+        .center-box textarea:focus,
+        .center-box select:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
         }
 
         .center-box table {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            margin-top: 2.5rem;
+            box-shadow: 0 16px 60px rgba(0, 0, 0, 0.05);
+        }
+
+        .center-box thead {
+            background: rgba(255, 255, 255, 0.85);
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .center-box th,
+        .center-box td {
+            padding: 1rem 1.2rem;
+            font-size: 0.95rem;
+            text-align: center;
+            color: #1e293b;
+        }
+
+        .edit-button {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.22);
+            color: #2563eb;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(6px);
+            transition: 0.3s ease;
+        }
+
+        .edit-button:hover {
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 8px 18px rgba(59, 130, 246, 0.4);
+        }
+
+        #toggleForm {
+            background: linear-gradient(to right, #22c55e, #16a34a);
+            padding: 0.6rem 1.6rem;
+            font-weight: 700;
+            border-radius: 1rem;
+            color: white;
             font-size: 1.05rem;
-            line-height: 1.6;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+            transition: 0.3s ease;
         }
 
-        .page-title {
-            font-size: 2.8rem; /* zaten büyük */
-            font-weight: 800;
-            color: #003366;
-            margin-bottom: 2rem;
+        #toggleForm:hover {
+            transform: scale(1.05);
+            background: linear-gradient(to right, #15803d, #166534);
         }
 
+        /* Güncelle Butonu */
+        .center-box button,
+        .x-primary-button {
+            background: linear-gradient(to right, #0ea5e9, #3b82f6);
+            color: white;
+            font-weight: 600;
+            padding: 0.7rem 1.8rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+            border: none;
+            transition: 0.3s ease;
+        }
+
+        .center-box button:hover,
+        .x-primary-button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(to right, #2563eb, #1d4ed8);
+        }
+
+        /* Cam netliği & kutuları silme */
+        .center-box > div.p-6 {
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08);
+        }
+
+        #formArea > div,
+        .center-box > .bg-white,
+        .center-box > .dark\:bg-gray-800,
+        .center-box > div.bg-white,
+        .center-box > div.shadow-sm,
+        .center-box > div.sm\:rounded-lg {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        main,
+        #app,
+        html body > div {
+            background: transparent !important;
+        }
+
+        .submit-animated {
+            width: 150px;
+            height: 45px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            border: none;
+            position: relative;
+            overflow: hidden;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 80, 160, 0.2);
+        }
+
+        .submit-animated:hover {
+            background: #1746c1;
+        }
+
+        .submit-animated:focus {
+            animation: extend 1s ease-in-out forwards;
+        }
+
+        .submit-animated:focus span {
+            animation: disappear 1s ease-in-out forwards;
+        }
+
+        .submit-animated:focus img {
+            animation: appear 1s ease-in-out forwards;
+        }
+
+        .submit-animated img {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+
+        @keyframes extend {
+            0% { width: 200px; height: 50px; border-radius: 50px; }
+            50% { background: #22c55e; }
+            100% { width: 60px; height: 60px; border-radius: 50%; background: #22c55e; }
+        }
+
+        @keyframes disappear {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes appear {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
     </style>
+
     <div class="py-6">
         <div class="center-box">
 
@@ -87,7 +248,7 @@
 
             <!-- Form Alanı -->
             <div id="formArea" class="{{ isset($editVisit) ? '' : 'hidden' }}">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="p-6 mb-6">
                     <form method="POST" action="{{ isset($editVisit) ? route('security.update', $editVisit->id) : route('security.store') }}">
                         @csrf
                         @if(isset($editVisit))
@@ -155,9 +316,13 @@
                         </div>
 
                         <div class="mt-6 flex items-center gap-4">
-                            <x-primary-button>
+                            <!-- <x-primary-button>
                                 {{ isset($editVisit) ? 'GÜNCELLE' : 'KAYDET' }}
-                            </x-primary-button>
+                            </x-primary-button> -->
+                            <button type="button" class="submit-animated" id="submit-button">
+                                <span>{{ isset($editVisit) ? 'GÜNCELLE' : 'KAYDET' }}</span>
+                                <img src="https://cdn-icons-png.flaticon.com/512/845/845646.png" alt="✓">
+                            </button>
                             @if(isset($editVisit))
                                 <a href="{{ route('security.create') }}" class="text-blue-500 hover:underline">İptal</a>
                             @endif
@@ -167,7 +332,7 @@
             </div>
 
             <!-- GÜNLÜK ZİYARETÇİ LİSTESİ PANELİ -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="glass-panel">
                 <h2 class="text-xl font-bold mb-4">Bugünün Ziyaretçi Listesi</h2>
                 <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-700 dark:text-gray-200">
                     <thead class="bg-gray-100 dark:bg-gray-700 text-left">
@@ -206,13 +371,31 @@
 
             <!-- JS: Form Aç/Kapa -->
             <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                    const btn = document.getElementById('toggleForm');
-                    const form = document.getElementById('formArea');
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        form.classList.toggle('hidden');
-                    });
+                document.addEventListener('DOMContentLoaded', function () {
+                    const toggleFormButton = document.getElementById('toggleForm');
+                    const formArea = document.getElementById('formArea');
+
+                    if (toggleFormButton && formArea) {
+                        toggleFormButton.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            formArea.classList.toggle('hidden');
+                            if (!formArea.classList.contains('hidden')) {
+                                formArea.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        });
+                    }
+
+                    // Kaydet butonunu animasyonlu olarak submit et (1 saniye sonra)
+                    const submitButton = document.getElementById('submit-button');
+                    if (submitButton) {
+                        const form = submitButton.closest('form');
+                        submitButton.addEventListener('click', function () {
+                            submitButton.focus(); // animasyonu tetikle
+                            setTimeout(() => {
+                                form.submit();     // 1 saniye sonra submit et
+                            }, 1000); // buton animasyon süresi
+                        });
+                    }
                 });
             </script>
 

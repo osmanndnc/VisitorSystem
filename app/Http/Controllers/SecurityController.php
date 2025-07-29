@@ -69,7 +69,7 @@ class SecurityController extends Controller
             'plate_city' => 'required|string',
             'plate_letters' => 'required|string',
             'plate_number' => 'required|string',
-            'entry_time' => 'required|date',
+            // 'entry_time' => 'required|date',
             'person_to_visit' => 'required|string',
             'purpose' => 'required|string',
         ]);
@@ -86,7 +86,7 @@ class SecurityController extends Controller
         ]);
 
         $visit->update([
-            'entry_time' => $request->entry_time,
+            'entry_time' => now(),
             'person_to_visit' => $request->person_to_visit,
             'purpose' => $request->purpose,
         ]);

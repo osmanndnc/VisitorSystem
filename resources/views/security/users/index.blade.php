@@ -55,7 +55,7 @@
             z-index: 1;
         }
 
-        /* === KAYDET BUTONU - DOKUNMA === */
+        /* === KAYDET BUTONU === */
         .submit-animated {
             width: 200px;
             height: 50px;

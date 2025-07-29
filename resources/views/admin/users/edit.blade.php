@@ -24,14 +24,10 @@
                 <input type="email" name="email" value="{{ old('email', $user->email) }}" class="w-full border rounded px-3 py-2">
             </div>
 
-            <div class="mb-4">
+            <!-- <div class="mb-4">
                 <label class="block text-sm font-medium">Rol</label>
-                <select name="role" class="w-full border rounded px-3 py-2">
-                    <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="super_admin" {{ $user->role === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
-                    <option value="security" {{ $user->role === 'security' ? 'selected' : '' }}>Security</option>
-                </select>
-            </div>
+                <input type="text" name="role" value="{{ old('role', $user->role) }}" class="w-full border rounded px-3 py-2">
+            </div> -->
 
             <div class="mb-4">
                 <label class="block text-sm font-medium">Durum</label>
