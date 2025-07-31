@@ -236,6 +236,19 @@
             0% { opacity: 0; }
             100% { opacity: 1; }
         }
+        select {
+            background-color: #f5f5f5; 
+            color: #1e293b !important;
+            border-radius: 1rem;
+            padding: 0.8rem 1rem;
+            border: 1px solid #d1d5db;
+            appearance: none;
+        }
+
+        select option {
+            background-color: white;
+            color: #1e293b;
+        }
     </style>
 
     <div class="py-6">
@@ -259,59 +272,75 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <x-input-label for="name" :value="'Ad Soyad'" />
-                                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
-                                    value="{{ isset($editVisit) ? $editVisit->visitor->name : old('name') }}" required />
-                            </div>
-
-                            <div>
                                 <x-input-label for="tc_no" :value="'T.C. Kimlik No'" />
                                 <x-text-input id="tc_no" name="tc_no" type="text" maxlength="11" pattern="[0-9]{11}"
                                     class="mt-1 block w-full" required 
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11)"
+                                    onblur="getVisitorData()" 
                                     value="{{ isset($editVisit) ? $editVisit->visitor->tc_no : old('tc_no') }}" />
                             </div>
-
+                            
                             <div>
-                                <x-input-label for="phone" :value="'Telefon'" />
-                                <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" required 
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\d{4})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4').slice(0, 14)" 
-                                    placeholder="0500 000 00 00"
-                                    value="{{ isset($editVisit) ? $editVisit->visitor->phone : old('phone') }}" />
-                            </div>
-
-                            <div>
-                                <x-input-label for="plate" :value="'Plaka'" />
-                                <div class="flex gap-2">
-                                    @php
-                                        $plate = isset($editVisit) ? $editVisit->visitor->plate : '';
-                                        $plateParts = array_pad(explode(' ', $plate), 3, '');
-                                    @endphp
-
-                                    <x-text-input name="plate_city" type="text" class="mt-1 w-16 uppercase"
-                                        maxlength="6" required value="{{ old('plate_city', $plateParts[0]) }}" />
-
-                                    <x-text-input name="plate_letters" type="text" class="mt-1 w-20 uppercase"
-                                        maxlength="6" required value="{{ old('plate_letters', $plateParts[1]) }}" />
-
-                                    <x-text-input name="plate_number" type="text" class="mt-1 w-24 uppercase"
-                                        maxlength="10" required value="{{ old('plate_number', $plateParts[2]) }}" />
-                                </div>
+                                <x-input-label for="name" :value="'Ad Soyad'" />
+                                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                                    autocomplete="off"
+                                    value="{{ isset($editVisit) ? $editVisit->visitor->name : old('name') }}" required />
                             </div>
                         </div>
 
                         <h3 class="text-lg font-medium mt-6 mb-4">Ziyaret Bilgisi</h3>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <x-input-label for="phone" :value="'Telefon'" />
+                                <input id="phone" name="phone" type="text" class="mt-1 block w-full" list="phone_list"
+                                    autocomplete="off"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\d{4})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4').slice(0, 14)" 
+                                    placeholder="0500 000 00 00"
+                                    value="{{ isset($editVisit) ? $editVisit->phone : old('phone') }}" />
+                                <datalist id="phone_list"></datalist>
+                            </div>
+
+                            <div>
+                                <x-input-label for="plate" :value="'Plaka'" />
+                                <input name="plate" id="plate" type="text" class="mt-1 block w-full uppercase"
+                                    list="plate_list"
+                                    autocomplete="off"
+                                    maxlength="20"
+                                    value="{{ isset($editVisit) ? $editVisit->plate : old('plate') }}" />
+                                <datalist id="plate_list"></datalist>
+                            </div>
+                        
+
                             <div>
                                 <x-input-label for="person_to_visit" :value="'Ziyaret Edilen Kişi'" />
-                                <x-text-input id="person_to_visit" name="person_to_visit" type="text" class="mt-1 block w-full"
-                                    value="{{ isset($editVisit) ? $editVisit->person_to_visit : old('person_to_visit') }}" required />
+                                <select name="person_to_visit" id="person_to_visit"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white text-black"
+                                    style="color: black !important; background-color: white !important;" required>
+                                    <option value="">Kişi Seçiniz</option>
+                                    @foreach($people as $person)
+                                        <option value="{{ $person->person_name }}"
+                                            @selected(old('person_to_visit', $editVisit->person_to_visit ?? '') == $person->person_name)>
+                                            {{ $person->person_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="mt-4 md:mt-0">
                                 <x-input-label for="purpose" :value="'Ziyaret Sebebi'" />
-                                <textarea name="purpose" id="purpose" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ isset($editVisit) ? $editVisit->purpose : old('purpose') }}</textarea>
+                                <select name="purpose" id="purpose"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white text-black"
+                                    style="color: black !important; background-color: white !important;" required>
+                                    <option value="">Sebep Seçiniz</option>
+                                    @foreach($reasons as $reason)
+                                        <option value="{{ $reason->reason }}"
+                                            @selected(old('purpose', $editVisit->purpose ?? '') == $reason->reason)>
+                                            {{ $reason->reason }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
@@ -352,8 +381,8 @@
                             <tr class="group">
                                 <td class="px-4 py-2">{{ $visit->visitor->name }}</td>
                                 <td class="px-4 py-2">{{ $visit->visitor->tc_no }}</td>
-                                <td class="px-4 py-2">{{ $visit->visitor->phone }}</td>
-                                <td class="px-4 py-2">{{ $visit->visitor->plate }}</td>
+                                <td class="px-4 py-2">{{ $visit->phone }}</td>
+                                <td class="px-4 py-2">{{ $visit->plate }}</td>
                                 <td class="px-4 py-2">{{ \Carbon\Carbon::parse($visit->entry_time)->format('Y-m-d H:i') }}</td>
                                 <td class="px-4 py-2">{{ $visit->purpose }}</td>
                                 <td class="px-4 py-2">{{ $visit->person_to_visit }}</td>
@@ -396,6 +425,52 @@
                             }, 1000); // buton animasyon süresi
                         });
                     }
+                });
+            </script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const tcInput = document.querySelector('input[name="tc_no"]');
+                    const nameInput = document.querySelector('input[name="name"]');
+                    const phoneInput = document.querySelector('input[name="phone"]');
+                    const plateInput = document.querySelector('input[name="plate"]');
+                    const phoneList = document.getElementById('phone_list');
+                    const plateList = document.getElementById('plate_list');
+
+                    tcInput.addEventListener('change', function () {
+                        const tc = tcInput.value.trim();
+
+                        if (tc.length !== 11) return;
+
+                        fetch(`/security/visitor-by-tc/${tc}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (!data) return;
+
+                                // Ad Soyad alanını doldur
+                                nameInput.value = data.name;
+
+                                // Telefon datalist güncelle
+                                phoneList.innerHTML = '';
+                                data.phones.forEach(phone => {
+                                    const option = document.createElement('option');
+                                    option.value = phone;
+                                    phoneList.appendChild(option);
+                                });
+
+                                // Plaka datalist güncelle
+                                plateList.innerHTML = '';
+                                data.plates.forEach(plate => {
+                                    const option = document.createElement('option');
+                                    option.value = plate;
+                                    plateList.appendChild(option);
+                                });
+
+                                // Eğer input boşsa en son plakayı otomatik getir
+                                if (!plateInput.value && data.plates.length > 0) {
+                                    plateInput.value = data.plates[0];
+                                }
+                            });
+                    });
                 });
             </script>
 

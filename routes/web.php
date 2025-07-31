@@ -94,5 +94,7 @@ Route::middleware(['auth', 'role:admin,super_admin'])->prefix('security')->name(
     Route::post('/security-users', [SecurityUserController::class, 'store'])->name('users.store');
 });
 
+Route::get('/security/visitor-by-tc/{tc}', [SecurityController::class, 'getVisitorData']);
+
 require __DIR__.'/auth.php';
 

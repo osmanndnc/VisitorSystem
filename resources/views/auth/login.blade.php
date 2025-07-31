@@ -319,13 +319,26 @@
             #footer-contact-info .links a div { width: 22px; height: 22px; }
             .footer-social-copyright { font-size: 0.6em; }
         }
+        .login-error-message {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
+
         <form class="login-form" method="POST" action="{{ route('login') }}">
             @csrf
             <h2>Giriş Yap</h2>
+            @if($errors->any())
+                <div class="login-error-message">
+                    {{ $errors->first() }}
+                </div>
+            @endif
             <div class="input-group">
                 <i class="fa-solid fa-user"></i>
                 <input type="text" id="username" name="username" value="{{ old('username', \Illuminate\Support\Facades\Cookie::get('remember_username')) }}" required autofocus autocomplete="username" placeholder="Kullanıcı Adı">

@@ -15,6 +15,8 @@ class Visit extends Model
 
     protected $fillable = [
         'visitor_id',
+        'phone',
+        'plate',
         'entry_time',
         'exit_time',
         'person_to_visit',
