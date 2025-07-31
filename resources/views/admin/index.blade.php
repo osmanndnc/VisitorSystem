@@ -170,6 +170,12 @@
         .export-button-bottom.excel:hover {
             background: linear-gradient(135deg, #218838 0%, #28a745 100%);
         }
+        .export-button-bottom.pdf {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        .export-button-bottom.pdf:hover {
+            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+        }
         .export-button-bottom svg {
             width: 20px;
             height: 20px;
@@ -179,7 +185,8 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-        .export-button-bottom.excel svg {
+        .export-button-bottom.excel svg,
+        .export-button-bottom.pdf svg {
             fill: currentColor;
             stroke: none;
         }
@@ -294,28 +301,37 @@
                 </tbody>
             </table>
 
-            {{-- YENİ EKLENEN RAPOR OLUŞTUR BUTONU --}}
-            <div class="report-generate-button-container">
-                <button id="generateReportBtn" type="button" class="report-generate-button">Rapor Oluştur</button>
-            </div>
-            {{-- YENİ EKLENEN RAPOR OLUŞTUR BUTONU SONU --}}
 
-            {{-- YENİ EKLENEN EXCEL VE YAZDIR BUTONLARI (Maskesiz Veri İçin) --}}
+
+            {{-- EXCEL VE YAZDIR BUTONLARI --}}
             <div class="export-buttons-bottom">
                 <button id="exportUnmaskedExcelBtn" type="button" class="export-button-bottom excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-excel-fill" viewBox="0 0 16 16">
                         <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM5.884 6.68L8 9.219l2.116-2.54a.145.145 0 0 1 .328 0l.542.65-.66 1.004-.961 1.458-.178.2-.66.994-1.116 1.688a.145.145 0 0 1-.328 0L4 9.219l-2.116 2.54a.145.145 0 0 1-.328 0l-.542-.65.66-1.004.961-1.458.178-.2.66-.994 1.116-1.688a.145.145 0 0 1 .328 0z"/>
                     </svg>
-                    Excel'e Aktar
+                    Excel
                 </button>
+                                {{-- PDF BUTONU --}}
+                
                 <button id="printUnmaskedBtn" type="button" class="export-button-bottom">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
                         <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm0 12h6a1 1 0 0 1 1 1v1H4v-1a1 1 0 0 1 1-1zM3 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H3V3zm3 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
                     </svg>
                     Yazdır
                 </button>
+                <a id="exportUnmaskedPdfBtn" href="#" class="export-button-bottom pdf">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
+                        <path d="M5.52 0.359L0 12.311V16h16V12.311L10.48 0.359zM8 8.163v1.895l-0.347 0.174L7.52 11h-0.082l-0.134-0.413l-0.347-0.174V8.163h-1.6V7.073h1.6V5.178h1.127V7.073H9.721v1.09h-1.6zM11 6.5h2v6h-2V6.5z"/>
+                    </svg>
+                    PDF
+                </a>
+
             </div>
-            {{-- EXPORT VE YAZDIR BUTONLARI SONU --}}
+            {{-- MASKELİ RAPOR OLUŞTUR BUTONU --}}
+            <div class="report-generate-button-container">
+                <button id="generateReportBtn" type="button" class="report-generate-button">Güvenli Rapor Oluştur</button>
+            </div>
+
 
         </div>
     </div>
@@ -329,6 +345,7 @@
         const generateReportBtn = document.getElementById('generateReportBtn');
         const exportUnmaskedExcelBtn = document.getElementById('exportUnmaskedExcelBtn');
         const printUnmaskedBtn = document.getElementById('printUnmaskedBtn');
+        const exportUnmaskedPdfBtn = document.getElementById('exportUnmaskedPdfBtn');
 
         filterBtn.addEventListener('click', () => filterMenu.classList.toggle('active'));
         reportBtn.addEventListener('click', () => reportMenu.classList.toggle('active'));
@@ -523,6 +540,58 @@
             window.location.href = `/report/export?` + exportParams.toString();
         });
 
+        if (exportUnmaskedPdfBtn) {
+            exportUnmaskedPdfBtn.addEventListener('click', () => {
+                console.log('Maskesiz PDF butonu tıklandı.'); // Hata ayıklama
+
+                const urlParams = new URLSearchParams(window.location.search);
+                let pdfParams = new URLSearchParams();
+
+                // Arama filtrelerini topla
+                document.querySelectorAll('.filter-option input').forEach(input => {
+                    const field = input.id.replace('_value', '');
+                    if (input.value.trim() !== '') {
+                        pdfParams.set(field + '_value', input.value.trim());
+                    }
+                });
+
+                // Tarih filtresini al
+                const dateFilterParam = urlParams.get('date_filter');
+                if (dateFilterParam) {
+                    pdfParams.set('date_filter', dateFilterParam);
+                } else {
+                    pdfParams.set('date_filter', 'daily');
+                }
+
+                pdfParams.set('sort_order', 'desc');
+
+                //  hangi alanların PDF'e aktarılacağını da gönder
+                const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
+                const filterInputValues = [...document.querySelectorAll('.filter-option input')]
+                                          .filter(input => input.value.trim() !== '')
+                                          .map(input => input.id.replace('_value', ''));
+
+                let fieldsToExport = [];
+                if (selectedOptions.length === 0 && filterInputValues.length === 0) {
+                    fieldsToExport = [
+                        'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
+                        'purpose', 'person_to_visit', 'approved_by'
+                    ];
+                } else {
+                    const selectedFieldsFromOptions = selectedOptions.map(opt => opt.getAttribute('data-field'));
+                    fieldsToExport = Array.from(new Set([...selectedFieldsFromOptions, ...filterInputValues]));
+                }
+
+                fieldsToExport.forEach(field => {
+                    pdfParams.append('fields[]', field);
+                });
+
+                window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
+            });
+        } else {
+            console.error("Hata: 'exportUnmaskedPdfBtn' elementi bulunamadı. ID'nin doğru olduğundan emin olun.");
+        }
+
         printUnmaskedBtn.addEventListener('click', () => {
             const table = document.querySelector('table');
             if (table) {
@@ -573,6 +642,7 @@
                 `;
                 printContentHtml += '</style>';
                 printContentHtml += '</head><body>';
+                printContentHtml += '<div id="printContainer">'; 
                 
 
                 const today = new Date();
@@ -581,17 +651,51 @@
                 printContentHtml += '<h2 class="page-title">Ziyaretçi Listesi</h2>';
                 printContentHtml += '<div style="display: flex; justify-content: center; width: 100%; margin-top: 20px;">';
                 printContentHtml += table.outerHTML; 
+                printContentHtml += '</div>';
                 printContentHtml += '</div>';        
                 printContentHtml += '</body></html>';
 
-                document.body.innerHTML = printContentHtml;
+               // Yeni iframe oluştur ve içeriği ona yaz
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none'; 
+                document.body.appendChild(iframe);
 
-                window.print();
-
+                const iframeDoc = iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(printContentHtml);
+                iframeDoc.close();
+                iframe.onload = function() {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch (error) {
+                        console.error('Yazdırma hatası:', error);
+                        alert('Yazdırma işlemi sırasında bir hata oluştu: ' + error.message);
+                    } finally {
+                        setTimeout(() => {
+                            if (document.body.contains(iframe)) {
+                                document.body.removeChild(iframe);
+                            }
+                        }, 1000);
+                    }
+                };
+                
+                //iframe yüklenmezse
                 setTimeout(() => {
-                    document.body.innerHTML = originalBodyHTML;
-                    window.location.reload(); 
-                }, 500); 
+                    if (iframe.contentWindow && iframe.contentWindow.document.readyState !== 'complete') {
+                        console.warn("Iframe yüklenmedi veya geç yüklendi, manuel print deneniyor.");
+                        if (iframe.contentWindow) {
+                           iframe.contentWindow.focus();
+                           iframe.contentWindow.print();
+                       }
+                        setTimeout(() => {
+                            if (document.body.contains(iframe)) {
+                                document.body.removeChild(iframe);
+                            }
+                        }, 1000);
+                    }
+                }, 2000);
+
             } else {
                 alert('Yazdırılacak tablo bulunamadı.');
             }

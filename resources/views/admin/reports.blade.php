@@ -71,46 +71,33 @@
                     </table>
                 </div>
 
-                <div class="mt-5 d-flex justify-content-center print-hidden" style="gap: 2rem;">
+                <div class="mt-5 d-flex flex-wrap justify-content-center print-hidden"
+                    style="gap: 1.5rem 2rem; padding: 1rem 0;">
                     <a href="{{ route('report.export', ['fields' => implode(',', $fieldsForBlade), 'date_filter' => ($dateFilter ?? ''), 'sort_order' => ($sortOrder ?? 'desc')]) }}"
-                       class="btn shadow-sm d-flex align-items-center me-3"
-                       style="background-color: #28a745; color: #ffffff; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
-                        <i class="bi bi-file-earmark-excel me-2"></i> Excel'e Aktar
+                       class="custom-btn btn-excel">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </a>
+                    <a href="{{ route('report.maskedPdf', ['fields' => $fieldsForBlade, 'date_filter' => $dateFilter, 'sort_order' => $sortOrder]) }}"
+                       target="_blank"
+                       class="custom-btn btn-pdf">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
                     </a>
 
-                    <button id="printReportBtn"
-                            class="btn shadow-sm d-flex align-items-center me-3"
-                            style="background-color: #003366; color: #ffffff; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
-                        <i class="bi bi-printer me-2"></i> Yazdır
+                    <button id="printReportBtn" class="custom-btn btn-print">
+                        <i class="bi bi-printer"></i> Yazdır
                     </button>
 
-                    <button id="showChartBtn"
-                            class="btn shadow-sm d-flex align-items-center me-3"
-                            style="background-color: #ffc107; color: #343a40; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold; height: 40px;">
-                        <i class="bi bi-graph-up-arrow me-2"></i> Grafik Göster
+                    <button id="showChartBtn" class="custom-btn btn-chart">
+                        <i class="bi bi-graph-up-arrow"></i> Grafik
                     </button>
                 </div>
 
                 <div id="reportChartContainer" class="mt-5" style="width: 90%; display: none; position: relative;">
                     <canvas id="reportChart"></canvas>
 
-                    <button id="downloadPdfBtn"
-                            style="
-                                background-color: #dc3545;
-                                color: white;
-                                border-radius: 8px;
-                                padding: 0.5rem 1rem;
-                                font-size: 1rem;
-                                font-weight: bold;
-                                height: 40px;
-                                display: none;
-                                position: absolute;
-                                bottom: -20px;
-                                right: 5px;
-                                z-index: 10;
-                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                            ">
-                        <i class="bi bi-file-earmark-pdf me-2"></i> Grafik PDF İndir
+                    <button id="downloadPdfBtn" class="custom-btn btn-pdf"
+                        style="display: none; position: absolute; bottom: -20px; right: 5px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <i class="bi bi-file-earmark-pdf"></i> Grafik PDF İndir
                     </button>
                 </div>
 
@@ -129,8 +116,61 @@
             min-height: 100%;
             background-color: rgba(0,0,0,0.08); 
         }
+        
 
-       
+       .custom-btn {
+    height: 44px;
+    min-width: 140px;
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 10px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem; /* Butonlar arası dikey-yatay boşluk */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    user-select: none;
+    transition: background-color 0.3s ease;
+    color: white;
+}
+
+        .custom-btn i {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        .btn-excel {
+            background-color: #28a745;
+        }
+        .btn-excel:hover {
+            background-color: #218838;
+        }
+        .btn-pdf {
+            background-color: #dc3545;
+            box-shadow: 0 3px 6px rgba(220, 53, 69, 0.5);
+        }
+        .btn-pdf:hover {
+            background-color: #b02a37;
+        }
+        .btn-print {
+            background-color: #003366;
+        }
+        .btn-print:hover {
+            background-color: #002244;
+        }
+        .btn-chart {
+            background-color: #ffc107;
+            color: #343a40;
+        }
+        .btn-chart:hover {
+            background-color: #e0a800;
+            color: #212529;
+        }
+
         @media print {
             .print-hidden { display: none !important; }
             body { background-color: #fff !important; }
@@ -244,7 +284,7 @@
 
             let labels = [];
             let counts = [];
-            let chartTitle = ''; // Chart.js'in kendi başlığı için kullanılacak değişken
+            let chartTitle = '';
             let xAxisLabel = '';
 
             if (reportType === 'daily') {
@@ -343,7 +383,6 @@
             });
         }
 
-        // PDF İNDİRME İŞLEVİ
         document.getElementById('downloadPdfBtn').addEventListener('click', () => {
             const chartCanvas = document.getElementById('reportChart');
 

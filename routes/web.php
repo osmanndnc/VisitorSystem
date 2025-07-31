@@ -63,6 +63,8 @@ Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
     Route::get('/admin/generate-report', [AdminReportController::class, 'generateReport'])->name('admin.generateReport');
     Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports');
     Route::get('/report/export', [ReportExportController::class, 'export'])->withoutMiddleware([\App\Http\Middleware\PreventBackHistory::class])->name('report.export');
+    Route::get('/admin/export-pdf-unmasked', [AdminController::class, 'exportPdfUnmasked'])->name('admin.exportPdfUnmasked');
+    Route::get('/admin/reports/masked-pdf', [AdminReportController::class, 'exportMaskedPdf'])->name('report.maskedPdf');
 });
 
 
