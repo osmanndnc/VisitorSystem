@@ -8,6 +8,7 @@ use App\Models\Visit;
 use App\Models\PersonToVisit;
 use App\Models\VisitReason;
 use Illuminate\Support\Carbon;
+use App\Rules\ValidTcNo;
 
 class SecurityController extends Controller
 {
@@ -25,8 +26,8 @@ class SecurityController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'tc_no' => ['required', 'string', new ValidTcNo()],
             'name' => 'required|string',
-            'tc_no' => 'required|string|size:11',
             'phone' => 'required|string',
             'plate' => 'required|string',
             'person_to_visit' => 'required|string',
@@ -66,8 +67,8 @@ class SecurityController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
+            'tc_no' => ['required', 'string', new ValidTcNo()],
             'name' => 'required|string',
-            'tc_no' => 'required|string|size:11',
             'phone' => 'required|string',
             'plate' => 'required|string',
             'person_to_visit' => 'required|string',
@@ -91,6 +92,7 @@ class SecurityController extends Controller
 
         return redirect()->route('security.create')->with('success', 'Ziyaretçi bilgisi güncellendi.');
     }
+
 
 
     public function destroy($id)

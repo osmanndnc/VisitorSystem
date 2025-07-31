@@ -273,11 +273,14 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="tc_no" :value="'T.C. Kimlik No'" />
-                                <x-text-input id="tc_no" name="tc_no" type="text" maxlength="11" pattern="[0-9]{11}"
-                                    class="mt-1 block w-full" required 
+                                <x-text-input id="tc_no" name="tc_no" type="text" maxlength="11"
+                                    value="{{ old('tc_no', $editVisit->visitor->tc_no ?? '') }}"
+                                    required class="mt-1 block w-full"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11)"
-                                    onblur="getVisitorData()" 
-                                    value="{{ isset($editVisit) ? $editVisit->visitor->tc_no : old('tc_no') }}" />
+                                    onblur="getVisitorData()" />
+                                @error('tc_no')
+                                    <span class="text-red-600 text-sm">{{ $message }}</span>
+                                @enderror
                             </div>
                             
                             <div>
@@ -285,6 +288,9 @@
                                 <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
                                     autocomplete="off"
                                     value="{{ isset($editVisit) ? $editVisit->visitor->name : old('name') }}" required />
+                                @error('name')
+                                    <span class="text-red-600 text-sm">{{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
 
@@ -299,6 +305,9 @@
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\d{4})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4').slice(0, 14)" 
                                     placeholder="0500 000 00 00"
                                     value="{{ isset($editVisit) ? $editVisit->phone : old('phone') }}" />
+                                @error('phone')
+                                    <span class="text-red-600 text-sm">{{ $message }}</span>
+                                @enderror
                                 <datalist id="phone_list"></datalist>
                             </div>
 
@@ -309,6 +318,9 @@
                                     autocomplete="off"
                                     maxlength="20"
                                     value="{{ isset($editVisit) ? $editVisit->plate : old('plate') }}" />
+                                @error('plate')
+                                    <span class="text-red-600 text-sm">{{ $message }}</span>
+                                @enderror
                                 <datalist id="plate_list"></datalist>
                             </div>
                         
@@ -326,6 +338,9 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                @error('person_to_visit')
+                                    <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="mt-4 md:mt-0">
@@ -341,6 +356,9 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                @error('purpose')
+                                    <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
 
@@ -465,14 +483,26 @@
                                     plateList.appendChild(option);
                                 });
 
-                                // Eğer input boşsa en son plakayı otomatik getir
-                                if (!plateInput.value && data.plates.length > 0) {
-                                    plateInput.value = data.plates[0];
-                                }
+                                // // Eğer input boşsa en son plakayı otomatik getir
+                                // if (!plateInput.value && data.plates.length > 0) {
+                                //     plateInput.value = data.plates[0];
+                                // }
                             });
                     });
                 });
             </script>
+            @if ($errors->any())
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const formArea = document.getElementById('formArea');
+                        if (formArea && formArea.classList.contains('hidden')) {
+                            formArea.classList.remove('hidden');
+                            formArea.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    });
+                </script>
+            @endif
+
 
         </div>
     </div>
