@@ -41,7 +41,6 @@
             <x-input-label for="update_password_password_confirmation" :value="__('Şifre Onayla')" />
             <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
             
-            <!-- Şifre onaylama hata mesajını Türkçeleştir -->
             @if($errors->updatePassword->has('password_confirmation'))
                 <p class="text-red-500 text-sm mt-2">
                     @if($errors->updatePassword->first('password_confirmation') === 'The password field confirmation does not match.')
