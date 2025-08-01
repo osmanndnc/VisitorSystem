@@ -187,7 +187,7 @@
 
     </style>
 
-    <script>
+    <!-- <script>
         document.addEventListener('DOMContentLoaded', function () {
             const toggleForms = document.querySelectorAll('.toggle-form');
             toggleForms.forEach(form => {
@@ -220,13 +220,56 @@
                 });
             }
         });
+    </script> -->
+            <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const kayıtFormu = document.getElementById('kullanici-formu');
+            const toggleFormButton = document.getElementById('toggle-form-button');
+
+            if (toggleFormButton && kayıtFormu) {
+                toggleFormButton.addEventListener('click', function () {
+                    kayıtFormu.classList.toggle('hidden');
+
+                    if (!kayıtFormu.classList.contains('hidden')) {
+                        kayıtFormu.scrollIntoView({ behavior: 'smooth' });
+
+                        const form = kayıtFormu.querySelector('form');
+                        form.action = "{{ route('security.users.store') }}";
+                        kayıtFormu.querySelector('h2').innerText = "Yeni Kullanıcı Ekle";
+                        kayıtFormu.querySelector('input[name=\"ad_soyad\"]').value = "";
+                        kayıtFormu.querySelector('input[name=\"user_phone\"]').value = "";
+                        kayıtFormu.querySelector('input[name=\"username\"]').value = "";
+                        kayıtFormu.querySelector('input[name=\"email\"]').value = "";
+                        kayıtFormu.querySelector('input[name=\"password\"]').value = "";
+                        kayıtFormu.querySelector('select[name=\"role\"]').value = "";
+
+                        const methodInput = kayıtFormu.querySelector('input[name=\"_method\"]');
+                        if (methodInput) methodInput.remove();
+                    }
+                });
+            }
+
+            const cancelEditButton = document.getElementById('cancel-edit-button');
+            if (cancelEditButton) {
+                cancelEditButton.addEventListener('click', function () {
+                    window.location.href = "{{ route('security.users.index') }}";
+                });
+            }
+
+            document.querySelectorAll('.toggle-form').forEach(form => {
+                form.querySelector('.toggle-switch').addEventListener('click', function () {
+                    this.classList.toggle('active');
+                    form.submit();
+                });
+            });
+        });
     </script>
 
     <div class="py-6 max-w-7xl mx-auto">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Güvenlik Kullanıcıları</h2>
             @if(auth()->user()->hasAnyRole(['admin', 'super_admin']))
-                <button id="toggle-form-button" class="btn-style905">
+                <button id="toggle-form-button" class="btn-style905" type="button">
                     + Kullanıcı Kaydı Ekle
                 </button>
             @endif
@@ -236,6 +279,8 @@
             <thead>
                 <tr class="bg-gray-100 text-left">
                     <th class="px-4 py-2">#</th>
+                    <th class="px-4 py-2">Ad Soyad</th>
+                    <th class="px-4 py-2">Telefon</th>
                     <th class="px-4 py-2">Kullanıcı Adı</th>
                     <th class="px-4 py-2">Email</th>
                     <th class="px-4 py-2">Rol</th>
@@ -249,6 +294,8 @@
                 @foreach($users as $index => $user)
                     <tr class="border-t {{ !$user->is_active ? 'passive-row' : '' }}">
                         <td class="px-4 py-2">{{ $index + 1 }}</td>
+                        <td class="px-4 py-2">{{ $user->ad_soyad }}</td>
+                        <td class="px-4 py-2">{{ $user->user_phone }}</td>
                         <td class="px-4 py-2">{{ $user->username }}</td>
                         <td class="px-4 py-2">{{ $user->email }}</td>
                         <td class="px-4 py-2">{{ ucfirst($user->role) }}</td>
@@ -266,7 +313,7 @@
                         </td>
                         <td class="px-4 py-2">
                             @if(auth()->user()->hasAnyRole(['admin', 'super_admin']))
-                                <a href="{{ route('security.users.edit', $user->id) }}" class="text-blue-600">Düzenle</a>
+                                <a href="{{ route('security.users.index', ['edit' => $user->id]) }}" class="text-blue-600">Düzenle</a>
                             @else
                                 <span class="text-gray-400 cursor-not-allowed">Düzenle</span>
                             @endif
@@ -276,45 +323,73 @@
             </tbody>
         </table>
 
-        @if(auth()->user()->hasAnyRole(['admin', 'super_admin']))
-        <div id="kullanici-formu" class="bg-white shadow rounded p-6 mt-10 hidden">
-            <h2 class="text-lg font-bold mb-4">Yeni Kullanıcı Kaydı</h2>
-            <form id="kullanici-ekle-form" method="POST" action="{{ route('security.users.store') }}">
-                @csrf
-                <div class="mb-4">
-                    <label for="username" class="block text-sm font-medium text-gray-700">Kullanıcı Adı</label>
-                    <input type="text" name="username" id="username" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
 
-                <div class="mb-4">
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" name="email" id="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
+        @if(auth()->user()->hasAnyRole(['super_admin']))
+            <div id="kullanici-formu" class="mt-8 max-w-2xl mx-auto bg-white p-6 rounded-lg shadow {{ isset($editUser) ? '' : 'hidden' }}">
+                <h2 class="text-lg font-bold mb-4">
+                    {{ isset($editUser) ? 'Kullanıcıyı Güncelle' : 'Yeni Kullanıcı Ekle' }}
+                </h2>
 
-                <div class="mb-4">
-                    <label for="password" class="block text-sm font-medium text-gray-700">Şifre</label>
-                    <input type="password" name="password" id="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
+                <form method="POST" action="{{ isset($editUser) ? route('security.users.update', $editUser->id) : route('security.users.store') }}">
+                    @csrf
+                    @if(isset($editUser)) @method('PUT') @endif
 
-                <div class="mb-4">
-                    <label for="role" class="block text-sm font-medium text-gray-700">Rol</label>
-                    <select name="role" id="role" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        <option value="">Rol Seçin</option>
-                        <option value="security">Güvenlik</option>
-                        @if(auth()->user()->role === 'super_admin')
-                            <option value="admin">Admin</option>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium">Ad Soyad</label>
+                        <input type="text" name="ad_soyad" value="{{ old('ad_soyad', $editUser->ad_soyad ?? '') }}" required class="w-full border rounded px-3 py-2">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium">Telefon</label>
+                        <input type="text" name="user_phone" value="{{ old('user_phone', $editUser->user_phone ?? '') }}" class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium">Kullanıcı Adı</label>
+                        <input type="text" name="username" value="{{ old('username', $editUser->username ?? '') }}" required class="w-full border rounded px-3 py-2">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium">Email</label>
+                        <input type="email" name="email" value="{{ old('email', $editUser->email ?? '') }}" required class="w-full border rounded px-3 py-2">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium">
+                            {{ isset($editUser) ? 'Yeni Şifre (Boş bırakılırsa değişmez)' : 'Şifre' }}
+                        </label>
+                        <input type="password" name="password" class="w-full border rounded px-3 py-2">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium">Rol</label>
+                        <select name="role" required class="w-full border rounded px-3 py-2">
+                            <option value="">Rol Seçin</option>
+                            <option value="admin" {{ old('role', $editUser->role ?? '') == 'admin' ? 'selected' : '' }}>Admin</option>
+                            <option value="security" {{ old('role', $editUser->role ?? '') == 'security' ? 'selected' : '' }}>Güvenlik</option>
+                        </select>
+                    </div>
+
+                    <input type="hidden" name="is_active" value="1">
+
+                    <!-- <button type="button" class="submit-animated" id="submit-button">
+                        <span>Kaydet</span>
+                        <img src="https://cdn-icons-png.flaticon.com/512/845/845646.png" alt="✓">
+                    </button> -->
+                    <div class="flex justify-end">
+                        <button type="submit" class="submit-animated" id="submit-button">
+                            <span>{{ isset($editUser) ? 'Güncelle' : 'Kaydet' }}</span>
+                            <img src="https://cdn-icons-png.flaticon.com/512/845/845646.png" alt="✓">
+                        </button>
+                        
+                        @if(isset($editUser))
+                            <button type="button" id="cancel-edit-button" class="btn-style905 bg-red-600 hover:bg-red-700 ml-4">
+                                İptal
+                            </button>
                         @endif
-                    </select>
-                </div>
-
-                <input type="hidden" name="is_active" value="1">
-
-                <button type="button" class="submit-animated" id="submit-button">
-                    <span>Kaydet</span>
-                    <img src="https://cdn-icons-png.flaticon.com/512/845/845646.png" alt="✓">
-                </button>
-            </form>
-        </div>
+                    </div>
+                </form>
+            </div>
         @endif
     </div>
 </x-app-layout>

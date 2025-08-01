@@ -308,7 +308,7 @@
                                         @case('plate') {{ $visit->visitor->plate ?? '-' }} @break
                                         @case('purpose') {{ $visit->purpose ?? '-' }} @break
                                         @case('person_to_visit') {{ $visit->person_to_visit ?? '-' }} @break
-                                        @case('approved_by') {{ $visit->approver->username ?? $visit->approved_by ?? '-' }} @break
+                                        @case('approved_by') {{ $visit->approver->ad_soyad ?? $visit->approved_by ?? '-' }} @break
                                         @default {{ $visit->$field ?? '-' }}
                                     @endswitch
                                 </td>

@@ -12,12 +12,17 @@
                 <!-- Menü Bağlantıları -->
                 @if(auth()->user()->role === 'super_admin' || auth()->user()->role === 'admin')
                     <div class="hidden md:flex gap-8 items-center">
+                        <!-- Yeni: Ziyaretçi Listesi Butonu -->
+                        <x-nav-link href="{{ route('admin.index') }}" :active="request()->routeIs('admin.visitor.*')" class="text-[1.1rem] font-semibold text-blue-900 backdrop-blur-md bg-white/60 px-4 py-2 rounded-xl hover:text-indigo-700 transition duration-200">
+                            Ziyaretçi Listesi
+                        </x-nav-link>
                         <x-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')" class="text-[1.1rem] font-semibold text-gray-700 backdrop-blur-md bg-white/60 px-4 py-2 rounded-xl hover:text-indigo-700 transition duration-200">
                             Adminler
                         </x-nav-link>
                         <x-nav-link href="{{ route('security.users.index') }}" :active="request()->routeIs('security.users.*')" class="text-[1.1rem] font-semibold text-gray-700 backdrop-blur-md bg-white/60 px-4 py-2 rounded-xl hover:text-indigo-700 transition duration-200">
                             Güvenlikler
                         </x-nav-link>
+
                     </div>
                 @endif
             </div>

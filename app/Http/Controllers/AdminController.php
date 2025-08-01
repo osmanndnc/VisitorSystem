@@ -70,7 +70,7 @@ class AdminController extends Controller
                     });
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($value) {
-                        $query->where('username', 'like', "%{$value}%");
+                        $query->where('ad_soyad', 'like', "%{$value}%");
                     });
                 } elseif ($field === 'id') { 
                     $visitsQuery->where('id', 'like', "%{$value}%");
@@ -146,7 +146,7 @@ class AdminController extends Controller
                     });
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
-                        $query->where('username', 'like', "%{$searchValue}%");
+                        $query->where('ad_soyad', 'like', "%{$searchValue}%");
                     });
                 } elseif ($field === 'id') {
                      $visitsQuery->where('id', 'like', "%{$searchValue}%");
@@ -173,7 +173,7 @@ class AdminController extends Controller
                     case 'plate': $row[$field] = $visit->visitor->plate ?? '-'; break;
                     case 'purpose': $row[$field] = $visit->purpose ?? '-'; break;
                     case 'person_to_visit': $row[$field] = $visit->person_to_visit ?? '-'; break;
-                    case 'approved_by': $row[$field] = $visit->approver->username ?? $visit->approved_by ?? '-'; break;
+                    case 'approved_by': $row[$field] = $visit->approver->ad_soyad ?? $visit->approved_by ?? '-'; break;
                     default: $row[$field] = $visit->$field ?? '-'; break;
                 }
             }

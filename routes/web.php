@@ -71,7 +71,7 @@ Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
 // Admin kullanıcı yönetimi
 Route::middleware(['auth', 'role:admin,super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/admin-users', [AdminUserController::class, 'index'])->name('users.index');
-    Route::get('/admin-users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+    // Route::get('/admin-users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/admin-users/{user}', [AdminUserController::class, 'update'])->name('users.update'); // <-- BURAYA TAŞINDI
     Route::patch('/admin-users/{user}/toggle', [AdminUserController::class, 'toggleStatus'])->name('users.toggle');
 });
@@ -79,7 +79,7 @@ Route::middleware(['auth', 'role:admin,super_admin'])->prefix('admin')->name('ad
 // Security kullanıcı yönetimi
 Route::middleware(['auth', 'role:admin,super_admin'])->prefix('security')->name('security.')->group(function () {
     Route::get('/security-users', [SecurityUserController::class, 'index'])->name('users.index');
-    Route::get('/security-users/{user}/edit', [SecurityUserController::class, 'edit'])->name('users.edit');
+    // Route::get('/security-users/{user}/edit', [SecurityUserController::class, 'edit'])->name('users.edit');
     Route::put('/security-users/{user}', [SecurityUserController::class, 'update'])->name('users.update');
     Route::patch('/security-users/{user}/toggle', [SecurityUserController::class, 'toggle'])->name('users.toggle');
 });
