@@ -23,51 +23,60 @@ class AdminController extends Controller
             'approved_by'
         ];
         
-        $fields = $allFields;
-        if ($request->has('filter')) {
-            $fields = explode(',', $request->input('filter'));
-            $fields = array_intersect($fields, $allFields); // Güvenlik için
-            if (empty($fields)) $fields = $allFields;
-        }
-
-        $filters = [];
-        foreach ($allFields as $field) {
-            $key = $field . '_value';
-            if ($request->has($key) && trim($request->$key) !== '') {
-                $filters[$field] = $request->$key;
-            }
+        $fields = $request->has('filter')
+            ? array_intersect(explode(',', $request->input('filter')), $allFields)
+            : $allFields;
+        
+        if (empty($fields)) {
+            $fields = $allFields;
         }
 
         $visitsQuery = Visit::with(['visitor', 'approver']);
 
-        // Günlük, Aylık, Yıllık filtrelemeyi ekle
-        $dateFilter = $request->input('date_filter', 'daily'); // Varsayılan
+        // --- Tarih Filtreleme Mantığı ---
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-        switch ($dateFilter) {
-            case 'daily':
-                $visitsQuery->whereDate('entry_time', Carbon::today());
-                break;
-            case 'monthly':
-                $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
-                            ->whereYear('entry_time', Carbon::now()->year);
-                break;
-            case 'yearly':
-                $visitsQuery->whereYear('entry_time', Carbon::now()->year);
-                break;
+        if ($startDate) {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
+            $visitsQuery->whereBetween('entry_time', [$start, $end]);
+        } else {
+            $dateFilter = $request->input('date_filter', 'daily');
+            switch ($dateFilter) {
+                case 'daily':
+                    $visitsQuery->whereDate('entry_time', Carbon::today());
+                    break;
+                case 'monthly':
+                    $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
+                                ->whereYear('entry_time', Carbon::now()->year);
+                    break;
+                case 'yearly':
+                    $visitsQuery->whereYear('entry_time', Carbon::now()->year);
+                    break;
+                case 'all':
+                default:
+                    break;
+            }
         }
 
-        // Diğer filtreleri uygula
-        foreach ($filters as $field => $value) {
-            if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
-                $visitsQuery->whereHas('visitor', function ($query) use ($field, $value) {
-                    $query->where($field, 'like', "%{$value}%");
-                });
-            } elseif ($field === 'approved_by') {
-                $visitsQuery->whereHas('approver', function ($query) use ($value) {
-                    $query->where('username', 'like', "%{$value}%");
-                });
-            } else {
-                $visitsQuery->where($field, 'like', "%{$value}%");
+        // --- Diğer Alan Filtreleme Mantığı ---
+        foreach ($allFields as $field) {
+            $value = $request->input($field . '_value');
+            if ($value) {
+                if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
+                    $visitsQuery->whereHas('visitor', function ($query) use ($field, $value) {
+                        $query->where($field, 'like', "%{$value}%");
+                    });
+                } elseif ($field === 'approved_by') {
+                    $visitsQuery->whereHas('approver', function ($query) use ($value) {
+                        $query->where('username', 'like', "%{$value}%");
+                    });
+                } elseif ($field === 'id') { 
+                    $visitsQuery->where('id', 'like', "%{$value}%");
+                } else {
+                    $visitsQuery->where($field, 'like', "%{$value}%");
+                }
             }
         }
 
@@ -77,8 +86,6 @@ class AdminController extends Controller
             'visits' => $visits,
             'fields' => $fields,
             'allFields' => $allFields,
-            'filters' => $filters,
-            'filterFields' => array_keys($filters)
         ]);
     }
 
@@ -88,28 +95,46 @@ class AdminController extends Controller
             'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
             'purpose', 'person_to_visit', 'approved_by'
         ];
-        $selectedFields = $request->input('fields', []);
+        
+        // fields parametresinden ID'yi kaldırıyoruz
+        $selectedFields = array_diff($request->input('fields', $allFields), ['id']);
 
-        // Eğer fields[] parametresi boş gelirse (hiçbir filtre seçilmemişse), tüm alanları kullan
         if (empty($selectedFields)) {
-            $selectedFields = $allFields;
+            $selectedFields = array_diff($allFields, ['id']);
         }
 
         $visitsQuery = Visit::with(['visitor', 'approver']);
+        
+        $reportTitle = '';
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-        // Tarih filtresi
-        $dateFilter = $request->input('date_filter', 'daily');
-        switch ($dateFilter) {
-            case 'daily':
-                $visitsQuery->whereDate('entry_time', Carbon::today());
-                break;
-            case 'monthly':
-                $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
-                            ->whereYear('entry_time', Carbon::now()->year);
-                break;
-            case 'yearly':
-                $visitsQuery->whereYear('entry_time', Carbon::now()->year);
-                break;
+        if ($startDate) {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
+            $visitsQuery->whereBetween('entry_time', [$start, $end]);
+            $reportTitle = Carbon::parse($startDate)->format('d.m.Y') . ' - ' . Carbon::parse($endDate)->format('d.m.Y') . ' Aralığı';
+        } else {
+            $dateFilter = $request->input('date_filter', 'daily');
+            switch ($dateFilter) {
+                case 'daily':
+                    $visitsQuery->whereDate('entry_time', Carbon::today());
+                    $reportTitle = 'Günlük';
+                    break;
+                case 'monthly':
+                    $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
+                                ->whereYear('entry_time', Carbon::now()->year);
+                    $reportTitle = 'Aylık';
+                    break;
+                case 'yearly':
+                    $visitsQuery->whereYear('entry_time', Carbon::now()->year);
+                    $reportTitle = 'Yıllık';
+                    break;
+                case 'all':
+                default:
+                    $reportTitle = 'Tüm';
+                    break;
+            }
         }
 
         foreach ($allFields as $field) {
@@ -123,6 +148,8 @@ class AdminController extends Controller
                     $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
                         $query->where('username', 'like', "%{$searchValue}%");
                     });
+                } elseif ($field === 'id') {
+                     $visitsQuery->where('id', 'like', "%{$searchValue}%");
                 } else {
                     $visitsQuery->where($field, 'like', "%{$searchValue}%");
                 }
@@ -134,12 +161,11 @@ class AdminController extends Controller
         
         $visits = $visitsQuery->get();
 
-        // PDF için verileri formatlanması
         $pdfData = $visits->map(function ($visit) use ($selectedFields) {
             $row = [];
             foreach ($selectedFields as $field) {
                 switch ($field) {
-                    case 'id': $row[$field] = $visit->id ?? '-'; break;
+                    // ID case'i kaldırıldı
                     case 'entry_time': $row[$field] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-'; break;
                     case 'name': $row[$field] = $visit->visitor->name ?? '-'; break;
                     case 'tc_no': $row[$field] = $visit->visitor->tc_no ?? '-'; break;
@@ -157,7 +183,6 @@ class AdminController extends Controller
         $pdfHeadings = [];
         foreach ($selectedFields as $field) {
             $pdfHeadings[] = match($field) {
-                'id' => 'ID',
                 'entry_time' => 'Giriş Tarihi',
                 'name' => 'Ad-Soyad',
                 'tc_no' => 'T.C. Kimlik No',
@@ -170,13 +195,6 @@ class AdminController extends Controller
             };
         }
 
-        $reportTitle = '';
-        switch ($dateFilter) {
-            case 'daily': $reportTitle = 'Günlük'; break;
-            case 'monthly': $reportTitle = 'Aylık'; break;
-            case 'yearly': $reportTitle = 'Yıllık'; break;
-            default: $reportTitle = 'Tüm'; break;
-        }
         $fullReportTitle = $reportTitle . ' Ziyaretçi Listesi';
         $pdf = Pdf::loadView('pdf.unmasked_report', compact('pdfData', 'pdfHeadings', 'fullReportTitle'));
         return $pdf->download('ziyaretci_listesi.pdf');

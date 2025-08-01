@@ -3,17 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <title>
-        @php
-            $dateFilterTitles = [
-                'daily' => 'Günlük',
-                'monthly' => 'Aylık',
-                'yearly' => 'Yıllık',
-                '' => 'Tüm',
-                null => 'Tüm',
-            ];
-            $displayDateFilter = $dateFilterTitles[$dateFilter ?? ''] ?? 'Tüm';
-        @endphp
-        {{ $displayDateFilter }} Ziyaretçi Raporu - PDF
+        @if ($reportTitle)
+            {{ $reportTitle }} Ziyaretçi Raporu - PDF
+        @else
+            Ziyaretçi Raporu - PDF
+        @endif
     </title>
     <style>
         @font-face {
@@ -34,6 +28,13 @@
             color: #003366;
             margin-bottom: 1rem;
         }
+        p {
+            text-align: center;
+            font-style: italic;
+            color: #555;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
         table {
             border-collapse: collapse;
             width: 100%;
@@ -52,13 +53,22 @@
     </style>
 </head>
 <body>
-    <h2>{{ $displayDateFilter }} Ziyaretçi Raporu</h2>
+    @if ($reportTitle)
+        <h2>{{ $reportTitle }} Ziyaretçi Raporu</h2>
+        @if ($reportRange)
+            <p>({{ $reportRange }})</p>
+        @endif
+    @else
+        <h2>Ziyaretçi Raporu</h2>
+        @if ($reportRange)
+            <p>({{ $reportRange }})</p>
+        @endif
+    @endif
 
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Ekleyen</th>
+                <th>Kayıt No</th>
                 @foreach ($fieldsForBlade as $field)
                     <th>
                         @switch($field)
@@ -69,6 +79,7 @@
                             @case('plate') Plaka @break
                             @case('purpose') Ziyaret Sebebi @break
                             @case('person_to_visit') Ziyaret Edilen Kişi @break
+                            @case('approved_by') Ekleyen @break
                             @default {{ ucfirst(str_replace('_', ' ', $field)) }}
                         @endswitch
                     </th>
@@ -76,10 +87,9 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($data as $row)
+            @foreach ($data as $index => $row)
                 <tr>
-                    <td>{{ $row['id'] ?? '-' }}</td>
-                    <td>{{ $row['approved_by'] ?? '-' }}</td>
+                    <td>{{ $index + 1 }}</td>
                     @foreach ($fieldsForBlade as $field)
                         <td>{{ $row[$field] ?? '-' }}</td>
                     @endforeach

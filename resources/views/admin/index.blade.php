@@ -1,11 +1,7 @@
 <x-app-layout>
     <style>
-        html {
-            zoom: 80%;
-        }
-        body {
-            background: #f1f5f9;
-        }
+        html { zoom: 80%; }
+        body { background: #f1f5f9; }
         .center-box {
             position: relative;
             width: 90%;
@@ -21,6 +17,12 @@
             font-size: 2.8rem;
             font-weight: 800;
             color: #003366; 
+            margin-bottom: 0.5rem;
+        }
+        .active-filter-info {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #555;
             margin-bottom: 2rem;
         }
         .modern-btn {
@@ -74,10 +76,37 @@
             color: #003366;
             font-weight: 700;
         }
-        table {
+        .filter-option input, .date-filter-inputs input {
             width: 100%;
-            border-collapse: collapse;
+            margin-top: 0.3rem;
+            padding: 0.3rem 0.4rem;
+            font-size: 0.9rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.3rem;
+            display: none;
+            box-sizing: border-box;
         }
+        .filter-option.selected input {
+            display: block;
+        }
+        .date-filter-inputs {
+            display: none;
+            padding: 0.5rem;
+            border-top: 1px solid #e5e7eb;
+            margin-top: 0.5rem;
+        }
+        .date-filter-inputs input {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .date-filter-inputs label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
         table th, table td {
             padding: 1rem;
             border-bottom: 1px solid #e2e8f0;
@@ -101,9 +130,7 @@
             margin-left: 0.75rem;
             vertical-align: middle;
         }
-        .svg-button:hover {
-            background-color: #f0f0f0;
-        }
+        .svg-button:hover { background-color: #f0f0f0; }
         .svg-path {
             transition: stroke-width 0.3s;
             stroke-dasharray: 100;
@@ -118,22 +145,6 @@
             0% { stroke-dashoffset: 100; }
             100% { stroke-dashoffset: 0; }
         }
-     
-        .filter-option input {
-            width: 100%;
-            margin-top: 0.3rem;
-            padding: 0.3rem 0.4rem;
-            font-size: 0.9rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.3rem;
-            display: none;
-            box-sizing: border-box;
-        }
-        .filter-option.selected input {
-            display: block;
-        }
-
-       
         .report-generate-button-container,
         .export-buttons-bottom { 
             display: flex;
@@ -164,18 +175,10 @@
             box-shadow: 0 8px 20px rgba(0, 80, 158, 0.7);
             transform: scale(1.07);
         }
-        .export-button-bottom.excel {
-            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-        }
-        .export-button-bottom.excel:hover {
-            background: linear-gradient(135deg, #218838 0%, #28a745 100%);
-        }
-        .export-button-bottom.pdf {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        }
-        .export-button-bottom.pdf:hover {
-            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
-        }
+        .export-button-bottom.excel { background: linear-gradient(135deg, #28a745 0%, #218838 100%); }
+        .export-button-bottom.excel:hover { background: linear-gradient(135deg, #218838 0%, #28a745 100%); }
+        .export-button-bottom.pdf { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .export-button-bottom.pdf:hover { background: linear-gradient(135deg, #c82333 0%, #dc3545 100%); }
         .export-button-bottom svg {
             width: 20px;
             height: 20px;
@@ -195,6 +198,9 @@
     <div class="py-6">
         <div class="center-box">
             <h2 class="page-title">Ziyaretçi Listesi</h2>
+            <div class="active-filter-info">
+                <span id="activeFilterText">Günlük Kayıtlar</span>
+            </div>
 
             <div class="flex justify-between items-center mb-6 relative" style="display:flex; justify-content: space-between; align-items: center;">
                 <div class="relative">
@@ -248,10 +254,21 @@
                     </button>
                     <div id="reportMenu" class="dropdown-menu" style="left:auto; right:0;">
                         <ul>
+                            <li data-type="all">Tüm Kayıtlar</li>
                             <li data-type="daily">Günlük</li>
                             <li data-type="monthly">Aylık</li>
                             <li data-type="yearly">Yıllık</li>
+                            <li id="dateRangeOption">Tarih Aralığı</li>
                         </ul>
+                        <div id="dateRangeInputs" class="date-filter-inputs">
+                            <label for="start_date">Başlangıç:</label>
+                            <input type="date" id="start_date" value="{{ request('start_date') }}">
+                            <label for="end_date">Bitiş:</label>
+                            <input type="date" id="end_date" value="{{ request('end_date') }}">
+                            <button id="applyDateRange" class="w-full rounded-lg font-semibold modern-btn hover:brightness-110 transition mt-2" style="padding: 0.4rem 1.5rem; font-size: 1rem;">
+                                Uygula
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -301,9 +318,6 @@
                 </tbody>
             </table>
 
-
-
-            {{-- EXCEL VE YAZDIR BUTONLARI --}}
             <div class="export-buttons-bottom">
                 <button id="exportUnmaskedExcelBtn" type="button" class="export-button-bottom excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-excel-fill" viewBox="0 0 16 16">
@@ -311,8 +325,6 @@
                     </svg>
                     Excel
                 </button>
-                                {{-- PDF BUTONU --}}
-                
                 <button id="printUnmaskedBtn" type="button" class="export-button-bottom">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
                         <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm0 12h6a1 1 0 0 1 1 1v1H4v-1a1 1 0 0 1 1-1zM3 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H3V3zm3 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
@@ -325,14 +337,10 @@
                     </svg>
                     PDF
                 </a>
-
             </div>
-            {{-- MASKELİ RAPOR OLUŞTUR BUTONU --}}
             <div class="report-generate-button-container">
                 <button id="generateReportBtn" type="button" class="report-generate-button">Güvenli Rapor Oluştur</button>
             </div>
-
-
         </div>
     </div>
 
@@ -346,15 +354,56 @@
         const exportUnmaskedExcelBtn = document.getElementById('exportUnmaskedExcelBtn');
         const printUnmaskedBtn = document.getElementById('printUnmaskedBtn');
         const exportUnmaskedPdfBtn = document.getElementById('exportUnmaskedPdfBtn');
+        const dateRangeOption = document.getElementById('dateRangeOption');
+        const dateRangeInputs = document.getElementById('dateRangeInputs');
+        const applyDateRangeBtn = document.getElementById('applyDateRange');
 
         filterBtn.addEventListener('click', () => filterMenu.classList.toggle('active'));
         reportBtn.addEventListener('click', () => reportMenu.classList.toggle('active'));
+        
+        dateRangeOption.addEventListener('click', () => {
+            document.querySelectorAll('#reportMenu li').forEach(li => li.style.display = 'none');
+            dateRangeInputs.style.display = 'block';
+            dateRangeOption.style.display = 'block';
+        });
+
+        applyDateRangeBtn.addEventListener('click', () => {
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            const params = new URLSearchParams(window.location.search);
+            
+            params.delete('date_filter');
+            params.set('start_date', startDate);
+            if (endDate) {
+                params.set('end_date', endDate);
+            } else {
+                params.delete('end_date');
+            }
+
+            document.querySelectorAll('.filter-option input').forEach(input => {
+                const fieldName = input.id.replace('_value', '');
+                if (input.value.trim() !== '') {
+                    params.set(fieldName + '_value', input.value.trim());
+                } else {
+                    params.delete(fieldName + '_value');
+                }
+            });
+
+            window.location.href = window.location.pathname + '?' + params.toString();
+        });
 
         document.querySelectorAll('#reportMenu li').forEach(item => {
             item.addEventListener('click', () => {
+                if (item.id === 'dateRangeOption') return;
+
                 const type = item.dataset.type;
                 const urlParams = new URLSearchParams(window.location.search);
+                
+                urlParams.delete('start_date');
+                urlParams.delete('end_date');
                 urlParams.set('date_filter', type);
+
                 document.querySelectorAll('.filter-option.selected input').forEach(input => {
                     const fieldName = input.id.replace('_value', '');
                     if (input.value.trim() !== '') {
@@ -363,6 +412,14 @@
                         urlParams.delete(fieldName + '_value');
                     }
                 });
+                
+                const selectedFieldsFromFilter = [...document.querySelectorAll('.filter-option.selected')].map(opt => opt.getAttribute('data-field'));
+                if (selectedFieldsFromFilter.length > 0) {
+                    urlParams.set('filter', selectedFieldsFromFilter.join(','));
+                } else {
+                    urlParams.delete('filter');
+                }
+
                 window.location.href = window.location.pathname + '?' + urlParams.toString();
             });
         });
@@ -387,6 +444,11 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
+            const dateFilterParam = urlParams.get('date_filter');
+            const startDateParam = urlParams.get('start_date');
+            const endDateParam = urlParams.get('end_date');
+            const activeFilterText = document.getElementById('activeFilterText');
+            
             const filterParam = urlParams.get('filter');
             if (filterParam) {
                 const filters = filterParam.split(',');
@@ -401,13 +463,18 @@
                     }
                 });
             }
-
-            const dateFilterParam = urlParams.get('date_filter');
-            if (dateFilterParam) {
+            
+            if (startDateParam) {
+                const start = new Date(startDateParam).toLocaleDateString('tr-TR');
+                const end = endDateParam ? new Date(endDateParam).toLocaleDateString('tr-TR') : 'Bugün';
+                activeFilterText.textContent = `(${start} - ${end} Aralığı)`;
+            } else if (dateFilterParam) {
                 const reportTypeElement = document.querySelector(`#reportMenu li[data-type="${dateFilterParam}"]`);
                 if (reportTypeElement) {
-                    reportBtn.textContent = reportTypeElement.textContent + ' Kayıtlar';
+                    activeFilterText.textContent = `(${reportTypeElement.textContent} Kayıtlar)`;
                 }
+            } else {
+                activeFilterText.textContent = '(Günlük Kayıtlar)';
             }
         });
 
@@ -434,9 +501,19 @@
             });
 
             const dateFilterParam = new URLSearchParams(window.location.search).get('date_filter');
-            if (dateFilterParam) {
+            const startDateParam = new URLSearchParams(window.location.search).get('start_date');
+            const endDateParam = new URLSearchParams(window.location.search).get('end_date');
+
+            if (startDateParam) {
+                params.set('start_date', startDateParam);
+                params.delete('date_filter');
+            }
+            if (endDateParam) {
+                params.set('end_date', endDateParam);
+            }
+            if (dateFilterParam && !startDateParam) {
                 params.set('date_filter', dateFilterParam);
-            } else {
+            } else if (!startDateParam) {
                 params.set('date_filter', 'daily');
             }
 
@@ -447,158 +524,79 @@
             if (!filterBtn.contains(e.target) && !filterMenu.contains(e.target)) {
                 filterMenu.classList.remove('active');
             }
-            if (!reportBtn.contains(e.target) && !reportMenu.contains(e.target)) {
+            if (!reportBtn.contains(e.target) && !reportMenu.contains(e.target) && !dateRangeInputs.contains(e.target)) {
                 reportMenu.classList.remove('active');
+                dateRangeInputs.style.display = 'none';
+                document.querySelectorAll('#reportMenu li').forEach(li => li.style.display = 'block');
             }
         });
 
-        generateReportBtn.addEventListener('click', () => {
+        function getCommonExportParams(isReportPage = false) {
             const urlParams = new URLSearchParams(window.location.search);
-            let reportParams = new URLSearchParams();
+            const exportParams = new URLSearchParams();
 
-            const allFilterOptions = [...document.querySelectorAll('.filter-option')];
-            const activeFilterFields = []; 
+            const allFields = [
+                'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
+                'purpose', 'person_to_visit', 'approved_by'
+            ];
             
-            allFilterOptions.forEach(opt => {
-                const field = opt.getAttribute('data-field');
-                const input = opt.querySelector('input');
-                
-                if (opt.classList.contains('selected') || (input && input.value.trim() !== '')) {
-                    activeFilterFields.push(field); 
+            const filterParam = urlParams.get('filter');
+            let selectedFields = filterParam ? filterParam.split(',') : allFields;
 
-                    if (input && input.value.trim() !== '') {
-                        reportParams.set(field + '_value', input.value.trim());
-                    }
+            // Raporlama sayfası için 'id' filtresini her zaman kaldır
+            if (isReportPage) {
+                 selectedFields = selectedFields.filter(field => field !== 'id');
+            }
+
+            selectedFields.forEach(field => {
+                exportParams.append('fields[]', field);
+                const value = urlParams.get(field + '_value');
+                if (value) {
+                    exportParams.set(field + '_value', value);
                 }
             });
 
-            if (activeFilterFields.length > 0) {
-                activeFilterFields.forEach(field => {
-                    reportParams.append('fields[]', field);
-                });
-            }
-
             const dateFilterParam = urlParams.get('date_filter');
+            const startDateParam = urlParams.get('start_date');
+            const endDateParam = urlParams.get('end_date');
+
+            if (startDateParam) {
+                exportParams.set('start_date', startDateParam);
+            }
+            if (endDateParam) {
+                exportParams.set('end_date', endDateParam);
+            }
             if (dateFilterParam) {
-                reportParams.set('date_filter', dateFilterParam);
-            } else {
-                reportParams.set('date_filter', 'daily');
+                exportParams.set('date_filter', dateFilterParam);
             }
 
-            reportParams.set('sort_order', 'desc');
+            exportParams.set('sort_order', 'desc');
+            return exportParams;
+        }
 
+        generateReportBtn.addEventListener('click', () => {
+            const reportParams = getCommonExportParams(true);
             window.location.href = `/admin/generate-report?` + reportParams.toString();
         });
 
-        // Yeni eklenen Maskesiz Excel butonu fonksiyonu
         exportUnmaskedExcelBtn.addEventListener('click', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            let exportParams = new URLSearchParams();
-
-            // Tüm arama filtrelerini topla (sadece input değeri olanları)
-            document.querySelectorAll('.filter-option input').forEach(input => {
-                const field = input.id.replace('_value', '');
-                if (input.value.trim() !== '') {
-                    exportParams.set(field + '_value', input.value.trim());
-                }
-            });
-
-            // Tarih filtresini al
-            const dateFilterParam = urlParams.get('date_filter');
-            if (dateFilterParam) {
-                exportParams.set('date_filter', dateFilterParam);
-            } else {
-                exportParams.set('date_filter', 'daily');
-            }
-
-            // Maskeleme yapılmayacağını belirtmek için yeni bir parametre ekle
-            exportParams.set('unmasked', 'true'); 
-            exportParams.set('sort_order', 'desc');
-
-            // Hangi alanların Excel'e aktarılacağını da gönder
-            const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
-            const filterInputValues = [...document.querySelectorAll('.filter-option input')]
-                                      .filter(input => input.value.trim() !== '')
-                                      .map(input => input.id.replace('_value', ''));
-
-            let fieldsToExport = [];
-            if (selectedOptions.length === 0 && filterInputValues.length === 0) {
-                fieldsToExport = [
-                    'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
-                    'purpose', 'person_to_visit', 'approved_by'
-                ];
-            } else {
-                const selectedFieldsFromOptions = selectedOptions.map(opt => opt.getAttribute('data-field'));
-                fieldsToExport = Array.from(new Set([...selectedFieldsFromOptions, ...filterInputValues]));
-            }
-
-            fieldsToExport.forEach(field => {
-                exportParams.append('fields[]', field);
-            });
-
-
+            const exportParams = getCommonExportParams(false);
+            exportParams.set('unmasked', 'true');
             window.location.href = `/report/export?` + exportParams.toString();
         });
 
         if (exportUnmaskedPdfBtn) {
             exportUnmaskedPdfBtn.addEventListener('click', () => {
-                console.log('Maskesiz PDF butonu tıklandı.'); // Hata ayıklama
-
-                const urlParams = new URLSearchParams(window.location.search);
-                let pdfParams = new URLSearchParams();
-
-                // Arama filtrelerini topla
-                document.querySelectorAll('.filter-option input').forEach(input => {
-                    const field = input.id.replace('_value', '');
-                    if (input.value.trim() !== '') {
-                        pdfParams.set(field + '_value', input.value.trim());
-                    }
-                });
-
-                // Tarih filtresini al
-                const dateFilterParam = urlParams.get('date_filter');
-                if (dateFilterParam) {
-                    pdfParams.set('date_filter', dateFilterParam);
-                } else {
-                    pdfParams.set('date_filter', 'daily');
-                }
-
-                pdfParams.set('sort_order', 'desc');
-
-                //  hangi alanların PDF'e aktarılacağını da gönder
-                const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
-                const filterInputValues = [...document.querySelectorAll('.filter-option input')]
-                                          .filter(input => input.value.trim() !== '')
-                                          .map(input => input.id.replace('_value', ''));
-
-                let fieldsToExport = [];
-                if (selectedOptions.length === 0 && filterInputValues.length === 0) {
-                    fieldsToExport = [
-                        'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
-                        'purpose', 'person_to_visit', 'approved_by'
-                    ];
-                } else {
-                    const selectedFieldsFromOptions = selectedOptions.map(opt => opt.getAttribute('data-field'));
-                    fieldsToExport = Array.from(new Set([...selectedFieldsFromOptions, ...filterInputValues]));
-                }
-
-                fieldsToExport.forEach(field => {
-                    pdfParams.append('fields[]', field);
-                });
-
+                const pdfParams = getCommonExportParams(false);
                 window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
             });
-        } else {
-            console.error("Hata: 'exportUnmaskedPdfBtn' elementi bulunamadı. ID'nin doğru olduğundan emin olun.");
         }
 
         printUnmaskedBtn.addEventListener('click', () => {
             const table = document.querySelector('table');
             if (table) {
                 const originalBodyHTML = document.body.innerHTML;
-
                 let printContentHtml = '<html><head><title>Ziyaretçi Listesi</title>';
-
                 document.querySelectorAll('style').forEach(styleElement => {
                     printContentHtml += styleElement.outerHTML;
                 });
@@ -606,56 +604,50 @@
                     printContentHtml += linkTag.outerHTML;
                 });
 
-                // Yazdırma penceresine özel stil (tablo sığması için)
                 printContentHtml += '<style>';
-                printContentHtml += `
-                    body { margin: 1cm !important; font-family: sans-serif; }
+                printContentHtml += `body { margin: 1cm !important; font-family: sans-serif; }
                     table { width: 100% !important; table-layout: fixed !important; word-wrap: break-word !important; border-collapse: collapse !important; }
                     th, td { 
                         white-space: normal !important; 
                         padding: 4px !important; 
-                        font-size: 8px !important; /* Daha küçük font */
+                        font-size: 8px !important; 
                         vertical-align: top !important; 
                         border: 1px solid #ccc !important; 
                         min-width: unset !important; 
                     }
                     .page-title {
                         text-align: center;
-                        font-size: 24px; /* Yazdırırken başlık boyutu */
+                        font-size: 24px; 
                         font-weight: bold;
                         color: #003366;
                         margin-bottom: 20px;
                     }
-                    /* Tablo başlıklarının arka planını koru */
                     thead th {
                         background-color: #003366 !important;
                         color: #ffffff !important;
                         -webkit-print-color-adjust: exact !important;
                         color-adjust: exact !important;
                     }
-                    /* İstenmeyen üst/alt kısımları ve URL'leri gizle */
                     @page {
                         margin: 1cm !important;
                         @top-left { content: ""; } @top-center { content: ""; } @top-right { content: ""; }
                         @bottom-left { content: ""; } @bottom-center { content: ""; } @bottom-right { content: ""; }
-                    }
-                `;
+                    }`;
                 printContentHtml += '</style>';
                 printContentHtml += '</head><body>';
                 printContentHtml += '<div id="printContainer">'; 
                 
-
+                const activeFilterText = document.getElementById('activeFilterText').textContent;
                 const today = new Date();
                 const formattedDate = today.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                printContentHtml += '<div style="text-align: right; font-size: 10px; margin-bottom: 10px;">' + formattedDate + '</div>';
-                printContentHtml += '<h2 class="page-title">Ziyaretçi Listesi</h2>';
+                printContentHtml += `<div style="text-align: right; font-size: 10px; margin-bottom: 10px;">${formattedDate}</div>`;
+                printContentHtml += `<h2 class="page-title">Ziyaretçi Listesi ${activeFilterText}</h2>`;
                 printContentHtml += '<div style="display: flex; justify-content: center; width: 100%; margin-top: 20px;">';
                 printContentHtml += table.outerHTML; 
                 printContentHtml += '</div>';
-                printContentHtml += '</div>';        
+                printContentHtml += '</div>';        
                 printContentHtml += '</body></html>';
 
-               // Yeni iframe oluştur ve içeriği ona yaz
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none'; 
                 document.body.appendChild(iframe);
@@ -680,7 +672,6 @@
                     }
                 };
                 
-                //iframe yüklenmezse
                 setTimeout(() => {
                     if (iframe.contentWindow && iframe.contentWindow.document.readyState !== 'complete') {
                         console.warn("Iframe yüklenmedi veya geç yüklendi, manuel print deneniyor.");

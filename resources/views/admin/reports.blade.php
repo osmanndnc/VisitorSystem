@@ -9,15 +9,10 @@
         padding: 2.5rem;
     ">
         @php
-            $reportTitle = '';
-            switch ($dateFilter ?? '') {
-                case 'daily': $reportTitle = 'Günlük'; break;
-                case 'monthly': $reportTitle = 'Aylık'; break;
-                case 'yearly': $reportTitle = 'Yıllık'; break;
-                default: $reportTitle = 'Tüm'; break;
-            }
+            $reportTitle = $reportTitle ?? '';
+            $reportRange = $reportRange ?? '';
         @endphp
-
+        
         <h2 class="mb-4 text-center" style="
             font-weight: bold;
             font-size: 2.8rem;
@@ -26,7 +21,10 @@
             font-style: normal;
             margin-bottom: 2rem;
         ">
-            {{ $reportTitle }} Ziyaretçi Raporu
+            {{ $reportTitle ? $reportTitle . ' ' : '' }} Ziyaretçi Raporu
+            @if ($reportRange)
+                <span style="display: block; font-size: 1.2rem; font-weight: normal; margin-top: 5px; color: #555;">({{ $reportRange }})</span>
+            @endif
         </h2>
 
         @if ($data->isEmpty())
@@ -39,8 +37,7 @@
                     <table class="table table-striped table-hover table-bordered shadow-sm">
                         <thead style="background-color: #003366; color: #ffffff;">
                             <tr>
-                                <th class="text-center" style="min-width: 80px;">ID</th>
-                                <th class="text-center" style="min-width: 150px;">Ekleyen</th>
+                                <th class="text-center" style="min-width: 80px;">Kayıt No</th>
                                 @foreach ($fieldsForBlade as $field)
                                     <th class="text-center" style="min-width: 150px;">
                                         @switch($field)
@@ -51,6 +48,7 @@
                                             @case('plate') Plaka @break
                                             @case('purpose') Ziyaret Sebebi @break
                                             @case('person_to_visit') Ziyaret Edilen Kişi @break
+                                            @case('approved_by') Ekleyen @break
                                             @default {{ ucfirst(str_replace('_', ' ', $field)) }}
                                         @endswitch
                                     </th>
@@ -58,10 +56,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($data as $row)
+                            @foreach ($data as $index => $row)
                                 <tr>
-                                    <td class="text-center">{{ $row['id'] ?? '-' }}</td>
-                                    <td class="text-center">{{ $row['approved_by'] ?? '-' }}</td>
+                                    <td class="text-center">{{ $index + 1 }}</td>
                                     @foreach ($fieldsForBlade as $field)
                                         <td class="text-center">{{ $row[$field] ?? '-' }}</td>
                                     @endforeach
@@ -73,11 +70,11 @@
 
                 <div class="mt-5 d-flex flex-wrap justify-content-center print-hidden"
                     style="gap: 1.5rem 2rem; padding: 1rem 0;">
-                    <a href="{{ route('report.export', ['fields' => implode(',', $fieldsForBlade), 'date_filter' => ($dateFilter ?? ''), 'sort_order' => ($sortOrder ?? 'desc')]) }}"
+                    <a href="{{ route('report.export', request()->query()) }}"
                        class="custom-btn btn-excel">
                         <i class="bi bi-file-earmark-excel"></i> Excel
                     </a>
-                    <a href="{{ route('report.maskedPdf', ['fields' => $fieldsForBlade, 'date_filter' => $dateFilter, 'sort_order' => $sortOrder]) }}"
+                    <a href="{{ route('report.maskedPdf', request()->query()) }}"
                        target="_blank"
                        class="custom-btn btn-pdf">
                         <i class="bi bi-file-earmark-pdf"></i> PDF
@@ -94,7 +91,6 @@
 
                 <div id="reportChartContainer" class="mt-5" style="width: 90%; display: none; position: relative;">
                     <canvas id="reportChart"></canvas>
-
                     <button id="downloadPdfBtn" class="custom-btn btn-pdf"
                         style="display: none; position: absolute; bottom: -20px; right: 5px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                         <i class="bi bi-file-earmark-pdf"></i> Grafik PDF İndir
@@ -106,79 +102,29 @@
     </div>
 
     <style>
-        html {
-            zoom: 80%; 
-            height: 100%;
+        html { zoom: 80%; height: 100%; }
+        body { margin: 0; padding: 0; min-height: 100%; background-color: rgba(0,0,0,0.08); }
+        .custom-btn {
+            height: 44px; min-width: 140px; padding: 0 1.25rem; font-size: 1rem; font-weight: 700;
+            border-radius: 10px; display: inline-flex; justify-content: center; align-items: center;
+            gap: 0.5rem; margin: 0.5rem; box-shadow: 0 3px 6px rgba(0,0,0,0.1); cursor: pointer;
+            border: none; text-decoration: none; user-select: none; transition: background-color 0.3s ease;
+            color: white;
         }
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100%;
-            background-color: rgba(0,0,0,0.08); 
-        }
-        
-
-       .custom-btn {
-    height: 44px;
-    min-width: 140px;
-    padding: 0 1.25rem;
-    font-size: 1rem;
-    font-weight: 700;
-    border-radius: 10px;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem; /* Butonlar arası dikey-yatay boşluk */
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-    cursor: pointer;
-    border: none;
-    text-decoration: none;
-    user-select: none;
-    transition: background-color 0.3s ease;
-    color: white;
-}
-
-        .custom-btn i {
-            font-size: 1.2rem;
-            line-height: 1;
-        }
-        .btn-excel {
-            background-color: #28a745;
-        }
-        .btn-excel:hover {
-            background-color: #218838;
-        }
-        .btn-pdf {
-            background-color: #dc3545;
-            box-shadow: 0 3px 6px rgba(220, 53, 69, 0.5);
-        }
-        .btn-pdf:hover {
-            background-color: #b02a37;
-        }
-        .btn-print {
-            background-color: #003366;
-        }
-        .btn-print:hover {
-            background-color: #002244;
-        }
-        .btn-chart {
-            background-color: #ffc107;
-            color: #343a40;
-        }
-        .btn-chart:hover {
-            background-color: #e0a800;
-            color: #212529;
-        }
-
+        .custom-btn i { font-size: 1.2rem; line-height: 1; }
+        .btn-excel { background-color: #28a745; }
+        .btn-excel:hover { background-color: #218838; }
+        .btn-pdf { background-color: #dc3545; box-shadow: 0 3px 6px rgba(220, 53, 69, 0.5); }
+        .btn-pdf:hover { background-color: #b02a37; }
+        .btn-print { background-color: #003366; }
+        .btn-print:hover { background-color: #002244; }
+        .btn-chart { background-color: #ffc107; color: #343a40; }
+        .btn-chart:hover { background-color: #e0a800; color: #212529; }
         @media print {
             .print-hidden { display: none !important; }
             body { background-color: #fff !important; }
             .container { box-shadow: none !important; }
-            thead[style] {
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
+            thead[style] { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
         }
     </style>
 
@@ -249,8 +195,13 @@
                 year: 'numeric'
             });
 
+            const reportTitle = document.querySelector('h2').innerText.split('\n')[0].trim();
+            const reportRange = document.querySelector('h2 span')?.innerText.trim() || '';
+            const finalTitle = reportRange ? `Ziyaretçi Raporu ${reportRange}` : `${reportTitle} Ziyaretçi Raporu`;
+
+
             printHTML += `<div style="text-align:right; font-size:10px; margin-bottom:5px;">${dateStr}</div>`;
-            printHTML += `<h2 class="page-title">{{ $reportTitle }} Ziyaretçi Raporu</h2>`;
+            printHTML += `<h2 class="page-title">${finalTitle}</h2>`;
             printHTML += `<div style="margin-top:20px;">${table.outerHTML}</div>`;
             printHTML += '</body></html>';
 
@@ -262,8 +213,8 @@
                 window.location.reload();
             }, 500);
         });
-
-        // GRAFİK İÇİN 
+        
+        // GRAFİK İÇİN
         document.getElementById('showChartBtn').addEventListener('click', () => {
             const chartContainer = document.getElementById('reportChartContainer');
             const downloadPdfBtn = document.getElementById('downloadPdfBtn');
@@ -280,24 +231,24 @@
         function drawChart() {
             const ctx = document.getElementById('reportChart').getContext('2d');
             let chartData = @json($chartData ?? []);
-            let reportType = "{{ $dateFilter ?? 'all' }}";
+            let dateFilter = "{{ $dateFilter ?? '' }}";
 
             let labels = [];
             let counts = [];
             let chartTitle = '';
             let xAxisLabel = '';
 
-            if (reportType === 'daily') {
+            if (dateFilter === 'daily') {
                 chartTitle = 'Günlük Ziyaretçi Sayıları (Saatlere Göre)';
                 xAxisLabel = 'Saat';
                 labels = chartData.map(item => `${item.label}:00`);
                 counts = chartData.map(item => item.count);
-            } else if (reportType === 'monthly') {
+            } else if (dateFilter === 'monthly') {
                 chartTitle = 'Aylık Ziyaretçi Sayıları (Günlere Göre)';
                 xAxisLabel = 'Gün';
                 labels = chartData.map(item => item.label);
                 counts = chartData.map(item => item.count);
-            } else if (reportType === 'yearly') {
+            } else if (dateFilter === 'yearly') {
                 chartTitle = 'Yıllık Ziyaretçi Sayıları (Aylara Göre)';
                 xAxisLabel = 'Ay';
                 labels = chartData.map(item => {

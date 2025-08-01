@@ -6,18 +6,18 @@ use App\Models\Visit;
 use Illuminate\Contracts\Support\Responsable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
 {
-    protected $fields; // Excel'e aktarılacak seçili alanlar
+    protected $fields;
     protected $dateFilter;
     protected $sortOrder;
-    protected $request; 
-    protected $unmasked; 
+    protected $request;
+    protected $unmasked;
 
     public function __construct(array $fields, $dateFilter = '', $sortOrder = 'desc', $unmasked = false)
     {
@@ -32,19 +32,36 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
     {
         $visitsQuery = Visit::with('visitor', 'approver');
 
-        // TARİH FİLTRELEME
-        if ($this->dateFilter === 'daily') {
-            $visitsQuery->whereDate('entry_time', Carbon::today());
-        } elseif ($this->dateFilter === 'monthly') {
-            $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
-                        ->whereYear('entry_time', Carbon::now()->year);
-        } elseif ($this->dateFilter === 'yearly') {
-            $visitsQuery->whereYear('entry_time', Carbon::now()->year);
+        // --- TARİH FİLTRELEME MANTIĞI EKLENDİ ---
+        $startDate = $this->request->input('start_date');
+        $endDate = $this->request->input('end_date');
+
+        if ($startDate) {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
+            $visitsQuery->whereBetween('entry_time', [$start, $end]);
+        } else {
+            switch ($this->dateFilter) {
+                case 'daily':
+                    $visitsQuery->whereDate('entry_time', Carbon::today());
+                    break;
+                case 'monthly':
+                    $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
+                                ->whereYear('entry_time', Carbon::now()->year);
+                    break;
+                case 'yearly':
+                    $visitsQuery->whereYear('entry_time', Carbon::now()->year);
+                    break;
+                // 'all' durumunda filtre uygulanmaz
+                case 'all':
+                default:
+                    break;
+            }
         }
 
-        // ARAMA FİLTRELEME
+        // --- ARAMA FİLTRELEME ---
         $allPossibleFieldsForSearch = [
-            'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
+            'entry_time', 'name', 'tc_no', 'phone', 'plate',
             'purpose', 'person_to_visit', 'approved_by'
         ];
         
@@ -65,7 +82,7 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
             }
         }
 
-        // SIRALAMA
+        // --- SIRALAMA ---
         $visitsQuery->orderBy('entry_time', $this->sortOrder);
 
         return $visitsQuery->get();
@@ -74,16 +91,11 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
     public function map($visit): array
     {
         $row = [];
-        $row[] = $visit->id ?? '-';
-        $row[] = $this->unmasked ? ($visit->approver->username ?? '-') : ($visit->approver->username ?? '-');
-        
         foreach ($this->fields as $field) {
-            // ID ve approved_by zaten eklendiği için tekrarlamıyoruz
-            if (in_array($field, ['id', 'approved_by'])) {
-                continue;
-            }
-
             switch ($field) {
+                case 'id':
+                    $row[] = $visit->id ?? '-';
+                    break;
                 case 'entry_time':
                     $row[] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-';
                     break;
@@ -105,6 +117,9 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                 case 'person_to_visit':
                     $row[] = $this->unmasked ? ($visit->person_to_visit ?? '-') : $this->maskName($visit->person_to_visit ?? '');
                     break;
+                case 'approved_by':
+                    $row[] = $this->unmasked ? ($visit->approver->username ?? '-') : ($visit->approver->username ?? '-');
+                    break;
                 default:
                     $row[] = $visit->$field ?? '-';
                     break;
@@ -115,13 +130,10 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
 
     public function headings(): array
     {
-        $headings = ['ID', 'Ekleyen'];
+        $headings = [];
         foreach ($this->fields as $field) {
-            if (in_array($field, ['id', 'approved_by'])) {
-                continue;
-            }
-
-            $headings[] = match($field) {
+            $headings[] = match ($field) {
+                'id' => 'ID',
                 'entry_time' => 'Giriş Tarihi',
                 'name' => 'Ad-Soyad',
                 'tc_no' => 'T.C. Kimlik No',
@@ -129,12 +141,14 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                 'plate' => 'Plaka',
                 'purpose' => 'Ziyaret Sebebi',
                 'person_to_visit' => 'Ziyaret Edilen Kişi',
+                'approved_by' => 'Ekleyen',
                 default => ucfirst(str_replace('_', ' ', $field)),
             };
         }
         return $headings;
     }
     
+    // Maskeleme metotları
     private function fullMask($text)
     {
         return str_repeat('*', mb_strlen($text));
