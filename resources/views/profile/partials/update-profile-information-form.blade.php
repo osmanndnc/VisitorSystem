@@ -23,6 +23,12 @@
             <x-input-error class="mt-2" :messages="$errors->get('username')" />
         </div>
 
+         <div>
+            <x-input-label for="user_phone" :value="__('Telefon Numarası')" />
+            <x-text-input id="user_phone" name="user_phone" type="text" class="mt-1 block w-full" :value="old('user_phone', $user->user_phone)" required autocomplete="tel" />
+            <x-input-error class="mt-2" :messages="$errors->get('user_phone')" />
+        </div>
+
         <div>
             <x-input-label for="email" :value="__('E-posta')" />
             <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
@@ -66,7 +72,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600 dark:text-gray-400"
+                    class="text-sm text-green-600 dark:text-green-400"
                 >{{ __('Kaydedildi.') }}</p>
             @endif
         </div>

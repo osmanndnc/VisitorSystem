@@ -12,7 +12,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         $allFields = [
-            'id',
+            'id', // ID sütunu ana sayfada görüntülenecek
             'entry_time',
             'name',
             'tc_no',
