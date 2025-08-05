@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class SecurityUserController extends Controller
 {
@@ -51,6 +52,14 @@ class SecurityUserController extends Controller
 
         $user->save();
 
+        Log::info('Güvenlik kullanıcısı güncellendi', [
+            'target user' => $user->username,
+            'new role' => $user->role,
+            'activity' => $user->is_active ? 'Aktif' : 'Pasif',
+            'person of transaction' => auth()->user()->username,
+            'time' => now(),
+        ]);
+
         return redirect()->route('security.users.index')->with('success', 'Kullanıcı güncellendi');
     }
 
@@ -59,6 +68,14 @@ class SecurityUserController extends Controller
         $user = User::findOrFail($id); // ya da SecurityUser
         $user->is_active = !$user->is_active;
         $user->save();
+
+        // Güvenlik aktif pasif kontrol logu
+        Log::info('Güvenlik kullanıcısının durumu değiştirildi', [
+            'process' => $user->is_active ? 'Aktif edildi' : 'Pasif edildi',
+            'target user' => $user->username,
+            'person of transaction' => auth()->user()->username,
+            'time' => now(),
+        ]);
 
         return back()->with('success', 'Durum değiştirildi.');
     }
@@ -85,9 +102,14 @@ class SecurityUserController extends Controller
             'is_active' => $request->is_active,
         ]);
 
+        Log::info('Yeni güvenlik kullanıcısı oluşturuldu', [
+            'created user' => $request->username,
+            'role' => $request->role,
+            'created by' => auth()->user()->username,
+            'time' => now(),
+        ]);
+
         return back()->with('success', 'Kullanıcı başarıyla oluşturuldu.');
     }
-
-    
 
 }

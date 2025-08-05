@@ -27,7 +27,7 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
         $this->request = request();
         $this->unmasked = $unmasked;
     }
-
+ 
     public function collection()
     {
         $visitsQuery = Visit::with('visitor', 'approver');

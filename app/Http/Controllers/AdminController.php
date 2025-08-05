@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Visit;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -81,6 +82,15 @@ class AdminController extends Controller
         }
 
         $visits = $visitsQuery->get();
+
+        Log::info('Admin ziyaretçi listeleme yaptı', [
+            'user_id' => auth()->id(),
+            'requested_by' => auth()->user()->username ?? 'Anonim',
+            'filters' => $request->except('_token'),
+            'filter_type' => $startDate ? 'custom_range' : ($request->input('date_filter') ?? 'daily'),
+            'record_count' => $visits->count(),
+            'timestamp' => now()->toDateTimeString(),
+        ]);
 
         return view('admin.index', [
             'visits' => $visits,
@@ -196,6 +206,17 @@ class AdminController extends Controller
         }
 
         $fullReportTitle = $reportTitle . ' Ziyaretçi Listesi';
+
+        Log::info('Admin PDF (unmasked) dışa aktarımı yaptı', [
+            'user_id' => auth()->id(),
+            'requested_by' => auth()->user()->username ?? 'Anonim',
+            'filters' => $request->except('_token'),
+            'field_count' => count($selectedFields),
+            'record_count' => $visits->count(),
+            'export_type' => 'pdf_unmasked',
+            'timestamp' => now()->toDateTimeString(),
+        ]);
+        
         $pdf = Pdf::loadView('pdf.unmasked_report', compact('pdfData', 'pdfHeadings', 'fullReportTitle'));
         return $pdf->download('ziyaretci_listesi.pdf');
     }

@@ -279,59 +279,7 @@
             @endif
         </div>
 
-        <!-- Tablo -->
-        <table class="table-auto w-full bg-white shadow rounded">
-            <thead>
-                <tr class="bg-gray-100 text-left">
-                    <th class="px-4 py-2">#</th>
-                    <th class="px-4 py-2">Ad Soyad</th>
-                    <th class="px-4 py-2">Telefon</th>
-                    <th class="px-4 py-2">Kullanıcı Adı</th>
-                    <th class="px-4 py-2">Email</th>
-                    <th class="px-4 py-2">Rol</th>
-                    <th class="px-4 py-2">Oluşturulma</th>
-                    <th class="px-4 py-2">Güncellenme</th>
-                    <th class="px-4 py-2">Durum</th>
-                    <th class="px-4 py-2">İşlem</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($users as $index => $user)
-                    <tr class="border-t {{ !$user->is_active ? 'passive-row' : '' }}">
-                        <td class="px-4 py-2">{{ $index + 1 }}</td>
-                        <td class="px-4 py-2">{{ $user->ad_soyad }}</td>
-                        <td class="px-4 py-2">{{ $user->user_phone }}</td>
-                        <td class="px-4 py-2">{{ $user->username }}</td>
-                        <td class="px-4 py-2">{{ $user->email }}</td>
-                        <td class="px-4 py-2">{{ ucfirst($user->role) }}</td>
-                        <td class="px-4 py-2">{{ $user->created_at->format('Y-m-d H:i') }}</td>
-                        <td class="px-4 py-2">{{ $user->updated_at->format('Y-m-d H:i') }}</td>
-                        <td class="px-4 py-2">
-                            @if(auth()->user()->role === 'super_admin')
-                                <form class="toggle-form" action="{{ route('admin.users.toggle', $user->id) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <button type="button" class="toggle-switch {{ $user->is_active ? 'active' : '' }}">
-                                        <div class="circle"></div>
-                                        <span class="label">{{ $user->is_active ? 'Aktif' : 'Pasif' }}</span>
-                                    </button>
-                                </form>
-                            @else
-                                <span class="text-sm px-3 py-1 rounded-full font-medium {{ $user->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                    {{ $user->is_active ? 'Aktif' : 'Pasif' }}
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-2">
-                            @if(auth()->user()->role === 'super_admin')
-                                <a href="{{ route('admin.users.index', ['edit' => $user->id]) }}" class="text-blue-600">Düzenle</a>
-                            @else
-                                <span class="text-gray-400 cursor-not-allowed">Düzenle</span>
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+
 
         <!-- Form -->
         @if(auth()->user()->hasAnyRole(['super_admin']))
@@ -397,5 +345,59 @@
                 </form>
             </div>
         @endif
+
+        <!-- Tablo -->
+        <table class="table-auto w-full bg-white shadow rounded">
+            <thead>
+                <tr class="bg-gray-100 text-left">
+                    <th class="px-4 py-2">#</th>
+                    <th class="px-4 py-2">Ad Soyad</th>
+                    <th class="px-4 py-2">Telefon</th>
+                    <th class="px-4 py-2">Kullanıcı Adı</th>
+                    <th class="px-4 py-2">Email</th>
+                    <th class="px-4 py-2">Rol</th>
+                    <th class="px-4 py-2">Oluşturulma</th>
+                    <th class="px-4 py-2">Güncellenme</th>
+                    <th class="px-4 py-2">Durum</th>
+                    <th class="px-4 py-2">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($users as $index => $user)
+                    <tr class="border-t {{ !$user->is_active ? 'passive-row' : '' }}">
+                        <td class="px-4 py-2">{{ $index + 1 }}</td>
+                        <td class="px-4 py-2">{{ $user->ad_soyad }}</td>
+                        <td class="px-4 py-2">{{ $user->user_phone }}</td>
+                        <td class="px-4 py-2">{{ $user->username }}</td>
+                        <td class="px-4 py-2">{{ $user->email }}</td>
+                        <td class="px-4 py-2">{{ ucfirst($user->role) }}</td>
+                        <td class="px-4 py-2">{{ $user->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-2">{{ $user->updated_at->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-2">
+                            @if(auth()->user()->role === 'super_admin')
+                                <form class="toggle-form" action="{{ route('admin.users.toggle', $user->id) }}" method="POST">
+                                    @csrf @method('PATCH')
+                                    <button type="button" class="toggle-switch {{ $user->is_active ? 'active' : '' }}">
+                                        <div class="circle"></div>
+                                        <span class="label">{{ $user->is_active ? 'Aktif' : 'Pasif' }}</span>
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-sm px-3 py-1 rounded-full font-medium {{ $user->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $user->is_active ? 'Aktif' : 'Pasif' }}
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-2">
+                            @if(auth()->user()->role === 'super_admin')
+                                <a href="{{ route('admin.users.index', ['edit' => $user->id]) }}" class="text-blue-600">Düzenle</a>
+                            @else
+                                <span class="text-gray-400 cursor-not-allowed">Düzenle</span>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </x-app-layout>

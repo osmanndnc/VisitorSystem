@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AdminUserController extends Controller
 {
@@ -22,27 +23,7 @@ class AdminUserController extends Controller
 
         return view('admin.users.index', compact('users', 'currentUser', 'editUser'));
     }
-
-    // // Kullanıcıları listele
-    // public function index()
-    // {
-    //     $currentUser = Auth::user();
-
-    //     // Tüm admin kullanıcılarını getir
-    //     $users = User::where('role', 'admin')->get();
-
-    //     return view('admin.users.index', compact('users', 'currentUser'));
-    // }
-
-    // // Kullanıcıyı düzenleme sayfası
-    // public function edit($id)
-    // {
-    //     $editUser = User::findOrFail($id);
-    //     $users = User::where('role', 'Admin')->get();
-
-    //     return view('admin.users.index', compact('users', 'editUser'));
-    // }
-
+    
 
     // Kullanıcıyı güncelle
     public function update(Request $request, User $user)
@@ -56,7 +37,7 @@ class AdminUserController extends Controller
             'user_phone' => 'nullable|string|max:20',
             'username' => 'required|string|max:191',
             'email' => 'required|email|max:191',
-            'role' => 'required|in:admin,super_admin',
+            'role' => 'required|in:admin,security',
             'is_active' => 'required|boolean',
             'password' => 'nullable|string|min:6',
         ]);
@@ -75,6 +56,14 @@ class AdminUserController extends Controller
 
         $user->save();
 
+        Log::info('Admin kullanıcısı güncellendi', [
+            'target user' => $user->username,
+            'new role' => $user->role,
+            'activity' => $user->is_active ? 'Aktif' : 'Pasif',
+            'person of transaction' => auth()->user()->username,
+            'time' => now(),
+        ]);
+
         return redirect()->route('admin.users.index')->with('success', 'Kullanıcı güncellendi.');
     }
 
@@ -92,6 +81,14 @@ class AdminUserController extends Controller
 
         $user->is_active = !$user->is_active;
         $user->save();
+
+        // Güvenlik aktif pasif kontrol logu
+        Log::info('Admin kullanıcısının durumu değiştirildi', [
+            'process' => $user->is_active ? 'Aktif edildi' : 'Pasif edildi',
+            'target user' => $user->username,
+            'person of transaction' => auth()->user()->username,
+            'time' => now(),
+        ]);
 
         return back()->with('success', 'Kullanıcının durumu güncellendi.');
     }
@@ -116,6 +113,13 @@ class AdminUserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'is_active' => $request->is_active,
+        ]);
+
+        Log::info('Yeni admin kullanıcısı oluşturuldu', [
+            'created user' => $request->username,
+            'role' => $request->role,
+            'created by' => auth()->user()->username,
+            'time' => now(),
         ]);
 
         return back()->with('success', 'Kullanıcı başarıyla oluşturuldu.');
