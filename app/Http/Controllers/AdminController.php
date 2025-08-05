@@ -150,10 +150,12 @@ class AdminController extends Controller
         foreach ($allFields as $field) {
             $searchValue = $request->input($field . '_value');
             if ($searchValue) {
-                if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
+                if (in_array($field, ['name', 'tc_no'])) {
                     $visitsQuery->whereHas('visitor', function ($query) use ($field, $searchValue) {
                         $query->where($field, 'like', "%{$searchValue}%");
                     });
+                } elseif (in_array($field, ['phone', 'plate', 'purpose', 'person_to_visit'])) {
+                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
                         $query->where('ad_soyad', 'like', "%{$searchValue}%");
@@ -179,8 +181,8 @@ class AdminController extends Controller
                     case 'entry_time': $row[$field] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-'; break;
                     case 'name': $row[$field] = $visit->visitor->name ?? '-'; break;
                     case 'tc_no': $row[$field] = $visit->visitor->tc_no ?? '-'; break;
-                    case 'phone': $row[$field] = $visit->visitor->phone ?? '-'; break;
-                    case 'plate': $row[$field] = $visit->visitor->plate ?? '-'; break;
+                    case 'phone': $row[$field] = $visit->phone ?? '-'; break;
+                    case 'plate': $row[$field] = $visit->plate ?? '-'; break;
                     case 'purpose': $row[$field] = $visit->purpose ?? '-'; break;
                     case 'person_to_visit': $row[$field] = $visit->person_to_visit ?? '-'; break;
                     case 'approved_by': $row[$field] = $visit->approver->ad_soyad ?? $visit->approved_by ?? '-'; break;

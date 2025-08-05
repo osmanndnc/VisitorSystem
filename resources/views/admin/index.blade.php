@@ -70,15 +70,14 @@
             cursor: pointer;
             transition: all 0.2s ease;
             user-select: none;
-            color: #333; /* Yazı rengi koyu */
-            background-color: transparent; /* Arka plan şeffaf */
+            color: #333; 
+            background-color: transparent;
         }
         .dropdown-menu li:hover { 
-            background: #003366 !important; /* Hover'da lacivert */
-            color: #fff !important; /* Hover'da yazı beyaz */
+            background: #003366 !important;
+            color: #fff !important;
         }
         
-        /* Arama kutusu tasarımı */
         .search-box {
             padding: 1rem;
             border-bottom: 1px solid #f1f5f9;
@@ -113,7 +112,6 @@
             transform: translateY(-1px);
         }
         
-        /* Arama sonuçları için vurgulama animasyonu */
         .highlight {
             background: linear-gradient(45deg, #ff6b6b, #ee5a52, #ff6b6b);
             background-size: 200% 200%;
@@ -140,7 +138,6 @@
             100% { background: linear-gradient(45deg, #fff5f5, #ffe8e8, #fff5f5); }
         }
         
-        /* Filtre seçenekleri için güncellenmiş stiller */
         .filter-option {
             display: flex;
             flex-direction: row;
@@ -223,10 +220,8 @@
         #reportMenu.dropdown-menu {
             font-size: 1rem;
             padding: 1rem;
-        }        
-
-                
-        /* Temizle butonu için özel stiller */
+        }         
+        
         .clear-btn {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
@@ -307,7 +302,7 @@
             0% { stroke-dashoffset: 100; }
             100% { stroke-dashoffset: 0; }
         }
-     
+      
         .report-generate-button-container,
         .export-buttons-bottom { 
             display: flex;
@@ -350,22 +345,11 @@
         .export-button-bottom.pdf:hover {
             background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
         }
-        .export-button-bottom svg {
-            width: 20px;
-            height: 20px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .export-button-bottom.excel svg,
-        .export-button-bottom.pdf svg {
-            fill: currentColor;
-            stroke: none;
+        .export-button-bottom i {
+            font-size: 20px;
         }
         .date-filter-inputs {
-             display: none;
+            display: none;
         }
         .date-filter-inputs input[type="date"] {
             padding: 0.5rem;
@@ -376,6 +360,8 @@
             box-sizing: border-box;
         }
     </style>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <div class="py-6">
         <div class="center-box">
@@ -388,7 +374,6 @@
                 <div class="relative">
                     <button id="filterBtn" type="button" class="modern-btn">Filtreleme Yap</button>
                     <div id="filterMenu" class="dropdown-menu filter-dropdown">
-                        <!-- Arama Kutusu -->
                         <div class="search-box">
                             <div class="search-input-wrapper">
                                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -399,7 +384,6 @@
                             </div>
                         </div>
 
-                        <!-- Mevcut Filtreler -->
                         <ul id="filterOptions">
                             <li class="filter-option" data-field="entry_time">Giriş Tarihi
                                 <input type="text" id="entry_time_value" placeholder="Giriş Tarihi ara" value="{{ request('entry_time_value') }}">
@@ -431,11 +415,7 @@
                                 Filtreyi Uygula
                             </button>
                             <button id="clearFilters" class="clear-btn">
-                                <svg class="clear-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                                </svg>
-                                Temizle
+                                <i class="bi bi-x-circle-fill clear-icon"></i> Temizle
                             </button>
                         </div>
                     </div>
@@ -518,22 +498,13 @@
             {{-- EXCEL VE YAZDIR BUTONLARI --}}
             <div class="export-buttons-bottom">
                 <button id="exportUnmaskedExcelBtn" type="button" class="export-button-bottom excel">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-excel-fill" viewBox="0 0 16 16">
-                        <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM5.884 6.68L8 9.219l2.116-2.54a.145.145 0 0 1 .328 0l.542.65-.66 1.004-.961 1.458-.178.2-.66.994-1.116 1.688a.145.145 0 0 1-.328 0L4 9.219l-2.116 2.54a.145.145 0 0 1-.328 0l-.542-.65.66-1.004.961-1.458.178-.2.66-.994 1.116-1.688a.145.145 0 0 1 .328 0z"/>
-                    </svg>
-                    Excel
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel
                 </button>
                 <button id="printUnmaskedBtn" type="button" class="export-button-bottom">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
-                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm0 12h6a1 1 0 0 1 1 1v1H4v-1a1 1 0 0 1 1-1zM3 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H3V3zm3 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
-                    </svg>
-                    Yazdır
+                    <i class="bi bi-printer-fill"></i> Yazdır
                 </button>
                 <a id="exportUnmaskedPdfBtn" href="#" class="export-button-bottom pdf">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
-                        <path d="M5.52 0.359L0 12.311V16h16V12.311L10.48 0.359zM8 8.163v1.895l-0.347 0.174L7.52 11h-0.082l-0.134-0.413l-0.347-0.174V8.163h-1.6V7.073h1.6V5.178h1.127V7.073H9.721v1.09h-1.6zM11 6.5h2v6h-2V6.5z"/>
-                    </svg>
-                    PDF
+                    <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                 </a>
             </div>
             {{-- MASKELİ RAPOR OLUŞTUR BUTONU --}}
@@ -627,7 +598,7 @@
             window.location.href = window.location.pathname + '?date_filter=daily';
         });
 
-        // Global arama fonksiyonu - BÜYÜK/KÜÇÜK HARF DUYARSIZ
+        // Global arama fonksiyonu
         document.getElementById('globalSearch').addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase().trim();
             
@@ -665,7 +636,7 @@
             }
         });
 
-        // Filtreyi temizle butonu
+        // Filtreyi temizle
         document.getElementById('clearFilters').addEventListener('click', () => {
             document.querySelectorAll('.filter-option input').forEach(input => {
                 input.value = '';
@@ -732,7 +703,6 @@
             }
         });
 
-        // Filtre seçeneklerine tıklama
         document.querySelectorAll('.filter-option').forEach(option => {
             option.addEventListener('click', (e) => {
                 if (e.target.tagName.toLowerCase() === 'input') {
@@ -750,7 +720,6 @@
             });
         });
 
-        // Filtreyi uygula butonuna tıklama
         document.getElementById('applyFilters').addEventListener('click', () => {
             const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
             if (selectedOptions.length === 0) {
@@ -919,7 +888,7 @@
                 printContentHtml += '<div style="display: flex; justify-content: center; width: 100%; margin-top: 20px;">';
                 printContentHtml += table.outerHTML; 
                 printContentHtml += '</div>';
-                printContentHtml += '</div>';        
+                printContentHtml += '</div>';         
                 printContentHtml += '</body></html>';
 
                 const iframe = document.createElement('iframe');
@@ -950,7 +919,7 @@
                     if (iframe.contentWindow && iframe.contentWindow.document.readyState !== 'complete') {
                         if (iframe.contentWindow) {
                            iframe.contentWindow.focus();
-                                                      iframe.contentWindow.print();
+                           iframe.contentWindow.print();
                        }
                         setTimeout(() => {
                             if (document.body.contains(iframe)) {
@@ -958,7 +927,7 @@
                             }
                         }, 1000);
                     }
-                }, 2000);
+                }, 2000); 
 
             } else {
                 alert('Yazdırılacak tablo bulunamadı.');
