@@ -33,7 +33,6 @@ class AdminReportController extends Controller
         Carbon::setLocale('tr');
 
         $allFields = [
-            // 'id' sütunu raporlarda hiç kullanılmayacağı için buradan tamamen kaldırıldı.
             'entry_time',
             'name',
             'tc_no',
@@ -101,10 +100,14 @@ class AdminReportController extends Controller
         foreach ($allFields as $field) {
             $value = $request->input($field . '_value');
             if ($value) {
-                if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
+                if (in_array($field, ['name', 'tc_no'])) {
+                    // visitor ilişkisi üzerinden filtrele
                     $visitsQuery->whereHas('visitor', function ($query) use ($field, $value) {
                         $query->where($field, 'like', "%{$value}%");
                     });
+                } elseif (in_array($field, ['phone', 'plate'])) {
+                    // visit tablosundan direkt filtrele
+                    $visitsQuery->where($field, 'like', "%{$value}%");
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($value) {
                         $query->where('username', 'like', "%{$value}%");
@@ -240,10 +243,12 @@ class AdminReportController extends Controller
         foreach ($allFields as $field) {
             $searchValue = $request->input($field . '_value');
             if ($searchValue) {
-                if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
+                if (in_array($field, ['name', 'tc_no'])) {
                     $visitsQuery->whereHas('visitor', function ($query) use ($field, $searchValue) {
                         $query->where($field, 'like', "%{$searchValue}%");
                     });
+                } elseif (in_array($field, ['phone', 'plate'])) {
+                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
                         $query->where('username', 'like', "%{$searchValue}%");

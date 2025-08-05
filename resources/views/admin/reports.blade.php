@@ -89,7 +89,9 @@
                     </button>
                 </div>
 
-                <div id="reportChartContainer" class="mt-5" style="width: 90%; display: none; position: relative;">
+                <div id="reportChartContainer" class="mt-5" style="width: 90%; display: none; position: relative;"
+                     data-chart='@json($chartData ?? [])' 
+                     data-filter="{{ $dateFilter ?? '' }}">
                     <canvas id="reportChart"></canvas>
                     <button id="downloadPdfBtn" class="custom-btn btn-pdf"
                         style="display: none; position: absolute; bottom: -20px; right: 5px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
@@ -199,7 +201,6 @@
             const reportRange = document.querySelector('h2 span')?.innerText.trim() || '';
             const finalTitle = reportRange ? `Ziyaretçi Raporu ${reportRange}` : `${reportTitle} Ziyaretçi Raporu`;
 
-
             printHTML += `<div style="text-align:right; font-size:10px; margin-bottom:5px;">${dateStr}</div>`;
             printHTML += `<h2 class="page-title">${finalTitle}</h2>`;
             printHTML += `<div style="margin-top:20px;">${table.outerHTML}</div>`;
@@ -222,6 +223,15 @@
                 chartContainer.style.display = 'block';
                 downloadPdfBtn.style.display = 'flex';
                 drawChart();
+
+                    setTimeout(() => {
+            chartContainer.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'end' 
+            });
+        }, 500);
+
+        
             } else {
                 chartContainer.style.display = 'none';
                 downloadPdfBtn.style.display = 'none';
@@ -230,8 +240,11 @@
 
         function drawChart() {
             const ctx = document.getElementById('reportChart').getContext('2d');
-            let chartData = @json($chartData ?? []);
-            let dateFilter = "{{ $dateFilter ?? '' }}";
+            
+            // Data attribute'dan veri al
+            const chartContainer = document.getElementById('reportChartContainer');
+            let chartData = JSON.parse(chartContainer.dataset.chart || '[]');
+            let dateFilter = chartContainer.dataset.filter || '';
 
             let labels = [];
             let counts = [];

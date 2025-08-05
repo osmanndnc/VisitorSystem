@@ -14,7 +14,7 @@
             font-family: 'DejaVu Sans';
             font-style: normal;
             font-weight: normal;
-            src: url({{ storage_path('fonts/DejaVuSans.ttf') }}) format('truetype');
+            src: url("{{ asset('fonts/DejaVuSans.ttf') }}") format('truetype');
         }
         body, table, th, td {
             font-family: 'DejaVu Sans', sans-serif;

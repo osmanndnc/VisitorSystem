@@ -32,7 +32,7 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
     {
         $visitsQuery = Visit::with('visitor', 'approver');
 
-        // --- TARİH FİLTRELEME MANTIĞI EKLENDİ ---
+        // Tarih filtreleme
         $startDate = $this->request->input('start_date');
         $endDate = $this->request->input('end_date');
 
@@ -52,23 +52,22 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                 case 'yearly':
                     $visitsQuery->whereYear('entry_time', Carbon::now()->year);
                     break;
-                // 'all' durumunda filtre uygulanmaz
                 case 'all':
                 default:
                     break;
             }
         }
 
-        // --- ARAMA FİLTRELEME ---
+        // Arama filtreleri
         $allPossibleFieldsForSearch = [
             'entry_time', 'name', 'tc_no', 'phone', 'plate',
             'purpose', 'person_to_visit', 'approved_by'
         ];
-        
+
         foreach ($allPossibleFieldsForSearch as $field) {
             $searchValue = $this->request->input($field . '_value');
             if ($searchValue) {
-                if (in_array($field, ['name', 'tc_no', 'phone', 'plate'])) {
+                if (in_array($field, ['name', 'tc_no'])) {
                     $visitsQuery->whereHas('visitor', function ($query) use ($field, $searchValue) {
                         $query->where($field, 'like', "%{$searchValue}%");
                     });
@@ -76,13 +75,15 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                     $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
                         $query->where('username', 'like', "%{$searchValue}%");
                     });
+                } elseif (in_array($field, ['phone', 'plate'])) {
+                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
                 } else {
                     $visitsQuery->where($field, 'like', "%{$searchValue}%");
                 }
             }
         }
 
-        // --- SIRALAMA ---
+        // Sıralama
         $visitsQuery->orderBy('entry_time', $this->sortOrder);
 
         return $visitsQuery->get();
@@ -106,10 +107,10 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                     $row[] = $this->unmasked ? ($visit->visitor->tc_no ?? '-') : $this->partialMask($visit->visitor->tc_no ?? '', 1, 2);
                     break;
                 case 'phone':
-                    $row[] = $this->unmasked ? ($visit->visitor->phone ?? '-') : $this->partialMask($visit->visitor->phone ?? '', 0, 2);
+                    $row[] = $this->unmasked ? ($visit->phone ?? '-') : $this->partialMask($visit->phone ?? '', 0, 2);
                     break;
                 case 'plate':
-                    $row[] = $this->unmasked ? ($visit->visitor->plate ?? '-') : $this->maskPlate($visit->visitor->plate ?? '');
+                    $row[] = $this->unmasked ? ($visit->plate ?? '-') : $this->maskPlate($visit->plate ?? '');
                     break;
                 case 'purpose':
                     $row[] = $visit->purpose ?? '-';
@@ -147,8 +148,8 @@ class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldA
         }
         return $headings;
     }
-    
-    // Maskeleme metotları
+
+    // Maskeleme yardımcı metotları
     private function fullMask($text)
     {
         return str_repeat('*', mb_strlen($text));

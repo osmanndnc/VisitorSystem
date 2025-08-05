@@ -75,10 +75,12 @@ class MaskHelper
                         $row['tc_no'] = $visitor ? self::partialMask($visitor->tc_no, 1, 2) : '-';
                         break;
                     case 'phone':
-                        $row['phone'] = $visitor ? self::partialMask($visitor->phone, 0, 2) : '-';
+                        // Burada visitor değil, direkt visit üzerinden alıyoruz
+                        $row['phone'] = $visit->phone ? self::partialMask($visit->phone, 0, 2) : '-';
                         break;
                     case 'plate':
-                        $row['plate'] = $visitor ? self::maskPlate($visitor->plate) : '-';
+                        // Burada visitor değil, direkt visit üzerinden alıyoruz
+                        $row['plate'] = $visit->plate ? self::maskPlate($visit->plate) : '-';
                         break;
                     case 'purpose':
                         $row['purpose'] = $visit->purpose ?? '-';

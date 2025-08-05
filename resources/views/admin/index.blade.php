@@ -48,14 +48,17 @@
             display: none;
             position: absolute;
             top: 3rem;
-            left: 0;
-            background: #ffffff;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            width: 250px;
+            border-radius: 1rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.05);
+            width: 320px;
             z-index: 50;
-            padding: 1rem;
+            padding: 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .dropdown-menu.active { display: block; }
         .dropdown-menu ul {
@@ -69,45 +72,197 @@
             transition: background 0.2s ease;
             user-select: none;
         }
-        .dropdown-menu li:hover {
-            background: #f3f4f6;
+        .dropdown-menu li:hover { background: #020c32ff; }
+        
+        /* Arama kutusu tasarımı */
+        .search-box {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 1rem 1rem 0 0;
+        }
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: #64748b;
+            z-index: 1;
+        }
+        #globalSearch {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        #globalSearch:focus {
+            outline: none;
+            border-color: #003366;
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        /* Arama sonuçları için vurgulama animasyonu */
+        .highlight {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52, #ff6b6b);
+            background-size: 200% 200%;
+            animation: highlightPulse 1.5s ease-in-out infinite;
+            color: white;
+            font-weight: bold;
+            padding: 2px 4px;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+        }
+        @keyframes highlightPulse {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .highlight-row {
+            background: linear-gradient(45deg, #fff5f5, #ffe8e8, #fff5f5) !important;
+            animation: rowPulse 2s ease-in-out infinite;
+            border-left: 4px solid #ff6b6b;
+        }
+        @keyframes rowPulse {
+            0% { background: linear-gradient(45deg, #fff5f5, #ffe8e8, #fff5f5); }
+            50% { background: linear-gradient(45deg, #ffe8e8, #ffd6d6, #ffe8e8); }
+            100% { background: linear-gradient(45deg, #fff5f5, #ffe8e8, #fff5f5); }
+        }
+        
+        /* Filtre seçenekleri için güncellenmiş stiller */
+        .filter-option {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.50rem 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            border-radius: 0.5rem;
+            margin: 0.2rem 0.5rem;
+            position: relative;
+            background: linear-gradient(135deg, #d1e7ff 0%, #e3f2fd 100%);
+            color: #003366;
+            font-weight: 600;
+            border: 2px solid #003366;
+            box-shadow: 0 2px 8px rgba(0, 51, 102, 0.1);
+        }
+        .filter-option:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3f4f6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 51, 102, 0.15);
         }
         .filter-option.selected {
-            background-color: #d1e7ff; 
-            color: #003366;
-            font-weight: 700;
+            background: linear-gradient(135deg, #003366 0%, #00509e 100%);
+            color: white;
+            border: 2px solid #003366;
+            box-shadow: 0 4px 15px rgba(0, 51, 102, 0.3);
         }
-        .filter-option input, .date-filter-inputs input {
-            width: 100%;
-            margin-top: 0.3rem;
-            padding: 0.3rem 0.4rem;
-            font-size: 0.9rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.3rem;
+        .filter-option:not(.selected) {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            color: #6c757d;
+            font-weight: 400;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .filter-option input {
             display: none;
+            width: 55%;
+            margin-left: 0.8rem;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
+            border: 1px solid #e0e0e0ff;
+            border-radius: 0.3rem;
             box-sizing: border-box;
+            background-color: white;
+            transition: border-color 0.3s ease;
+            flex-shrink: 0;
+            height: 1.8rem;
+        }
+        .filter-option input:focus {
+            outline: none;
+            border-color: #003366;
+            box-shadow: 0 0 0 2px rgba(0, 51, 102, 0.1);
         }
         .filter-option.selected input {
             display: block;
+            background: white;
+            color: #374151;
         }
-        .date-filter-inputs {
-            display: none;
-            padding: 0.5rem;
-            border-top: 1px solid #e5e7eb;
-            margin-top: 0.5rem;
+        .filter-dropdown {
+            left: 50%;
+            transform: translateX(-50%);
+            position: absolute;
+            top: 100%;
         }
-        .date-filter-inputs input {
-            display: block;
-            margin-bottom: 0.5rem;
+        .record-dropdown {
+            left: 0;
+            transform: translateX(-50%);
+            position: absolute;
+            top: 100%;
+            transform: translateY(10px);
+            width: 100%; 
+            z-index: 999;
         }
-        .date-filter-inputs label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+        .dropdown-container {
+             position: relative;
+             display: inline-block;
         }
+        #reportMenu.dropdown-menu {
+            font-size: 1rem;
+            padding: 1rem;
+        }        
 
-        table { width: 100%; border-collapse: collapse; }
+                
+        /* Temizle butonu için özel stiller */
+        .clear-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+        }
+        .clear-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            transition: all 0.3s ease;
+        }
+        .clear-btn:hover .clear-icon {
+            transform: scale(1.1);
+            animation: clearPulse 0.6s ease-in-out;
+        }
+        @keyframes clearPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1.1); }
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
         table th, table td {
             padding: 1rem;
             border-bottom: 1px solid #e2e8f0;
@@ -131,7 +286,9 @@
             margin-left: 0.75rem;
             vertical-align: middle;
         }
-        .svg-button:hover { background-color: #f0f0f0; }
+        .svg-button:hover {
+            background-color: #f0f0f0;
+        }
         .svg-path {
             transition: stroke-width 0.3s;
             stroke-dasharray: 100;
@@ -146,6 +303,7 @@
             0% { stroke-dashoffset: 100; }
             100% { stroke-dashoffset: 0; }
         }
+     
         .report-generate-button-container,
         .export-buttons-bottom { 
             display: flex;
@@ -176,10 +334,18 @@
             box-shadow: 0 8px 20px rgba(0, 80, 158, 0.7);
             transform: scale(1.07);
         }
-        .export-button-bottom.excel { background: linear-gradient(135deg, #28a745 0%, #218838 100%); }
-        .export-button-bottom.excel:hover { background: linear-gradient(135deg, #218838 0%, #28a745 100%); }
-        .export-button-bottom.pdf { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
-        .export-button-bottom.pdf:hover { background: linear-gradient(135deg, #c82333 0%, #dc3545 100%); }
+        .export-button-bottom.excel {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+        .export-button-bottom.excel:hover {
+            background: linear-gradient(135deg, #218838 0%, #28a745 100%);
+        }
+        .export-button-bottom.pdf {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        .export-button-bottom.pdf:hover {
+            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+        }
         .export-button-bottom svg {
             width: 20px;
             height: 20px;
@@ -194,6 +360,17 @@
             fill: currentColor;
             stroke: none;
         }
+        .date-filter-inputs {
+             display: none;
+        }
+        .date-filter-inputs input[type="date"] {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
     </style>
 
     <div class="py-6">
@@ -206,11 +383,20 @@
             <div class="flex justify-between items-center mb-6 relative" style="display:flex; justify-content: space-between; align-items: center;">
                 <div class="relative">
                     <button id="filterBtn" type="button" class="modern-btn">Filtreleme Yap</button>
-                    <div id="filterMenu" class="dropdown-menu">
+                    <div id="filterMenu" class="dropdown-menu filter-dropdown">
+                        <!-- Arama Kutusu -->
+                        <div class="search-box">
+                            <div class="search-input-wrapper">
+                                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                <input type="text" placeholder="Tüm alanlarda ara..." id="globalSearch">
+                            </div>
+                        </div>
+
+                        <!-- Mevcut Filtreler -->
                         <ul id="filterOptions">
-                            <li class="filter-option" data-field="id">ID
-                                <input type="text" id="id_value" placeholder="ID ara" value="{{ request('id_value') }}">
-                            </li>
                             <li class="filter-option" data-field="entry_time">Giriş Tarihi
                                 <input type="text" id="entry_time_value" placeholder="Giriş Tarihi ara" value="{{ request('entry_time_value') }}">
                             </li>
@@ -236,15 +422,22 @@
                                 <input type="text" id="approved_by_value" placeholder="Ekleyen ara" value="{{ request('approved_by_value') }}">
                             </li>
                         </ul>
-                        <div class="p-2">
-                            <button id="applyFilters" class="w-full rounded-lg font-semibold modern-btn hover:brightness-110 transition" style="padding: 0.4rem 1.5rem; font-size: 1rem;">
+                        <div class="p-2" style="display: flex; gap: 0.5rem;">
+                            <button id="applyFilters" class="flex-1 rounded-lg font-semibold modern-btn hover:brightness-110 transition" style="padding: 0.4rem 1.5rem; font-size: 1rem;">
                                 Filtreyi Uygula
+                            </button>
+                            <button id="clearFilters" class="clear-btn">
+                                <svg class="clear-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                                Temizle
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="relative" style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="dropdown-container" style="position: relative;">
                     <button id="reportBtn" type="button" class="modern-btn">Kayıt Görüntüle</button>
                     <button id="refreshBtn" class="svg-button" aria-label="Yenile" title="Yenile">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
@@ -253,7 +446,7 @@
                             <polyline class="svg-path" points="21 3 21 9 15 9" />
                         </svg>
                     </button>
-                    <div id="reportMenu" class="dropdown-menu" style="left:auto; right:0;">
+                    <div id="reportMenu" class="dropdown-menu record-dropdown">
                         <ul>
                             <li data-type="all">Tüm Kayıtlar</li>
                             <li data-type="daily">Günlük</li>
@@ -273,7 +466,6 @@
                     </div>
                 </div>
             </div>
-
             <table>
                 <thead>
                     <tr>
@@ -305,11 +497,11 @@
                                         @case('entry_time') {{ $visit->entry_time ?? '-' }} @break
                                         @case('name') {{ $visit->visitor->name ?? '-' }} @break
                                         @case('tc_no') {{ $visit->visitor->tc_no ?? '-' }} @break
-                                        @case('phone') {{ $visit->visitor->phone ?? '-' }} @break
-                                        @case('plate') {{ $visit->visitor->plate ?? '-' }} @break
+                                        @case('phone') {{ $visit->phone ?? '-' }} @break
+                                        @case('plate') {{ $visit->plate ?? '-' }} @break
                                         @case('purpose') {{ $visit->purpose ?? '-' }} @break
                                         @case('person_to_visit') {{ $visit->person_to_visit ?? '-' }} @break
-                                        @case('approved_by') {{ $visit->approver->ad_soyad ?? $visit->approved_by ?? '-' }} @break
+                                        @case('approved_by') {{ $visit->approver->username ?? $visit->approved_by ?? '-' }} @break
                                         @default {{ $visit->$field ?? '-' }}
                                     @endswitch
                                 </td>
@@ -319,6 +511,7 @@
                 </tbody>
             </table>
 
+            {{-- EXCEL VE YAZDIR BUTONLARI --}}
             <div class="export-buttons-bottom">
                 <button id="exportUnmaskedExcelBtn" type="button" class="export-button-bottom excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-excel-fill" viewBox="0 0 16 16">
@@ -339,6 +532,7 @@
                     PDF
                 </a>
             </div>
+            {{-- MASKELİ RAPOR OLUŞTUR BUTONU --}}
             <div class="report-generate-button-container">
                 <button id="generateReportBtn" type="button" class="report-generate-button">Güvenli Rapor Oluştur</button>
             </div>
@@ -429,41 +623,96 @@
             window.location.href = window.location.pathname + '?date_filter=daily';
         });
 
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', (e) => {
-                if (e.target.tagName.toLowerCase() === 'input') return;
-                option.classList.toggle('selected');
-                const input = option.querySelector('input');
-                if (input) {
-                    input.style.display = option.classList.contains('selected') ? 'block' : 'none';
-                    if (!option.classList.contains('selected')) {
-                        input.value = '';
+        // Global arama fonksiyonu - BÜYÜK/KÜÇÜK HARF DUYARSIZ
+        document.getElementById('globalSearch').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.outerHTML = el.innerHTML;
+            });
+            document.querySelectorAll('.highlight-row').forEach(row => {
+                row.classList.remove('highlight-row');
+            });
+            
+            const tableRows = document.querySelectorAll('tbody tr');
+            
+            tableRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let hasMatch = false;
+                
+                cells.forEach(cell => {
+                    const cellText = cell.textContent;
+                    if (searchTerm && cellText.toLowerCase().includes(searchTerm)) {
+                        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        cell.innerHTML = cellText.replace(regex, '<span class="highlight">$1</span>');
+                        hasMatch = true;
                     }
+                });
+                
+                if (hasMatch) {
+                    row.classList.add('highlight-row');
                 }
             });
+            
+            if (searchTerm === '') {
+                tableRows.forEach(row => {
+                    row.classList.remove('highlight-row');
+                });
+            }
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dateFilterParam = urlParams.get('date_filter');
-            const startDateParam = urlParams.get('start_date');
-            const endDateParam = urlParams.get('end_date');
-            const activeFilterText = document.getElementById('activeFilterText');
+        // Filtreyi temizle butonu
+        document.getElementById('clearFilters').addEventListener('click', () => {
+            document.querySelectorAll('.filter-option input').forEach(input => {
+                input.value = '';
+            });
             
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.classList.add('selected');
+            });
+            
+            document.getElementById('globalSearch').value = '';
+            
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.outerHTML = el.innerHTML;
+            });
+            document.querySelectorAll('.highlight-row').forEach(row => {
+                row.classList.remove('highlight-row');
+            });
+            
+            window.location.href = window.location.pathname + '?date_filter=daily';
+        });
+
+        // Sayfa yüklendiğinde tüm filtreleri seçili yap
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.classList.add('selected');
+            });
+            
+            const urlParams = new URLSearchParams(window.location.search);
             const filterParam = urlParams.get('filter');
             if (filterParam) {
                 const filters = filterParam.split(',');
-                filters.forEach(f => {
-                    const opt = document.querySelector(`.filter-option[data-field="${f}"]`);
-                    if (opt) {
-                        opt.classList.add('selected');
-                        const input = opt.querySelector('input');
+                document.querySelectorAll('.filter-option').forEach(option => {
+                    option.classList.add('selected');
+                });
+                document.querySelectorAll('.filter-option').forEach(option => {
+                    const field = option.getAttribute('data-field');
+                    if (!filters.includes(field)) {
+                        option.classList.remove('selected');
+                        const input = option.querySelector('input');
                         if (input) {
-                            input.style.display = 'block';
+                            input.style.display = 'none';
+                            input.value = '';
                         }
                     }
                 });
             }
+
+            const dateFilterParam = urlParams.get('date_filter');
+            const startDateParam = urlParams.get('start_date');
+            const endDateParam = urlParams.get('end_date');
+            const activeFilterText = document.getElementById('activeFilterText');
             
             if (startDateParam) {
                 const start = new Date(startDateParam).toLocaleDateString('tr-TR');
@@ -479,6 +728,25 @@
             }
         });
 
+        // Filtre seçeneklerine tıklama
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                if (e.target.tagName.toLowerCase() === 'input') {
+                    return;
+                }
+                
+                option.classList.toggle('selected');
+                const input = option.querySelector('input');
+                if (input) {
+                    input.style.display = option.classList.contains('selected') ? 'block' : 'none';
+                    if (!option.classList.contains('selected')) {
+                        input.value = '';
+                    }
+                }
+            });
+        });
+
+        // Filtreyi uygula butonuna tıklama
         document.getElementById('applyFilters').addEventListener('click', () => {
             const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
             if (selectedOptions.length === 0) {
@@ -596,8 +864,8 @@
         printUnmaskedBtn.addEventListener('click', () => {
             const table = document.querySelector('table');
             if (table) {
-                const originalBodyHTML = document.body.innerHTML;
                 let printContentHtml = '<html><head><title>Ziyaretçi Listesi</title>';
+
                 document.querySelectorAll('style').forEach(styleElement => {
                     printContentHtml += styleElement.outerHTML;
                 });
@@ -606,19 +874,20 @@
                 });
 
                 printContentHtml += '<style>';
-                printContentHtml += `body { margin: 1cm !important; font-family: sans-serif; }
+                printContentHtml += `
+                    body { margin: 1cm !important; font-family: sans-serif; }
                     table { width: 100% !important; table-layout: fixed !important; word-wrap: break-word !important; border-collapse: collapse !important; }
                     th, td { 
                         white-space: normal !important; 
                         padding: 4px !important; 
-                        font-size: 8px !important; 
+                        font-size: 8px !important;
                         vertical-align: top !important; 
                         border: 1px solid #ccc !important; 
                         min-width: unset !important; 
                     }
                     .page-title {
                         text-align: center;
-                        font-size: 24px; 
+                        font-size: 24px;
                         font-weight: bold;
                         color: #003366;
                         margin-bottom: 20px;
@@ -633,20 +902,20 @@
                         margin: 1cm !important;
                         @top-left { content: ""; } @top-center { content: ""; } @top-right { content: ""; }
                         @bottom-left { content: ""; } @bottom-center { content: ""; } @bottom-right { content: ""; }
-                    }`;
+                    }
+                `;
                 printContentHtml += '</style>';
                 printContentHtml += '</head><body>';
                 printContentHtml += '<div id="printContainer">'; 
-                
-                const activeFilterText = document.getElementById('activeFilterText').textContent;
+
                 const today = new Date();
                 const formattedDate = today.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                printContentHtml += `<div style="text-align: right; font-size: 10px; margin-bottom: 10px;">${formattedDate}</div>`;
-                printContentHtml += `<h2 class="page-title">Ziyaretçi Listesi ${activeFilterText}</h2>`;
+                printContentHtml += '<div style="text-align: right; font-size: 10px; margin-bottom: 10px;">' + formattedDate + '</div>';
+                printContentHtml += '<h2 class="page-title">Ziyaretçi Listesi</h2>';
                 printContentHtml += '<div style="display: flex; justify-content: center; width: 100%; margin-top: 20px;">';
                 printContentHtml += table.outerHTML; 
                 printContentHtml += '</div>';
-                printContentHtml += '</div>';        
+                printContentHtml += '</div>';        
                 printContentHtml += '</body></html>';
 
                 const iframe = document.createElement('iframe');
@@ -675,10 +944,9 @@
                 
                 setTimeout(() => {
                     if (iframe.contentWindow && iframe.contentWindow.document.readyState !== 'complete') {
-                        console.warn("Iframe yüklenmedi veya geç yüklendi, manuel print deneniyor.");
                         if (iframe.contentWindow) {
                            iframe.contentWindow.focus();
-                           iframe.contentWindow.print();
+                                                      iframe.contentWindow.print();
                        }
                         setTimeout(() => {
                             if (document.body.contains(iframe)) {
