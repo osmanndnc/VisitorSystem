@@ -1,6 +1,5 @@
 <x-app-layout>
     <style>
-
         html { zoom: 80%; }
         body { background: #f1f5f9; }
         .center-box {
@@ -69,10 +68,15 @@
         .dropdown-menu li {
             padding: 0.4rem 0.5rem;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: all 0.2s ease;
             user-select: none;
+            color: #333; /* Yazı rengi koyu */
+            background-color: transparent; /* Arka plan şeffaf */
         }
-        .dropdown-menu li:hover { background: #020c32ff; }
+        .dropdown-menu li:hover { 
+            background: #003366 !important; /* Hover'da lacivert */
+            color: #fff !important; /* Hover'da yazı beyaz */
+        }
         
         /* Arama kutusu tasarımı */
         .search-box {
@@ -190,7 +194,7 @@
         .filter-option input:focus {
             outline: none;
             border-color: #003366;
-            box-shadow: 0 0 0 2px rgba(0, 51, 102, 0.1);
+            box-shadow: 0 0 0 2px rgba(28, 196, 129, 0.1);
         }
         .filter-option.selected input {
             display: block;
