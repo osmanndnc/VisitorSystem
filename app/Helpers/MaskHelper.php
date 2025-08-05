@@ -56,7 +56,7 @@ class MaskHelper
 
             // ID ve approved_by her zaman ekleyelim (maskelenmeyecek)
             $row['id'] = $visit->id;
-            $row['approved_by'] = $visit->approver->username ?? $visit->approved_by ?? '-';
+            $row['approved_by'] = $visit->approver->ad_soyad ?? $visit->approved_by ?? '-';
 
             foreach ($fields as $field) {
                 if (in_array($field, ['id', 'approved_by'])) {

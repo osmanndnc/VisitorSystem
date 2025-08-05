@@ -110,7 +110,7 @@ class AdminReportController extends Controller
                     $visitsQuery->where($field, 'like', "%{$value}%");
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($value) {
-                        $query->where('username', 'like', "%{$value}%");
+                        $query->where('ad_soyad', 'like', "%{$value}%");
                     });
                 } else {
                     $visitsQuery->where($field, 'like', "%{$value}%");
@@ -251,7 +251,7 @@ class AdminReportController extends Controller
                     $visitsQuery->where($field, 'like', "%{$searchValue}%");
                 } elseif ($field === 'approved_by') {
                     $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
-                        $query->where('username', 'like', "%{$searchValue}%");
+                        $query->where('ad_soyad', 'like', "%{$searchValue}%");
                     });
                 } else {
                     $visitsQuery->where($field, 'like', "%{$searchValue}%");

@@ -211,7 +211,7 @@ class AdminController extends Controller
 
         Log::info('Admin PDF (unmasked) dışa aktarımı yaptı', [
             'user_id' => auth()->id(),
-            'requested_by' => auth()->user()->username ?? 'Anonim',
+            'requested_by' => auth()->user()->ad_soyad ?? 'Anonim',
             'filters' => $request->except('_token'),
             'field_count' => count($selectedFields),
             'record_count' => $visits->count(),

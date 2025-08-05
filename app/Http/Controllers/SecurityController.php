@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Http\Requests\VisitorStoreRequest;
+use Illuminate\Http\Requests\VisitorUpdateRequest;
+
 use App\Models\Visitor;
 use App\Models\Visit;
 use App\Models\PersonToVisit;
