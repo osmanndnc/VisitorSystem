@@ -2,183 +2,75 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Requests\VisitorStoreRequest;
-use Illuminate\Http\Requests\VisitorUpdateRequest;
-
-use App\Models\Visitor;
+use App\Http\Requests\VisitorStoreRequest;
+use App\Http\Requests\VisitorUpdateRequest;
+use App\Services\VisitorService;
 use App\Models\Visit;
 use App\Models\PersonToVisit;
 use App\Models\VisitReason;
 use Illuminate\Support\Carbon;
-use App\Rules\ValidTcNo;
-use Illuminate\Support\Facades\Log;
 
 class SecurityController extends Controller
 {
+    protected VisitorService $visitorService;
+
+    public function __construct(VisitorService $visitorService)
+    {
+        $this->visitorService = $visitorService;
+    }
+
+    /**
+     * Ziyaretçi kayıt sayfasını ve bugünkü girişleri getirir.
+     */
     public function create()
     {
-        $visits = Visit::with('visitor')->whereDate('created_at', Carbon::today())->get();
-
-        //Dropdownlar için liste çekiyoruz
-        $people = PersonToVisit::all();
-        $reasons = VisitReason::all();
-
-        return view('security.create', compact('visits', 'people', 'reasons'));
+        return view('security.create', [
+            'visits' => Visit::with('visitor')->whereDate('created_at', Carbon::today())->get(),
+            'people' => PersonToVisit::all(),
+            'reasons' => VisitReason::all(),
+        ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Yeni bir ziyaretçi kaydını işler.
+     */
+    public function store(VisitorStoreRequest $request)
     {
-        try{
-            $request->validate([
-                'tc_no' => ['required', 'string', new ValidTcNo()],
-                'name' => 'required|string',
-                'phone' => 'required|string',
-                'plate' => 'required|string',
-                'person_to_visit' => 'required|string',
-                'purpose' => 'required|string',
-            ]);
+        $this->visitorService->store($request->validated(), auth()->user());
 
-            $securityId = auth()->user()->id;
-
-            $visitor = Visitor::firstOrCreate(
-                ['tc_no' => $request->tc_no],
-                ['name' => $request->name]
-            );
-
-            Visit::create([
-                'visitor_id' => $visitor->id,
-                'entry_time' => now(),
-                'person_to_visit' => $request->person_to_visit,
-                'purpose' => $request->purpose,
-                'approved_by' => $securityId,
-                'phone' => $request->phone,
-                'plate' => strtoupper($request->plate),
-            ]);
-
-            Log::info('Ziyaretçi kaydı oluşturuldu.', [
-                'by_user_id' => $securityId,
-                'by_username' => auth()->user()->username,
-                'tc_no' => $request->tc_no,
-                'ip' => $request->ip(),
-                'time' => now(),
-            ]);
-
-            return redirect()->route('security.create')->with('success', 'Ziyaretçi başarıyla kaydedildi.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('Form doğrulama hatası.', [
-                'by_user_id' => auth()->id(),
-                'by_username' => auth()->user()->username ?? 'Anonim',
-                'ip' => $request->ip(),
-                'hatalar' => $e->errors(),
-                'time' => now(),
-            ]);
-
-            throw $e; // Laravel normal hata mesajlarını göstermeye devam etsin
-        }
+        return redirect()->route('security.create')
+            ->with('success', 'Ziyaretçi başarıyla kaydedildi.');
     }
 
+    /**
+     * Mevcut bir ziyaretçi kaydını düzenlemek için formu doldurur.
+     */
     public function edit($id)
     {
-        $visits = Visit::with('visitor')->whereDate('created_at', Carbon::today())->get();
-        $editVisit = Visit::with('visitor')->findOrFail($id);
-        $people = PersonToVisit::all();
-        $reasons = VisitReason::all();
-        return view('security.create', compact('visits', 'editVisit', 'people', 'reasons'));
+        return view('security.create', [
+            'visits' => Visit::with('visitor')->whereDate('created_at', Carbon::today())->get(),
+            'editVisit' => Visit::with('visitor')->findOrFail($id),
+            'people' => PersonToVisit::all(),
+            'reasons' => VisitReason::all(),
+        ]);
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Güncellenen ziyaretçi bilgilerini kaydeder.
+     */
+    public function update(VisitorUpdateRequest $request, $id)
     {
-        $request->validate([
-            'tc_no' => ['required', 'string', new ValidTcNo()],
-            'name' => 'required|string',
-            'phone' => 'required|string',
-            'plate' => 'required|string',
-            'person_to_visit' => 'required|string',
-            'purpose' => 'required|string',
-        ]);
+        $this->visitorService->update($id, $request->validated(), auth()->user());
 
-        $visit = Visit::with('visitor')->findOrFail($id);
-
-        $visit->visitor->update([
-            'name' => $request->name,
-            'tc_no' => $request->tc_no,
-        ]);
-
-        $visit->update([
-            'entry_time' => now(),
-            'person_to_visit' => $request->person_to_visit,
-            'purpose' => $request->purpose,
-            'phone' => $request->phone,
-            'plate' => strtoupper($request->plate),
-        ]);
-
-        Log::info('Ziyaretçi kaydı güncellendi.', [
-            'by_user_id' => auth()->id(),
-            'by_username' => auth()->user()->username,
-            'tc_no' => $request->tc_no,
-            'ip' => $request->ip(),
-            'time' => now(),
-        ]);
-
-        return redirect()->route('security.create')->with('success', 'Ziyaretçi bilgisi güncellendi.');
+        return redirect()->route('security.create')
+            ->with('success', 'Ziyaretçi bilgisi güncellendi.');
     }
 
-    // public function destroy($id)
-    // {
-    //     $visit = Visit::findOrFail($id);
-
-    //     Log::warning('Ziyaretçi kaydı siliniyor.', [
-    //         'by_user_id' => auth()->id(),
-    //         'by_username' => auth()->user()->username,
-    //         'tc_no' => $visit->visitor->tc_no ?? 'Bilinmiyor',
-    //         'ip' => request()->ip(),
-    //         'time' => now(),
-    //     ]);
-
-    //     $visit->visitor->delete();
-    //     $visit->delete();
-
-    //     return redirect()->route('security.create')->with('success', 'Ziyaretçi kaydı silindi.');
-    // }
-
+    /**
+     * T.C. numarasına göre geçmiş ziyaret bilgilerini getirir.
+     */
     public function getVisitorData($tc)
     {
-        $visitor = Visitor::where('tc_no', $tc)->first();
-
-        if (!$visitor) {
-            // Sisteme ilk defa kayıt yapılan ziyaretçi
-            Log::notice('Ziyaretçi bulunamadı (getVisitorData).', [
-                'tc_no' => $tc,
-                'requested_by' => auth()->user()->username ?? 'Anonim',
-                'ip' => request()->ip(),
-                'time' => now(),
-            ]);
-            return response()->json(null);
-        }
-
-        $phones = Visit::where('visitor_id', $visitor->id)
-            ->pluck('phone')
-            ->unique()
-            ->values();
-
-        $plates = Visit::where('visitor_id', $visitor->id)
-            ->pluck('plate')
-            ->unique()
-            ->values();
-        
-        // Daha önceden sisteme kayıtlı bir ziyaretçi
-        Log::info('Ziyaretçi verisi getirildi (getVisitorData).', [
-            'tc_no' => $tc,
-            'requested_by' => auth()->user()->username ?? 'Anonim',
-            'ip' => request()->ip(),
-            'time' => now(),
-        ]);
-
-        return response()->json([
-            'name' => $visitor->name,
-            'phones' => $phones,
-            'plates' => $plates
-        ]);
+        return $this->visitorService->getVisitorData($tc, auth()->user());
     }
-
 }

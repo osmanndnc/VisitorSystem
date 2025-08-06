@@ -51,6 +51,13 @@ return [
     */
 
     'channels' => [
+
+        'visitor' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/visitor.log'),
+            'level' => 'info',
+        ],
+        
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
