@@ -10,12 +10,14 @@ use Illuminate\Support\Facades\Log;
 
 class AdminUserController extends Controller
 {
+    /**
+     * Admin kullanıcıları listeler. Düzenleme modu parametre ile tetiklenir.
+     */
     public function index(Request $request)
     {
         $currentUser = Auth::user();
         $users = User::where('role', 'admin')->get();
 
-        // Formu açmak için parametre varsa
         $editUser = null;
         if ($request->has('edit')) {
             $editUser = User::findOrFail($request->get('edit'));
@@ -23,9 +25,45 @@ class AdminUserController extends Controller
 
         return view('admin.users.index', compact('users', 'currentUser', 'editUser'));
     }
-    
 
-    // Kullanıcıyı güncelle
+    /**
+     * Yeni admin veya security rolüne sahip kullanıcı oluşturur.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'ad_soyad'   => 'required|string|max:255',
+            'user_phone' => 'nullable|string|max:20',
+            'username'   => 'required|string|max:255|unique:users,username',
+            'email'      => 'required|email|unique:users,email',
+            'password'   => 'required|string|min:6',
+            'role'       => 'required|in:admin,security',
+            'is_active'  => 'required|boolean',
+        ]);
+
+        User::create([
+            'ad_soyad'   => $validated['ad_soyad'],
+            'user_phone' => $validated['user_phone'],
+            'username'   => $validated['username'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($validated['password']),
+            'role'       => $validated['role'],
+            'is_active'  => $validated['is_active'],
+        ]);
+
+        Log::info('Yeni admin kullanıcısı oluşturuldu', [
+            'created_user' => $validated['username'],
+            'role'         => $validated['role'],
+            'created_by'   => auth()->user()->username,
+            'time'         => now(),
+        ]);
+
+        return back()->with('success', 'Kullanıcı başarıyla oluşturuldu.');
+    }
+
+    /**
+     * Mevcut admin kullanıcısını günceller.
+     */
     public function update(Request $request, User $user)
     {
         if (auth()->user()->role !== 'super_admin') {
@@ -35,46 +73,49 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'ad_soyad'   => 'required|string|max:255',
             'user_phone' => 'nullable|string|max:20',
-            'username' => 'required|string|max:191',
-            'email' => 'required|email|max:191',
-            'role' => 'required|in:admin,security',
-            'is_active' => 'required|boolean',
-            'password' => 'nullable|string|min:6',
+            'username'   => 'required|string|max:191',
+            'email'      => 'required|email|max:191',
+            'role'       => 'required|in:admin,security',
+            'is_active'  => 'required|boolean',
+            'password'   => 'nullable|string|min:6',
         ]);
 
-        $user->ad_soyad = $validated['ad_soyad'];
-        $user->user_phone = $validated['user_phone'];
-
-        $user->username = $validated['username'];
-        $user->email = $validated['email'];
-        $user->role = $validated['role'];
-        $user->is_active = $validated['is_active'];
+        $user->fill([
+            'ad_soyad'   => $validated['ad_soyad'],
+            'user_phone' => $validated['user_phone'],
+            'username'   => $validated['username'],
+            'email'      => $validated['email'],
+            'role'       => $validated['role'],
+            'is_active'  => $validated['is_active'],
+        ]);
 
         if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
+            $user->password = Hash::make($validated['password']);
         }
 
         $user->save();
 
         Log::info('Admin kullanıcısı güncellendi', [
-            'target user' => $user->username,
-            'new role' => $user->role,
-            'activity' => $user->is_active ? 'Aktif' : 'Pasif',
-            'person of transaction' => auth()->user()->username,
-            'time' => now(),
+            'target_user'      => $user->username,
+            'new_role'         => $user->role,
+            'updated_activity' => $user->is_active ? 'Aktif' : 'Pasif',
+            'updated_by'       => auth()->user()->username,
+            'time'             => now(),
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'Kullanıcı güncellendi.');
     }
 
-    // Kullanıcının aktif/pasif durumunu değiştir
+    /**
+     * Admin kullanıcısının aktif/pasif durumu değiştirilir.
+     */
     public function toggleStatus(User $user)
     {
         if (auth()->user()->role !== 'super_admin') {
             abort(403, 'Yetkisiz');
         }
 
-        // Kendi hesabını pasif yapamaz
+        // Kendi hesabını pasif yapmaya izin verilmez
         if (auth()->id() === $user->id) {
             return back()->with('error', 'Kendinizi pasif edemezsiniz.');
         }
@@ -82,47 +123,13 @@ class AdminUserController extends Controller
         $user->is_active = !$user->is_active;
         $user->save();
 
-        // Güvenlik aktif pasif kontrol logu
         Log::info('Admin kullanıcısının durumu değiştirildi', [
-            'process' => $user->is_active ? 'Aktif edildi' : 'Pasif edildi',
-            'target user' => $user->username,
-            'person of transaction' => auth()->user()->username,
-            'time' => now(),
+            'target_user' => $user->username,
+            'new_status'  => $user->is_active ? 'Aktif edildi' : 'Pasif edildi',
+            'changed_by'  => auth()->user()->username,
+            'time'        => now(),
         ]);
 
         return back()->with('success', 'Kullanıcının durumu güncellendi.');
     }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'ad_soyad'   => 'required|string|max:255',
-            'user_phone' => 'nullable|string|max:20',
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'role' => 'required|in:admin,security',
-            'is_active' => 'required|boolean',
-        ]);
-
-        User::create([
-            'ad_soyad'   => $request->ad_soyad,
-            'user_phone' => $request->user_phone,
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'is_active' => $request->is_active,
-        ]);
-
-        Log::info('Yeni admin kullanıcısı oluşturuldu', [
-            'created user' => $request->username,
-            'role' => $request->role,
-            'created by' => auth()->user()->username,
-            'time' => now(),
-        ]);
-
-        return back()->with('success', 'Kullanıcı başarıyla oluşturuldu.');
-    }
-
 }

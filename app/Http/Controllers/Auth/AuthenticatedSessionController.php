@@ -8,15 +8,15 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Giriş ekranını gösterir.
      */
     public function create(): View
     {
@@ -24,17 +24,19 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Giriş isteğini işler.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
         try {
-            $request->authenticate(); // Auth::attempt()
+            $request->authenticate();
 
-            // Eğer kullanıcı aktif değilse
-            if (!auth()->user()->is_active) {
-                Log::warning('Pasif kullanıcı giriş yapmaya çalıştı.', [
-                    'username' => auth()->user()->username,
+            $user = auth()->user();
+
+            // Kullanıcı pasifse giriş iptal edilir.
+            if (!$user->is_active) {
+                Log::warning('Pasif kullanıcı giriş denemesi.', [
+                    'username' => $user->username,
                     'ip' => $request->ip(),
                     'time' => now(),
                 ]);
@@ -46,53 +48,43 @@ class AuthenticatedSessionController extends Controller
                 ]);
             }
 
-            // Başarılı giriş logu
-            Log::info('Giriş başarılı.', [
-                'user_id' => auth()->id(),
-                'username' => auth()->user()->username,
+            Log::info('Kullanıcı girişi başarılı.', [
+                'user_id' => $user->id,
+                'username' => $user->username,
                 'ip' => $request->ip(),
                 'time' => now(),
             ]);
 
-            // Beni hatırla çerez işlemleri
-            if ($request->boolean('remember')) {
-                Cookie::queue('remember_username', $request->input('username'), 60 * 24 * 7);
-                Cookie::queue('remember_password', $request->input('password'), 60 * 24 * 7);
-            } else {
-                Cookie::queue(Cookie::forget('remember_username'));
-                Cookie::queue(Cookie::forget('remember_password'));
-            }
+            $this->handleRememberMe($request);
 
             $request->session()->regenerate();
 
             return redirect()->intended(RouteServiceProvider::redirectToBasedOnRole());
 
         } catch (ValidationException $e) {
-            // Giriş başarısız logu
             Log::error('Giriş başarısız.', [
                 'username' => $request->input('username'),
                 'ip' => $request->ip(),
                 'time' => now(),
-                'reason' => 'Kullanıcı adı veya şifre hatalı.',
+                'reason' => 'Kullanıcı adı veya şifre hatalı',
             ]);
 
-            //Kendi hata mesajımızı gönderiyoruz.
             return redirect()->route('login')->withErrors([
                 'username' => 'Kullanıcı adı veya şifre hatalı.',
             ])->withInput($request->only('username', 'remember'));
-            //throw $e; // Laravel kendi hata gösterimini yapsın
         }
     }
 
     /**
-     * Destroy an authenticated session.
+     * Oturumu sonlandırır.
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // Kullanıcı çıkış logu
+        $user = auth()->user();
+
         Log::info('Kullanıcı çıkış yaptı.', [
-            'user_id' => auth()->id(),
-            'username' => auth()->user()->username ?? 'Bilinmiyor',
+            'user_id' => $user->id ?? null,
+            'username' => $user->username ?? 'Bilinmiyor',
             'ip' => $request->ip(),
             'time' => now(),
         ]);
@@ -103,5 +95,28 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login')->with('status', 'Oturum kapatıldı.');
+    }
+
+    /**
+     * "Beni hatırla" çerezlerini işler.
+     */
+    private function handleRememberMe(Request $request): void
+    {
+        if ($request->boolean('remember')) {
+            Cookie::queue('remember_username', $request->input('username'), 60 * 24 * 7); // 7 gün
+            Cookie::queue('remember_password', $request->input('password'), 60 * 24 * 7); // 7 gün
+
+            Log::info('Beni hatırla çerezleri ayarlandı.', [
+                'username' => $request->input('username'),
+                'ip' => $request->ip(),
+            ]);
+        } else {
+            Cookie::queue(Cookie::forget('remember_username'));
+            Cookie::queue(Cookie::forget('remember_password'));
+
+            Log::info('Beni hatırla çerezleri temizlendi.', [
+                'ip' => $request->ip(),
+            ]);
+        }
     }
 }

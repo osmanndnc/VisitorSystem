@@ -7,12 +7,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Profil düzenleme formunu görüntüler.
      */
     public function edit(Request $request): View
     {
@@ -22,23 +23,33 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's profile information.
+     * Kullanıcının profil bilgilerini günceller.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill($validated);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        Log::info('Kullanıcı profili güncellendi', [
+            'user_id' => $user->id,
+            'username' => $user->username ?? $user->email,
+            'updated_fields' => array_keys($validated),
+            'timestamp' => now(),
+        ]);
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**
-     * Delete the user's account.
+     * Kullanıcının hesabını siler.
      */
     public function destroy(Request $request): RedirectResponse
     {
@@ -48,8 +59,14 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        Log::warning('Kullanıcı hesabı silindi', [
+            'user_id' => $user->id,
+            'username' => $user->username ?? $user->email,
+            'ip' => $request->ip(),
+            'time' => now(),
+        ]);
 
+        Auth::logout();
         $user->delete();
 
         $request->session()->invalidate();

@@ -5,272 +5,177 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Visit;
 use App\Helpers\MaskHelper;
-use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AdminReportController extends Controller
 {
+    /**
+     * Rapor ana sayfası – boş veri ile açılır.
+     */
     public function index(Request $request)
     {
-        $fieldsForBlade = [
-            'entry_time', 'name', 'tc_no', 'phone', 'plate',
-            'purpose', 'person_to_visit'
-        ];
-
-        $visits = collect();
-        $chartData = [];
-        $dateFilter = '';
-        $sortOrder = 'desc';
-
-        $reportTitle = 'Tüm';
-        $reportRange = 'Tüm zamanlar';
-
-        return view('admin.reports', compact('visits', 'fieldsForBlade', 'dateFilter', 'sortOrder', 'chartData', 'reportTitle', 'reportRange'));
+        $fieldsForBlade = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit'];
+        return view('admin.reports', [
+            'visits' => collect(),
+            'fieldsForBlade' => $fieldsForBlade,
+            'dateFilter' => '',
+            'sortOrder' => 'desc',
+            'chartData' => [],
+            'reportTitle' => 'Tüm',
+            'reportRange' => 'Tüm zamanlar',
+        ]);
     }
 
+    /**
+     * Filtrelenmiş ve maskelenmiş rapor verisini getirir.
+     */
     public function generateReport(Request $request)
     {
         Carbon::setLocale('tr');
-
-        $allFields = [
-            'entry_time',
-            'name',
-            'tc_no',
-            'phone',
-            'plate',
-            'purpose',
-            'person_to_visit',
-            'approved_by'
-        ];
-
+        $allFields = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
 
-        if (empty($selectedFields)) {
-            $selectedFields = $allFields;
-        }
-
-        $dateFilter = $request->input('date_filter', '');
-        $sortOrder = $request->input('sort_order', 'desc');
-
         $visitsQuery = Visit::with(['visitor', 'approver']);
+        [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
+        $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
-        $reportTitle = '';
-        $reportRange = '';
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if ($startDate) {
-            $start = Carbon::parse($startDate)->startOfDay();
-            $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
-            $visitsQuery->whereBetween('entry_time', [$start, $end]);
-            $reportTitle = '';
-            $reportRange = Carbon::parse($startDate)->format('d.m.Y') . ' - ' . ($endDate ? Carbon::parse($endDate)->format('d.m.Y') : 'Bugün');
-        } else {
-            switch ($dateFilter) {
-                case 'daily':
-                    $visitsQuery->whereDate('entry_time', today());
-                    $reportTitle = 'Günlük';
-                    $reportRange = Carbon::today()->format('d.m.Y');
-                    break;
-                case 'monthly':
-                    $visitsQuery->whereMonth('entry_time', now()->month)
-                        ->whereYear('entry_time', now()->year);
-                    $reportTitle = 'Aylık';
-                    $reportRange = Carbon::now()->isoFormat('MMMM YYYY');
-                    break;
-                case 'yearly':
-                    $visitsQuery->whereYear('entry_time', now()->year);
-                    $reportTitle = 'Yıllık';
-                    $reportRange = Carbon::now()->format('Y');
-                    break;
-                case 'all':
-                default:
-                    $reportTitle = '';
-                    $reportRange = 'Tüm zamanlar';
-                    break;
-            }
-        }
-
-        if ($sortOrder === 'asc') {
-            $visitsQuery->orderBy('entry_time', 'asc');
-        } else {
-            $visitsQuery->orderBy('entry_time', 'desc');
-        }
-
-        foreach ($allFields as $field) {
-            $value = $request->input($field . '_value');
-            if ($value) {
-                if (in_array($field, ['name', 'tc_no'])) {
-                    // visitor ilişkisi üzerinden filtrele
-                    $visitsQuery->whereHas('visitor', function ($query) use ($field, $value) {
-                        $query->where($field, 'like', "%{$value}%");
-                    });
-                } elseif (in_array($field, ['phone', 'plate'])) {
-                    // visit tablosundan direkt filtrele
-                    $visitsQuery->where($field, 'like', "%{$value}%");
-                } elseif ($field === 'approved_by') {
-                    $visitsQuery->whereHas('approver', function ($query) use ($value) {
-                        $query->where('ad_soyad', 'like', "%{$value}%");
-                    });
-                } else {
-                    $visitsQuery->where($field, 'like', "%{$value}%");
-                }
-            }
-        }
-
-        $visits = $visitsQuery->get();
-
+        $visits = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
         $data = MaskHelper::maskVisits($visits, $selectedFields);
+        $chartData = $this->prepareChartData($visits, $request->input('date_filter', ''));
 
-        $fieldsForBlade = $selectedFields; 
+        Log::info('Maskeleme ile rapor oluşturuldu', [
+            'user_id' => auth()->id(),
+            'filters' => $request->except('_token'),
+            'record_count' => $visits->count(),
+            'timestamp' => now(),
+        ]);
 
-        $chartData = $this->prepareChartData($visits, $dateFilter);
-
-        return view('admin.reports', compact('data', 'fieldsForBlade', 'dateFilter', 'sortOrder', 'chartData', 'reportTitle', 'reportRange'));
+        return view('admin.reports', compact('data', 'selectedFields', 'chartData', 'reportTitle', 'reportRange'))
+            ->with(['fieldsForBlade' => $selectedFields, 'dateFilter' => $request->date_filter, 'sortOrder' => $request->sort_order]);
     }
-    
-    protected function prepareChartData($visits, $dateFilter)
-    {
-        $chartData = [];
 
-        if ($dateFilter === 'daily') {
-            $hourlyCounts = $visits->groupBy(function ($visit) {
-                return $visit->entry_time->format('H');
-            })->map->count();
-
-            for ($i = 0; $i < 24; $i++) {
-                $hour = str_pad($i, 2, '0', STR_PAD_LEFT);
-                $chartData[] = ['label' => $hour, 'count' => $hourlyCounts[$hour] ?? 0];
-            }
-        } elseif ($dateFilter === 'monthly') {
-            $dailyCounts = $visits->groupBy(function ($visit) {
-                return $visit->entry_time->format('d');
-            })->map->count();
-
-            $daysInMonth = Carbon::now()->daysInMonth;
-
-            for ($i = 1; $i <= $daysInMonth; $i++) {
-                $day = str_pad($i, 2, '0', STR_PAD_LEFT);
-                $chartData[] = ['label' => (int)$day, 'count' => $dailyCounts[$day] ?? 0];
-            }
-        } elseif ($dateFilter === 'yearly') {
-            $monthlyCounts = $visits->groupBy(function ($visit) {
-                return $visit->entry_time->format('n');
-            })->map->count();
-
-            for ($i = 1; $i <= 12; $i++) { 
-                $chartData[] = ['label' => $i, 'count' => $monthlyCounts[$i] ?? 0];
-            }
-        } else {
-            $yearlyCounts = $visits->groupBy(function ($visit) {
-                return $visit->entry_time->format('Y');
-            })->map->count();
-
-            if ($visits->isNotEmpty()) {
-                $minYear = $visits->min('entry_time')->year;
-                $maxYear = $visits->max('entry_time')->year;
-                for ($year = $minYear; $year <= $maxYear; $year++) {
-                    $chartData[] = ['label' => $year, 'count' => $yearlyCounts[$year] ?? 0];
-                }
-            }
-        }
-
-        return array_values($chartData);
-    }
-    
+    /**
+     * Maskelenmiş PDF çıktısı üretir.
+     */
     public function exportMaskedPdf(Request $request)
     {
         Carbon::setLocale('tr');
-
-        $allFields = [
-            'entry_time', 'name', 'tc_no', 'phone', 'plate',
-            'purpose', 'person_to_visit', 'approved_by'
-        ];
-
-        $selectedFields = $request->input('fields', []);
-        if (empty($selectedFields)) {
-            $selectedFields = $allFields;
-        }
-
-        $dateFilter = $request->input('date_filter', '');
-        $sortOrder = $request->input('sort_order', 'desc');
+        $allFields = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
+        $selectedFields = $request->input('fields', $allFields);
 
         $visitsQuery = Visit::with(['visitor', 'approver']);
+        [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
+        $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
-        $reportTitle = '';
-        $reportRange = '';
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        $visits = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
+        $data = MaskHelper::maskVisits($visits, $selectedFields);
+
+        Log::info('PDF olarak güvenli (masked) rapor indirildi', [
+            'user_id' => auth()->id(),
+            'field_count' => count($selectedFields),
+            'record_count' => $visits->count(),
+            'timestamp' => now(),
+        ]);
+
+        $pdf = Pdf::loadView('pdf.masked_pdf', [
+            'data' => $data,
+            'fieldsForBlade' => $selectedFields,  
+            'reportTitle' => $reportTitle,
+            'reportRange' => $reportRange,
+        ])->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'DejaVu Sans'
+        ]);
+
+        return $pdf->download('Guvenli_Rapor.pdf');
+
+    }
+    /**
+     * Tarih filtreleme uygular ve rapor başlığı döner.
+     */
+    private function applyDateFilter($query, Request $request): array
+    {
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+        $filter = $request->input('date_filter', 'all');
 
         if ($startDate) {
             $start = Carbon::parse($startDate)->startOfDay();
             $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
-            $visitsQuery->whereBetween('entry_time', [$start, $end]);
-            $reportTitle = '';
-            $reportRange = Carbon::parse($startDate)->format('d.m.Y') . ' - ' . ($endDate ? Carbon::parse($endDate)->format('d.m.Y') : 'Bugün');
-        } else {
-            switch ($dateFilter) {
-                case 'daily':
-                    $visitsQuery->whereDate('entry_time', today());
-                    $reportTitle = 'Günlük';
-                    $reportRange = Carbon::today()->format('d.m.Y');
-                    break;
-                case 'monthly':
-                    $visitsQuery->whereMonth('entry_time', now()->month)
-                        ->whereYear('entry_time', now()->year);
-                    $reportTitle = 'Aylık';
-                    $reportRange = Carbon::now()->isoFormat('MMMM YYYY');
-                    break;
-                case 'yearly':
-                    $visitsQuery->whereYear('entry_time', now()->year);
-                    $reportTitle = 'Yıllık';
-                    $reportRange = Carbon::now()->format('Y');
-                    break;
-                case 'all':
-                default:
-                    $reportTitle = '';
-                    $reportRange = 'Tüm zamanlar';
-                    break;
+            $query->whereBetween('entry_time', [$start, $end]);
+
+            return ['', Carbon::parse($startDate)->format('d.m.Y') . ' - ' . ($endDate ? Carbon::parse($endDate)->format('d.m.Y') : 'Bugün')];
+        }
+
+        return match ($filter) {
+            'daily' => [$title = 'Günlük', $range = today()->format('d.m.Y')] && $query->whereDate('entry_time', today()),
+            'monthly' => [$title = 'Aylık', $range = now()->isoFormat('MMMM YYYY')] && $query->whereMonth('entry_time', now()->month)->whereYear('entry_time', now()->year),
+            'yearly' => [$title = 'Yıllık', $range = now()->year] && $query->whereYear('entry_time', now()->year),
+            default => ['Tüm', 'Tüm zamanlar']
+        };
+    }
+
+    /**
+     * Alan bazlı filtreleme uygular.
+     */
+    private function applyFieldFilters($query, Request $request, array $fields): void
+    {
+        foreach ($fields as $field) {
+            $value = $request->input("{$field}_value");
+            if (!$value) continue;
+
+            if (in_array($field, ['name', 'tc_no'])) {
+                $query->whereHas('visitor', fn($q) => $q->where($field, 'like', "%{$value}%"));
+            } elseif ($field === 'approved_by') {
+                $query->whereHas('approver', fn($q) => $q->where('ad_soyad', 'like', "%{$value}%"));
+            } elseif (in_array($field, ['phone', 'plate', 'purpose', 'person_to_visit'])) {
+                $query->where($field, 'like', "%{$value}%");
             }
         }
-        
-        if ($sortOrder === 'asc') {
-            $visitsQuery->orderBy('entry_time', 'asc');
-        } else {
-            $visitsQuery->orderBy('entry_time', 'desc');
+    }
+
+    /**
+     * Grafik verisini hazırlar.
+     */
+    private function prepareChartData($visits, $filter): array
+    {
+        return match ($filter) {
+            'daily' => $this->groupChart($visits, 'H', 0, 23),
+            'monthly' => $this->groupChart($visits, 'd', 1, now()->daysInMonth),
+            'yearly' => $this->groupChart($visits, 'n', 1, 12),
+            default => $this->groupChartByYear($visits),
+        };
+    }
+
+    /**
+     * Saat/gün/ay gruplamalı chart verisi oluşturur.
+     */
+    private function groupChart($visits, $format, $start, $end): array
+    {
+        $group = $visits->groupBy(fn($v) => $v->entry_time->format($format))->map->count();
+        $chart = [];
+
+        for ($i = $start; $i <= $end; $i++) {
+            $label = $format === 'H' ? str_pad($i, 2, '0', STR_PAD_LEFT) : $i;
+            $chart[] = ['label' => (int)$label, 'count' => $group[$label] ?? 0];
         }
-        
-        foreach ($allFields as $field) {
-            $searchValue = $request->input($field . '_value');
-            if ($searchValue) {
-                if (in_array($field, ['name', 'tc_no'])) {
-                    $visitsQuery->whereHas('visitor', function ($query) use ($field, $searchValue) {
-                        $query->where($field, 'like', "%{$searchValue}%");
-                    });
-                } elseif (in_array($field, ['phone', 'plate'])) {
-                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
-                } elseif ($field === 'approved_by') {
-                    $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
-                        $query->where('ad_soyad', 'like', "%{$searchValue}%");
-                    });
-                } else {
-                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
-                }
-            }
-        }
 
-        $visits = $visitsQuery->get();
+        return $chart;
+    }
 
-        $data = MaskHelper::maskVisits($visits, $selectedFields);
-        
-        $fieldsForBlade = $selectedFields;
+    /**
+     * Yıllara göre chart verisi hazırlar.
+     */
+    private function groupChartByYear($visits): array
+    {
+        $group = $visits->groupBy(fn($v) => $v->entry_time->format('Y'))->map->count();
+        $years = $visits->isNotEmpty()
+            ? range($visits->min('entry_time')->year, $visits->max('entry_time')->year)
+            : [];
 
-        $pdf = Pdf::loadView('pdf.masked_pdf', compact('data', 'fieldsForBlade', 'reportTitle', 'reportRange'))
-            ->setOptions([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'defaultFont' => 'DejaVu Sans'
-            ]);
-        return $pdf->download('Güvenli_Rapor.pdf');
+        return array_map(fn($year) => ['label' => $year, 'count' => $group[$year] ?? 0], $years);
     }
 }

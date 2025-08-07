@@ -10,11 +10,14 @@ use Illuminate\Support\Facades\Log;
 
 class SecurityUserController extends Controller
 {
+    /**
+     * Güvenlik kullanıcılarını listeler ve düzenleme modunu aktifleştirir.
+     */
     public function index(Request $request)
     {
         $users = User::where('role', 'security')->get();
         $editUser = null;
-        
+
         if ($request->has('edit')) {
             $editUser = User::where('role', 'security')->findOrFail($request->edit);
         }
@@ -22,6 +25,44 @@ class SecurityUserController extends Controller
         return view('security.users.index', compact('users', 'editUser'));
     }
 
+    /**
+     * Güvenlik kullanıcısını oluşturur ve loglar.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'ad_soyad'   => 'required|string|max:255',
+            'user_phone' => 'nullable|string|max:20',
+            'username'   => 'required|string|max:255|unique:users,username',
+            'email'      => 'required|email|unique:users,email',
+            'password'   => 'required|string|min:6',
+            'role'       => 'required|in:admin,security',
+            'is_active'  => 'required|boolean',
+        ]);
+
+        User::create([
+            'ad_soyad'   => $validated['ad_soyad'],
+            'user_phone' => $validated['user_phone'],
+            'username'   => $validated['username'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($validated['password']),
+            'role'       => $validated['role'],
+            'is_active'  => $validated['is_active'],
+        ]);
+
+        Log::info('Yeni güvenlik kullanıcısı oluşturuldu', [
+            'created_user' => $validated['username'],
+            'role'         => $validated['role'],
+            'created_by'   => auth()->user()->username,
+            'time'         => now(),
+        ]);
+
+        return back()->with('success', 'Kullanıcı başarıyla oluşturuldu.');
+    }
+
+    /**
+     * Güvenlik kullanıcısını günceller ve loglar.
+     */
     public function update(Request $request, User $user)
     {
         if (!in_array(auth()->user()->role, ['admin', 'super_admin'])) {
@@ -30,86 +71,56 @@ class SecurityUserController extends Controller
 
         $validated = $request->validate([
             'ad_soyad'   => 'required|string|max:255',
-            'user_phone' => 'nullable|string|max:20',   
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'password' => 'nullable|string|min:6',
-            'role' => 'required|in:admin,security',
-            'is_active' => 'required|boolean',
+            'user_phone' => 'nullable|string|max:20',
+            'username'   => 'required|string|max:255',
+            'email'      => 'required|email|max:255',
+            'password'   => 'nullable|string|min:6',
+            'role'       => 'required|in:admin,security',
+            'is_active'  => 'required|boolean',
         ]);
 
-        $user->ad_soyad = $validated['ad_soyad'];
-        $user->user_phone = $validated['user_phone'];
-
-        $user->username = $validated['username'];
-        $user->email = $validated['email'];
-        $user->role = $validated['role']; 
-        $user->is_active = $validated['is_active'];
+        $user->fill([
+            'ad_soyad'   => $validated['ad_soyad'],
+            'user_phone' => $validated['user_phone'],
+            'username'   => $validated['username'],
+            'email'      => $validated['email'],
+            'role'       => $validated['role'],
+            'is_active'  => $validated['is_active'],
+        ]);
 
         if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
+            $user->password = Hash::make($validated['password']);
         }
 
         $user->save();
 
         Log::info('Güvenlik kullanıcısı güncellendi', [
-            'target user' => $user->username,
-            'new role' => $user->role,
-            'activity' => $user->is_active ? 'Aktif' : 'Pasif',
-            'person of transaction' => auth()->user()->username,
-            'time' => now(),
+            'target_user'        => $user->username,
+            'new_role'           => $user->role,
+            'updated_activity'   => $user->is_active ? 'Aktif' : 'Pasif',
+            'updated_by'         => auth()->user()->username,
+            'time'               => now(),
         ]);
 
         return redirect()->route('security.users.index')->with('success', 'Kullanıcı güncellendi');
     }
 
+    /**
+     * Güvenlik kullanıcısının aktif/pasif durumunu değiştirir ve loglar.
+     */
     public function toggle($id)
     {
-        $user = User::findOrFail($id); // ya da SecurityUser
+        $user = User::findOrFail($id);
         $user->is_active = !$user->is_active;
         $user->save();
 
-        // Güvenlik aktif pasif kontrol logu
         Log::info('Güvenlik kullanıcısının durumu değiştirildi', [
-            'process' => $user->is_active ? 'Aktif edildi' : 'Pasif edildi',
-            'target user' => $user->username,
-            'person of transaction' => auth()->user()->username,
-            'time' => now(),
+            'target_user' => $user->username,
+            'new_status'  => $user->is_active ? 'Aktif' : 'Pasif',
+            'changed_by'  => auth()->user()->username,
+            'time'        => now(),
         ]);
 
         return back()->with('success', 'Durum değiştirildi.');
     }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'ad_soyad'   => 'required|string|max:255',
-            'user_phone' => 'nullable|string|max:20',   
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'role' => 'required|in:admin,security',
-            'is_active' => 'required|boolean',
-        ]);
-
-        User::create([
-            'ad_soyad'   => $request->ad_soyad,
-            'user_phone' => $request->user_phone,
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'is_active' => $request->is_active,
-        ]);
-
-        Log::info('Yeni güvenlik kullanıcısı oluşturuldu', [
-            'created user' => $request->username,
-            'role' => $request->role,
-            'created by' => auth()->user()->username,
-            'time' => now(),
-        ]);
-
-        return back()->with('success', 'Kullanıcı başarıyla oluşturuldu.');
-    }
-
 }
