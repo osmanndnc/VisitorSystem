@@ -30,16 +30,15 @@ class AuthenticatedSessionController extends Controller
     {
         try {
             $request->authenticate();
-
             $user = auth()->user();
 
-            // Kullanıcı pasifse giriş iptal edilir.
+            // Kullanıcı pasifse 
             if (!$user->is_active) {
-                Log::warning('Pasif kullanıcı giriş denemesi.', [
-                    'username' => $user->username,
-                    'ip' => $request->ip(),
-                    'time' => now(),
-                ]);
+                Log::channel('auth')->warning('Pasif kullanıcı giriş denemesi', $this->logContext([
+                    'action'  => 'login_attempt',
+                    'status'  => 'failed',
+                    'message' => 'Kullanıcı pasif durumda'
+                ]));
 
                 auth()->logout();
 
@@ -48,26 +47,25 @@ class AuthenticatedSessionController extends Controller
                 ]);
             }
 
-            Log::info('Kullanıcı girişi başarılı.', [
-                'user_id' => $user->id,
-                'username' => $user->username,
-                'ip' => $request->ip(),
-                'time' => now(),
-            ]);
+            // Başarılı giriş
+            Log::channel('auth')->info('Kullanıcı girişi başarılı', $this->logContext([
+                'action'  => 'login',
+                'status'  => 'success',
+                'message' => 'Giriş başarılı'
+            ]));
 
             $this->handleRememberMe($request);
-
             $request->session()->regenerate();
 
             return redirect()->intended(RouteServiceProvider::redirectToBasedOnRole());
 
         } catch (ValidationException $e) {
-            Log::error('Giriş başarısız.', [
-                'username' => $request->input('username'),
-                'ip' => $request->ip(),
-                'time' => now(),
-                'reason' => 'Kullanıcı adı veya şifre hatalı',
-            ]);
+            // Hatalı giriş
+            Log::channel('auth')->error('Giriş başarısız', $this->logContext([
+                'action'  => 'login',
+                'status'  => 'failed',
+                'message' => 'Kullanıcı adı veya şifre hatalı'
+            ]));
 
             return redirect()->route('login')->withErrors([
                 'username' => 'Kullanıcı adı veya şifre hatalı.',
@@ -82,15 +80,15 @@ class AuthenticatedSessionController extends Controller
     {
         $user = auth()->user();
 
-        Log::info('Kullanıcı çıkış yaptı.', [
+        Log::channel('auth')->info('Kullanıcı çıkış yaptı', $this->logContext([
+            'action'  => 'logout',
+            'status'  => 'success',
+            'message' => 'Oturum kapatıldı',
             'user_id' => $user->id ?? null,
-            'username' => $user->username ?? 'Bilinmiyor',
-            'ip' => $request->ip(),
-            'time' => now(),
-        ]);
+            'username'=> $user->username ?? 'Bilinmiyor'
+        ]));
 
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -106,17 +104,35 @@ class AuthenticatedSessionController extends Controller
             Cookie::queue('remember_username', $request->input('username'), 60 * 24 * 7); // 7 gün
             Cookie::queue('remember_password', $request->input('password'), 60 * 24 * 7); // 7 gün
 
-            Log::info('Beni hatırla çerezleri ayarlandı.', [
-                'username' => $request->input('username'),
-                'ip' => $request->ip(),
-            ]);
+            Log::channel('auth')->info('"Beni hatırla" aktif', $this->logContext([
+                'action'  => 'remember_me',
+                'status'  => 'enabled',
+                'message' => 'Beni hatırla çerezleri ayarlandı'
+            ]));
         } else {
             Cookie::queue(Cookie::forget('remember_username'));
             Cookie::queue(Cookie::forget('remember_password'));
 
-            Log::info('Beni hatırla çerezleri temizlendi.', [
-                'ip' => $request->ip(),
-            ]);
+            Log::channel('auth')->info('"Beni hatırla" devre dışı', $this->logContext([
+                'action'  => 'remember_me',
+                'status'  => 'disabled',
+                'message' => 'Beni hatırla çerezleri temizlendi'
+            ]));
         }
+    }
+
+    /**
+     * Ortak log context bilgisi.
+     */
+    private function logContext(array $extra = []): array
+    {
+        $user = auth()->user();
+
+        return array_merge([
+            'user_id'  => $user->id ?? null,
+            'username' => $user->username ?? request()->input('username'),
+            'ip'       => request()->ip(),
+            'time'     => now()->toDateTimeString(),
+        ], $extra);
     }
 }

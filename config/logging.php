@@ -52,12 +52,41 @@ return [
 
     'channels' => [
 
-        'visitor' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/visitor.log'),
+        /////////
+        'request' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/request.log'),
             'level' => 'info',
+            'days' => 30,
         ],
-        
+
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'info',
+            'days' => 30,
+        ],
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => 'info',
+            'days' => 30,
+        ],
+        'admin' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/admin.log'),
+            'level' => 'info',
+            'days' => 30,
+        ],
+        'report' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/report.log'),
+            'level' => 'info',
+            'days' => 14,
+        ],
+
+        /////////
+
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],

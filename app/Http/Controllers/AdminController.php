@@ -16,35 +16,36 @@ class AdminController extends Controller
     ];
 
     /**
-     * Admin arayüzünde ziyaretçileri listeler, filtreleme uygular ve loglar.
+     * Admin ziyaretçileri listeler (filtre + log).
      */
     public function index(Request $request)
     {
         $fields = $this->determineFields($request);
         $visitsQuery = Visit::with(['visitor', 'approver']);
+
         $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request);
 
         $visits = $visitsQuery->get();
 
-        Log::info('Admin ziyaretçi listeleme yaptı', [
-            'user_id' => auth()->id(),
-            'requested_by' => auth()->user()->username ?? 'Anonim',
-            'filters' => $request->except('_token'),
-            'filter_type' => $request->filled('start_date') ? 'custom_range' : ($request->input('date_filter') ?? 'daily'),
-            'record_count' => $visits->count(),
-            'timestamp' => now(),
-        ]);
+        Log::channel('admin')->info('Ziyaretçi listesi görüntülendi', $this->logContext([
+            'action'       => 'visitor_list',
+            'status'       => 'success',
+            'message'      => 'Admin ziyaretçi listeleme yaptı',
+            'filters'      => $request->except('_token'),
+            'filter_type'  => $request->filled('start_date') ? 'custom_range' : ($request->input('date_filter') ?? 'daily'),
+            'record_count' => $visits->count()
+        ]));
 
         return view('admin.index', [
-            'visits' => $visits,
-            'fields' => $fields,
+            'visits'    => $visits,
+            'fields'    => $fields,
             'allFields' => $this->allFields,
         ]);
     }
 
     /**
-     * PDF çıktısını filtrelenmemiş (unmasked) olarak üretir ve indirir.
+     * PDF çıktısını filtrelenmemiş olarak üretir.
      */
     public function exportPdfUnmasked(Request $request)
     {
@@ -59,32 +60,57 @@ class AdminController extends Controller
         $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'));
         $visits = $visitsQuery->get();
 
-        $pdfData = $this->mapVisitsForPdf($visits, $selectedFields);
-        $pdfHeadings = $this->mapFieldLabels($selectedFields);
-        $reportTitle = $this->generateReportTitle($request);
+        if ($visits->isEmpty()) {
+            Log::channel('admin')->warning('PDF export denemesi - veri yok', $this->logContext([
+                'action'  => 'pdf_export_unmasked',
+                'status'  => 'failed',
+                'message' => 'Filtreye uygun kayıt bulunamadı',
+                'filters' => $request->except('_token')
+            ]));
+
+            return back()->with('error', 'Seçilen filtrelere uygun kayıt bulunamadı.');
+        }
+
+        $pdfData         = $this->mapVisitsForPdf($visits, $selectedFields);
+        $pdfHeadings     = $this->mapFieldLabels($selectedFields);
+        $reportTitle     = $this->generateReportTitle($request);
         $fullReportTitle = $reportTitle . ' Ziyaretçi Listesi';
 
-        Log::info('Admin PDF (unmasked) dışa aktarımı yaptı', [
-            'user_id' => auth()->id(),
-            'requested_by' => auth()->user()->ad_soyad ?? 'Anonim',
-            'filters' => $request->except('_token'),
-            'field_count' => count($selectedFields),
-            'record_count' => $visits->count(),
-            'export_type' => 'pdf_unmasked',
-            'timestamp' => now(),
-        ]);
+        Log::channel('admin')->info('PDF export başarılı', $this->logContext([
+            'action'       => 'pdf_export_unmasked',
+            'status'       => 'success',
+            'message'      => 'Admin PDF (unmasked) dışa aktarımı yaptı',
+            'filters'      => $request->except('_token'),
+            'field_count'  => count($selectedFields),
+            'record_count' => $visits->count()
+        ]));
 
         $pdf = Pdf::loadView('pdf.unmasked_report', compact('pdfData', 'pdfHeadings', 'fullReportTitle'));
         return $pdf->download('ziyaretci_listesi.pdf');
     }
 
     /**
-     * Seçili filtre alanlarını belirler.
+     * Ortak log context bilgisi.
+     */
+    private function logContext(array $extra = []): array
+    {
+        $user = auth()->user();
+
+        return array_merge([
+            'user_id'  => $user->id ?? null,
+            'username' => $user->username ?? 'Anonim',
+            'ip'       => request()->ip(),
+            'time'     => now()->toDateTimeString(),
+        ], $extra);
+    }
+
+    /**
+     * Seçili alanları belirler.
      */
     private function determineFields(Request $request): array
     {
         $requested = $request->input('filter');
-        $fields = $requested ? array_intersect(explode(',', $requested), $this->allFields) : $this->allFields;
+        $fields    = $requested ? array_intersect(explode(',', $requested), $this->allFields) : $this->allFields;
         return empty($fields) ? $this->allFields : $fields;
     }
 
@@ -95,21 +121,23 @@ class AdminController extends Controller
     {
         if ($request->filled('start_date')) {
             $start = Carbon::parse($request->start_date)->startOfDay();
-            $end = $request->filled('end_date') ? Carbon::parse($request->end_date)->endOfDay() : Carbon::now()->endOfDay();
+            $end   = $request->filled('end_date')
+                        ? Carbon::parse($request->end_date)->endOfDay()
+                        : Carbon::now()->endOfDay();
             $query->whereBetween('entry_time', [$start, $end]);
         } else {
-            $dateFilter = $request->input('date_filter', 'daily');
-            match ($dateFilter) {
-                'daily' => $query->whereDate('entry_time', Carbon::today()),
-                'monthly' => $query->whereMonth('entry_time', Carbon::now()->month)->whereYear('entry_time', Carbon::now()->year),
-                'yearly' => $query->whereYear('entry_time', Carbon::now()->year),
-                default => null,
+            match ($request->input('date_filter', 'daily')) {
+                'daily'   => $query->whereDate('entry_time', Carbon::today()),
+                'monthly' => $query->whereMonth('entry_time', Carbon::now()->month)
+                                    ->whereYear('entry_time', Carbon::now()->year),
+                'yearly'  => $query->whereYear('entry_time', Carbon::now()->year),
+                default   => null,
             };
         }
     }
 
     /**
-     * Alan bazlı filtreleme uygular.
+     * Alan bazlı filtre uygular.
      */
     private function applyFieldFilters($query, Request $request): void
     {
@@ -130,7 +158,7 @@ class AdminController extends Controller
     }
 
     /**
-     * PDF veri setini map'ler.
+     * PDF veri setini mapler.
      */
     private function mapVisitsForPdf($visits, $fields)
     {
@@ -138,12 +166,15 @@ class AdminController extends Controller
             $row = [];
             foreach ($fields as $field) {
                 $row[$field] = match ($field) {
-                    'entry_time' => optional($visit->entry_time)->format('Y-m-d H:i:s'),
-                    'name' => $visit->visitor->name ?? '-',
-                    'tc_no' => $visit->visitor->tc_no ?? '-',
-                    'phone', 'plate', 'purpose', 'person_to_visit' => $visit->$field ?? '-',
-                    'approved_by' => $visit->approver->ad_soyad ?? $visit->approved_by ?? '-',
-                    default => $visit->$field ?? '-',
+                    'entry_time'     => optional($visit->entry_time)->format('Y-m-d H:i:s'),
+                    'name'           => $visit->visitor->name ?? '-',
+                    'tc_no'          => $visit->visitor->tc_no ?? '-',
+                    'phone',
+                    'plate',
+                    'purpose',
+                    'person_to_visit'=> $visit->$field ?? '-',
+                    'approved_by'    => $visit->approver->ad_soyad ?? $visit->approved_by ?? '-',
+                    default          => $visit->$field ?? '-',
                 };
             }
             return $row;
@@ -156,15 +187,15 @@ class AdminController extends Controller
     private function mapFieldLabels($fields): array
     {
         return array_map(fn($field) => match($field) {
-            'entry_time' => 'Giriş Tarihi',
-            'name' => 'Ad Soyad',
-            'tc_no' => 'T.C. Kimlik No',
-            'phone' => 'Telefon',
-            'plate' => 'Plaka',
-            'purpose' => 'Ziyaret Sebebi',
+            'entry_time'      => 'Giriş Tarihi',
+            'name'            => 'Ad Soyad',
+            'tc_no'           => 'T.C. Kimlik No',
+            'phone'           => 'Telefon',
+            'plate'           => 'Plaka',
+            'purpose'         => 'Ziyaret Sebebi',
             'person_to_visit' => 'Ziyaret Edilen Kişi',
-            'approved_by' => 'Ekleyen',
-            default => ucfirst(str_replace('_', ' ', $field)),
+            'approved_by'     => 'Ekleyen',
+            default           => ucfirst(str_replace('_', ' ', $field)),
         }, $fields);
     }
 
@@ -175,15 +206,15 @@ class AdminController extends Controller
     {
         if ($request->filled('start_date')) {
             $start = Carbon::parse($request->start_date)->format('d.m.Y');
-            $end = $request->filled('end_date') ? Carbon::parse($request->end_date)->format('d.m.Y') : $start;
+            $end   = $request->filled('end_date') ? Carbon::parse($request->end_date)->format('d.m.Y') : $start;
             return "$start - $end Aralığı";
         }
 
         return match ($request->input('date_filter', 'daily')) {
-            'daily' => 'Günlük',
+            'daily'   => 'Günlük',
             'monthly' => 'Aylık',
-            'yearly' => 'Yıllık',
-            default => 'Tüm',
+            'yearly'  => 'Yıllık',
+            default   => 'Tüm',
         };
     }
 }

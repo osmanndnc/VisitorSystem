@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,5 +23,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        // Global Context ekle.
+        app()->singleton('request_uid', fn() => (string) Str::uuid());
+
+        Log::withContext([
+            'request_id' => app('request_uid'),
+            'ip'       => request()->ip(),
+            'url'      => request()->fullUrl(),
+            'user_id'  => auth()->id(),
+            'username' => optional(auth()->user())->username,
+        ]);
     }
 }
