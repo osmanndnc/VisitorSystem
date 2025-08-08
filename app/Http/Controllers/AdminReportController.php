@@ -150,21 +150,48 @@ class AdminReportController extends Controller
         $endDate   = $request->end_date;
         $filter    = $request->input('date_filter', 'all');
 
+        // Özel tarih aralığı
         if ($startDate) {
             $start = Carbon::parse($startDate)->startOfDay();
             $end   = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
             $query->whereBetween('entry_time', [$start, $end]);
 
-            return ['', Carbon::parse($startDate)->format('d.m.Y') . ' - ' . ($endDate ? Carbon::parse($endDate)->format('d.m.Y') : 'Bugün')];
+            $title = '';
+            $range = Carbon::parse($startDate)->format('d.m.Y') . ' - ' . ($endDate ? Carbon::parse($endDate)->format('d.m.Y') : 'Bugün');
+            return [$title, $range];
         }
 
-        return match ($filter) {
-            'daily'   => [$title = 'Günlük', $range = today()->format('d.m.Y')] && $query->whereDate('entry_time', today()),
-            'monthly' => [$title = 'Aylık', $range = now()->isoFormat('MMMM YYYY')] && $query->whereMonth('entry_time', now()->month)->whereYear('entry_time', now()->year),
-            'yearly'  => [$title = 'Yıllık', $range = now()->year] && $query->whereYear('entry_time', now()->year),
-            default   => ['Tüm', 'Tüm zamanlar']
-        };
+        // Hazır filtreler
+        switch ($filter) {
+            case 'daily':
+                $query->whereDate('entry_time', today());
+                $title = 'Günlük';
+                $range = today()->format('d.m.Y');
+                break;
+
+            case 'monthly':
+                $query->whereMonth('entry_time', now()->month)
+                    ->whereYear('entry_time', now()->year);
+                $title = 'Aylık';
+                $range = now()->isoFormat('MMMM YYYY');
+                break;
+
+            case 'yearly':
+                $query->whereYear('entry_time', now()->year);
+                $title = 'Yıllık';
+                $range = (string) now()->year;
+                break;
+
+            case 'all':
+            default:
+                $title = 'Tüm';
+                $range = 'Tüm zamanlar';
+                break;
+        }
+
+        return [$title, $range];
     }
+
 
     /**
      * Alan bazlı filtreleme uygular.
