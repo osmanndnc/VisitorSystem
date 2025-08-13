@@ -2,188 +2,81 @@
 
 namespace App\Exports;
 
-use App\Models\Visit;
-use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use App\Helpers\MaskHelper;
 
-class ReportExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
+class ReportExport implements FromCollection, WithMapping, WithHeadings, WithStyles
 {
-    protected $fields;
-    protected $dateFilter;
-    protected $sortOrder;
-    protected $request;
-    protected $unmasked;
+    protected Collection $data;
+    protected array $fields;
+    protected array $masked;
 
-    public function __construct(array $fields, $dateFilter = '', $sortOrder = 'desc', $unmasked = false)
+    /**
+     * @param Collection $data   -> Visit koleksiyonu (with visitor, approver)
+     * @param array $fields      -> ['entry_time','name','tc_no','phone','plate','purpose','person_to_visit','approved_by']
+     * @param array $masked      -> ['name','tc_no','phone','plate','person_to_visit'] gibi
+     */
+    public function __construct(Collection $data, array $fields, array $masked = [])
     {
+        $this->data   = $data;
         $this->fields = $fields;
-        $this->dateFilter = $dateFilter;
-        $this->sortOrder = $sortOrder;
-        $this->request = request();
-        $this->unmasked = $unmasked;
+        $this->masked = $masked;
     }
- 
+
     public function collection()
     {
-        $visitsQuery = Visit::with('visitor', 'approver');
-
-        // Tarih filtreleme
-        $startDate = $this->request->input('start_date');
-        $endDate = $this->request->input('end_date');
-
-        if ($startDate) {
-            $start = Carbon::parse($startDate)->startOfDay();
-            $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
-            $visitsQuery->whereBetween('entry_time', [$start, $end]);
-        } else {
-            switch ($this->dateFilter) {
-                case 'daily':
-                    $visitsQuery->whereDate('entry_time', Carbon::today());
-                    break;
-                case 'monthly':
-                    $visitsQuery->whereMonth('entry_time', Carbon::now()->month)
-                                ->whereYear('entry_time', Carbon::now()->year);
-                    break;
-                case 'yearly':
-                    $visitsQuery->whereYear('entry_time', Carbon::now()->year);
-                    break;
-                case 'all':
-                default:
-                    break;
-            }
-        }
-
-        // Arama filtreleri
-        $allPossibleFieldsForSearch = [
-            'entry_time', 'name', 'tc_no', 'phone', 'plate',
-            'purpose', 'person_to_visit', 'approved_by'
-        ];
-
-        foreach ($allPossibleFieldsForSearch as $field) {
-            $searchValue = $this->request->input($field . '_value');
-            if ($searchValue) {
-                if (in_array($field, ['name', 'tc_no'])) {
-                    $visitsQuery->whereHas('visitor', function ($query) use ($field, $searchValue) {
-                        $query->where($field, 'like', "%{$searchValue}%");
-                    });
-                } elseif ($field === 'approved_by') {
-                    $visitsQuery->whereHas('approver', function ($query) use ($searchValue) {
-                        $query->where('username', 'like', "%{$searchValue}%");
-                    });
-                } elseif (in_array($field, ['phone', 'plate'])) {
-                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
-                } else {
-                    $visitsQuery->where($field, 'like', "%{$searchValue}%");
-                }
-            }
-        }
-
-        // Sıralama
-        $visitsQuery->orderBy('entry_time', $this->sortOrder);
-
-        return $visitsQuery->get();
-    }
-
-    public function map($visit): array
-    {
-        $row = [];
-        foreach ($this->fields as $field) {
-            switch ($field) {
-                case 'id':
-                    $row[] = $visit->id ?? '-';
-                    break;
-                case 'entry_time':
-                    $row[] = $visit->entry_time ? $visit->entry_time->format('Y-m-d H:i:s') : '-';
-                    break;
-                case 'name':
-                    $row[] = $this->unmasked ? ($visit->visitor->name ?? '-') : $this->maskName($visit->visitor->name ?? '');
-                    break;
-                case 'tc_no':
-                    $row[] = $this->unmasked ? ($visit->visitor->tc_no ?? '-') : $this->partialMask($visit->visitor->tc_no ?? '', 1, 2);
-                    break;
-                case 'phone':
-                    $row[] = $this->unmasked ? ($visit->phone ?? '-') : $this->partialMask($visit->phone ?? '', 0, 2);
-                    break;
-                case 'plate':
-                    $row[] = $this->unmasked ? ($visit->plate ?? '-') : $this->maskPlate($visit->plate ?? '');
-                    break;
-                case 'purpose':
-                    $row[] = $visit->purpose ?? '-';
-                    break;
-                case 'person_to_visit':
-                    $row[] = $this->unmasked ? ($visit->person_to_visit ?? '-') : $this->maskName($visit->person_to_visit ?? '');
-                    break;
-                case 'approved_by':
-                    $row[] = $this->unmasked ? ($visit->approver->username ?? '-') : ($visit->approver->username ?? '-');
-                    break;
-                default:
-                    $row[] = $visit->$field ?? '-';
-                    break;
-            }
-        }
-        return $row;
+        return $this->data;
     }
 
     public function headings(): array
     {
-        $headings = [];
-        foreach ($this->fields as $field) {
-            $headings[] = match ($field) {
-                'id' => 'ID',
-                'entry_time' => 'Giriş Tarihi',
-                'name' => 'Ad-Soyad',
-                'tc_no' => 'T.C. Kimlik No',
-                'phone' => 'Telefon',
-                'plate' => 'Plaka',
-                'purpose' => 'Ziyaret Sebebi',
-                'person_to_visit' => 'Ziyaret Edilen Kişi',
-                'approved_by' => 'Ekleyen',
-                default => ucfirst(str_replace('_', ' ', $field)),
+        return array_map(fn($f) => match ($f) {
+            'entry_time'      => 'Giriş Tarihi',
+            'name'            => 'Ad-Soyad',
+            'tc_no'           => 'T.C. Kimlik No',
+            'phone'           => 'Telefon',
+            'plate'           => 'Plaka',
+            'purpose'         => 'Ziyaret Sebebi',
+            'person_to_visit' => 'Ziyaret Edilen Kişi',
+            'approved_by'     => 'Ekleyen',
+            default           => ucfirst(str_replace('_', ' ', $f)),
+        }, $this->fields);
+    }
+
+    public function map($row): array
+    {
+        $out = [];
+
+        foreach ($this->fields as $f) {
+            // ham değer
+            $val = match ($f) {
+                'entry_time'      => $row->entry_time ? $row->entry_time->format('Y-m-d H:i:s') : '-',
+                'name'            => optional($row->visitor)->name ?? '-',
+                'tc_no'           => optional($row->visitor)->tc_no ?? '-',
+                'phone'           => $row->phone ?? '-',
+                'plate'           => $row->plate ?? '-',
+                'purpose'         => $row->purpose ?? '-',
+                'person_to_visit' => $row->person_to_visit ?? '-',
+                'approved_by'     => optional($row->approver)->ad_soyad ?? ($row->approved_by ?? '-'),
+                default           => data_get($row, $f, '-'),
             };
+
+            // seçime göre maske uygula (telefon burada 1 baş, 2 son kalsın)
+            $out[] = MaskHelper::apply($f, $val, $this->masked);
         }
-        return $headings;
+
+        return $out;
     }
 
-    // Maskeleme yardımcı metotları
-    private function fullMask($text)
+    // Basit başlık stili (opsiyonel)
+    public function styles(Worksheet $sheet)
     {
-        return str_repeat('*', mb_strlen($text));
-    }
-
-    private function partialMask($text, $visibleStart = 1, $visibleEnd = 1)
-    {
-        if (!$text) return '';
-        $length = mb_strlen($text);
-        if ($length <= $visibleStart + $visibleEnd) {
-            return str_repeat('*', $length);
-        }
-        $start = mb_substr($text, 0, $visibleStart);
-        $end = mb_substr($text, -$visibleEnd);
-        $middle = str_repeat('*', $length - $visibleStart - $visibleEnd);
-        return $start . $middle . $end;
-    }
-
-    private function maskName($fullName)
-    {
-        if (!$fullName) return '';
-        $parts = explode(' ', $fullName);
-        $maskedParts = array_map(function ($part) {
-            return mb_substr($part, 0, 1) . str_repeat('*', max(mb_strlen($part) - 1, 0));
-        }, $parts);
-        return implode(' ', $maskedParts);
-    }
-
-    private function maskPlate($plate)
-    {
-        if (!$plate) return '';
-        if (preg_match('/^(\d{2})\s*(\D+)\s*(\d+)$/', $plate, $matches)) {
-            return $matches[1] . ' ' . str_repeat('*', mb_strlen($matches[2])) . ' ' . str_repeat('*', mb_strlen($matches[3]));
-        }
-        return $this->partialMask($plate, 2, 2);
+        $sheet->getStyle('1')->getFont()->setBold(true);
+        return [];
     }
 }

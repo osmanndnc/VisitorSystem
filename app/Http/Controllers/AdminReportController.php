@@ -25,13 +25,15 @@ class AdminReportController extends Controller
         ]));
 
         return view('admin.reports', [
-            'visits'        => collect(),
-            'fieldsForBlade'=> $fieldsForBlade,
-            'dateFilter'    => '',
-            'sortOrder'     => 'desc',
-            'chartData'     => [],
-            'reportTitle'   => 'Tüm',
-            'reportRange'   => 'Tüm zamanlar',
+            'visits'         => collect(),
+            'fieldsForBlade' => $fieldsForBlade,
+            'dateFilter'     => '',
+            'sortOrder'      => 'desc',
+            'chartData'      => [],
+            'reportTitle'    => 'Tüm',
+            'reportRange'    => 'Tüm zamanlar',
+            // Varsayılan maskeler (UI açıldığında tikli gözüksün)
+            'masked'         => ['name','tc_no','phone','plate','person_to_visit'],
         ]);
     }
 
@@ -41,15 +43,32 @@ class AdminReportController extends Controller
     public function generateReport(Request $request)
     {
         Carbon::setLocale('tr');
-        $allFields       = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
-        $selectedFields  = $request->input('fields', $allFields);
+
+        $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
+        $selectedFields = $request->input('fields', $allFields);
+
+        // Kullanıcının seçtiği maskeler (varsayılan hepsi tikli)
+        $masked = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
+        // // Liste ekranında default: MASKE YOK
+        // $maskedInput = $request->input('mask', []);
+        // if (is_array($maskedInput)) {
+        //     $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
+        //     $masked  = $isAssoc
+        //         ? array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true))
+        //         : $maskedInput;
+        // } else {
+        //     $masked = [];
+        // }
+
+
 
         $visitsQuery = Visit::with(['visitor', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
         $visits    = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
-        $data      = MaskHelper::maskVisits($visits, $selectedFields);
+        // === ÖNEMLİ: Helper çağrısına $masked de veriyoruz
+        $data      = MaskHelper::maskVisits($visits, $selectedFields, $masked);
         $chartData = $this->prepareChartData($visits, $request->input('date_filter', ''));
 
         if ($visits->isEmpty()) {
@@ -65,15 +84,18 @@ class AdminReportController extends Controller
                 'status'       => 'success',
                 'message'      => 'Maskeleme ile rapor oluşturuldu',
                 'filters'      => $request->except('_token'),
+                'masked'       => $masked,
+                'fields'       => $selectedFields,
                 'record_count' => $visits->count()
             ]));
         }
 
         return view('admin.reports', compact('data', 'selectedFields', 'chartData', 'reportTitle', 'reportRange'))
             ->with([
-                'fieldsForBlade'=> $selectedFields,
-                'dateFilter'    => $request->date_filter,
-                'sortOrder'     => $request->sort_order
+                'fieldsForBlade' => $selectedFields,
+                'dateFilter'     => $request->date_filter,
+                'sortOrder'      => $request->sort_order,
+                'masked'         => $masked,
             ]);
     }
 
@@ -83,15 +105,33 @@ class AdminReportController extends Controller
     public function exportMaskedPdf(Request $request)
     {
         Carbon::setLocale('tr');
+
         $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
+        
+        //$masked         = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
+        // >>> MASK NORMALİZASYONU (map + liste her ikisini de kabul eder)
+        $maskedInput = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
+        if (is_array($maskedInput)) {
+            $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
+            if ($isAssoc) {
+                $masked = array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true));
+            } else {
+                $masked = $maskedInput;
+            }
+        } else {
+            $masked = ['name','tc_no','phone','plate','person_to_visit'];
+        }
+        // <<<
+
 
         $visitsQuery = Visit::with(['visitor', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
         $visits = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
-        $data   = MaskHelper::maskVisits($visits, $selectedFields);
+        // === ÖNEMLİ: PDF için de aynı maske seti kullanılıyor
+        $data   = MaskHelper::maskVisits($visits, $selectedFields, $masked);
 
         if ($visits->isEmpty()) {
             Log::channel('admin')->warning('PDF export denemesi – veri yok', $this->logContext([
@@ -109,14 +149,16 @@ class AdminReportController extends Controller
             'status'       => 'success',
             'message'      => 'PDF masked export başarılı',
             'field_count'  => count($selectedFields),
+            'masked'       => $masked,
             'record_count' => $visits->count()
         ]));
 
         $pdf = Pdf::loadView('pdf.masked_pdf', [
-            'data'          => $data,
-            'fieldsForBlade'=> $selectedFields,
-            'reportTitle'   => $reportTitle,
-            'reportRange'   => $reportRange,
+            'data'           => $data,
+            'fieldsForBlade' => $selectedFields,
+            'reportTitle'    => $reportTitle,
+            'reportRange'    => $reportRange,
+            'masked'         => $masked,
         ])->setOptions([
             'isHtml5ParserEnabled' => true,
             'isRemoteEnabled'      => true,
@@ -191,7 +233,6 @@ class AdminReportController extends Controller
 
         return [$title, $range];
     }
-
 
     /**
      * Alan bazlı filtreleme uygular.

@@ -1,3 +1,4 @@
+@php $pdfMode = $pdfMode ?? false; @endphp
 <x-app-layout>
     <div class="container py-5" style="
         background-color: #ffffff;
@@ -9,17 +10,36 @@
         padding: 2.5rem;
     ">
         @php
-            $reportTitle = $reportTitle ?? '';
-            $reportRange = $reportRange ?? '';
+            // mask[] => ['name','tc_no',...]  veya  mask[name]=on => ['name'=>'on', ...]
+            $maskInput  = (array) request()->input('mask', []);
+
+            // Dizi değerlerini "alan adları"na normalle
+            $maskFields = collect($maskInput)->map(function ($v, $k) {
+                return is_string($k) ? $k : $v; // anahtar string ise onu al, değilse değeri al
+            })->filter()->values()->all();
+
+            // Başlıkta gösterilecek liste
+            $maskedList = collect($maskFields)->map(function ($f) {
+                return match ($f) {
+                    'name'            => 'Ad Soyad',
+                    'tc_no'           => 'T.C. No',
+                    'phone'           => 'Telefon',
+                    'plate'           => 'Plaka',
+                    'person_to_visit' => 'Ziyaret Edilen',
+                    default           => $f,
+                };
+            })->implode(', ');
+
+            // Satır içi hızlı kontrol için set
+            $maskSet = array_flip($maskFields);
         @endphp
+
         
         <h2 class="mb-4 text-center" style="
             font-weight: bold;
             font-size: 2.8rem;
             color: #003366;
-            text-shadow: none;
-            font-style: normal;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         ">
             {{ $reportTitle ? $reportTitle . ' ' : '' }} Ziyaretçi Raporu
             @if ($reportRange)
@@ -27,7 +47,13 @@
             @endif
         </h2>
 
-        @if ($data->isEmpty())
+        @if(!empty($maskFields))
+            <div class="text-center" style="color:#6b7280; margin-top:-10px; margin-bottom: 20px;">
+                Maskelenen alanlar: <strong>{{ $maskedList }}</strong>
+            </div>
+        @endif
+
+        @if (empty($data) || (is_object($data) && method_exists($data,'isEmpty') && $data->isEmpty()))
             <div class="alert alert-warning text-center" role="alert">
                 Gösterilecek veri bulunamadı.
             </div>
@@ -60,7 +86,36 @@
                                 <tr>
                                     <td class="text-center">{{ $index + 1 }}</td>
                                     @foreach ($fieldsForBlade as $field)
-                                        <td class="text-center">{{ $row[$field] ?? '-' }}</td>
+                                        @php
+                                            $val = $row[$field] ?? '-';
+                                            $shouldMask = isset($maskMap[$field]); // URL'de mask[field] varsa
+
+                                            if ($shouldMask && $val !== '-') {
+                                                switch ($field) {
+                                                    case 'name':
+                                                    case 'person_to_visit':
+                                                        $val = \App\Helpers\MaskHelper::maskName((string)$val);
+                                                        break;
+                                                    case 'tc_no':
+                                                        $val = \App\Helpers\MaskHelper::maskTc((string)$val);
+                                                        break;
+                                                    case 'phone':
+                                                        $val = \App\Helpers\MaskHelper::maskPhone((string)$val);
+                                                        break;
+                                                    case 'plate':
+                                                        $val = method_exists(\App\Helpers\MaskHelper::class, 'maskPlate')
+                                                            ? \App\Helpers\MaskHelper::maskPlate((string)$val)
+                                                            : (preg_match('/^\d{2}\s+[A-ZÇĞİÖŞÜ]{1,3}\s+\d{2,4}$/u', strtoupper(trim((string)$val)))
+                                                                ? preg_replace('/^(\d{2})\s+[A-ZÇĞİÖŞÜ]{1,3}\s+\d{2,4}$/u', '$1 ** ****', strtoupper(trim((string)$val)))
+                                                                : $val);
+                                                        break;
+                                                    default:
+                                                        // entry_time, purpose, approved_by vb. maskelenmiyor
+                                                        break;
+                                                }
+                                            }
+                                        @endphp
+                                        <td class="text-center">{{ $val }}</td>
                                     @endforeach
                                 </tr>
                             @endforeach
@@ -70,6 +125,7 @@
 
                 <div class="mt-5 d-flex flex-wrap justify-content-center print-hidden"
                     style="gap: 1.5rem 2rem; padding: 1rem 0;">
+                    {{-- Query tüm parametreleri (mask dahil) taşıyor --}}
                     <a href="{{ route('report.export', request()->query()) }}"
                        class="custom-btn btn-excel">
                         <i class="bi bi-file-earmark-excel"></i> Excel
@@ -137,69 +193,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
-        document.getElementById('printReportBtn').addEventListener('click', () => {
+        // Yazdır
+        document.getElementById('printReportBtn')?.addEventListener('click', () => {
             const table = document.querySelector('table');
-            if (!table) {
-                alert('Yazdırılacak tablo bulunamadı.');
-                return;
-            }
+            if (!table) return alert('Yazdırılacak tablo bulunamadı.');
 
             const originalHTML = document.body.innerHTML;
-
             let printHTML = '<html><head><title>Yazdır - Ziyaretçi Raporu</title>';
 
-            document.querySelectorAll('style').forEach(style => {
-                printHTML += style.outerHTML;
-            });
-
-            document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-                printHTML += link.outerHTML;
-            });
+            document.querySelectorAll('style').forEach(style => { printHTML += style.outerHTML; });
+            document.querySelectorAll('link[rel="stylesheet"]').forEach(link => { printHTML += link.outerHTML; });
 
             printHTML += `
                 <style>
                     body { margin: 1cm; font-family: Arial, sans-serif; }
-                    h2.page-title {
-                        text-align: center;
-                        font-size: 24px;
-                        font-weight: bold;
-                        color: #003366;
-                        margin-bottom: 20px;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        table-layout: fixed;
-                        word-wrap: break-word;
-                    }
-                    th, td {
-                        padding: 5px;
-                        border: 1px solid #ccc;
-                        font-size: 10px;
-                        vertical-align: top;
-                    }
-                    thead th {
-                        background-color: #003366;
-                        color: #ffffff;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    @page {
-                        margin: 1cm;
-                    }
+                    h2.page-title { text-align: center; font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; table-layout: fixed; word-wrap: break-word; }
+                    th, td { padding: 5px; border: 1px solid #ccc; font-size: 10px; vertical-align: top; }
+                    thead th { background-color: #003366; color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    @page { margin: 1cm; }
                 </style>
             </head><body>`;
 
             const today = new Date();
-            const dateStr = today.toLocaleDateString('tr-TR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
+            const dateStr = today.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-            const reportTitle = document.querySelector('h2').innerText.split('\n')[0].trim();
-            const reportRange = document.querySelector('h2 span')?.innerText.trim() || '';
-            const finalTitle = reportRange ? `Ziyaretçi Raporu ${reportRange}` : `${reportTitle} Ziyaretçi Raporu`;
+            const h2 = document.querySelector('h2');
+            const titleOnly = (h2?.childNodes[0]?.textContent || 'Ziyaretçi Raporu').trim();
+            const range = document.querySelector('h2 span')?.innerText.trim() || '';
+            const finalTitle = range ? `${titleOnly} ${range}` : titleOnly;
 
             printHTML += `<div style="text-align:right; font-size:10px; margin-bottom:5px;">${dateStr}</div>`;
             printHTML += `<h2 class="page-title">${finalTitle}</h2>`;
@@ -215,23 +237,17 @@
             }, 500);
         });
         
-        // GRAFİK İÇİN
-        document.getElementById('showChartBtn').addEventListener('click', () => {
+        // Grafik
+        document.getElementById('showChartBtn')?.addEventListener('click', () => {
             const chartContainer = document.getElementById('reportChartContainer');
             const downloadPdfBtn = document.getElementById('downloadPdfBtn');
             if (chartContainer.style.display === 'none') {
                 chartContainer.style.display = 'block';
                 downloadPdfBtn.style.display = 'flex';
                 drawChart();
-
-                    setTimeout(() => {
-            chartContainer.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'end' 
-            });
-        }, 500);
-
-        
+                setTimeout(() => {
+                    chartContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 500);
             } else {
                 chartContainer.style.display = 'none';
                 downloadPdfBtn.style.display = 'none';
@@ -240,16 +256,11 @@
 
         function drawChart() {
             const ctx = document.getElementById('reportChart').getContext('2d');
-            
-            // Data attribute'dan veri al
             const chartContainer = document.getElementById('reportChartContainer');
             let chartData = JSON.parse(chartContainer.dataset.chart || '[]');
             let dateFilter = chartContainer.dataset.filter || '';
 
-            let labels = [];
-            let counts = [];
-            let chartTitle = '';
-            let xAxisLabel = '';
+            let labels = [], counts = [], chartTitle = '', xAxisLabel = '';
 
             if (dateFilter === 'daily') {
                 chartTitle = 'Günlük Ziyaretçi Sayıları (Saatlere Göre)';
@@ -265,7 +276,7 @@
                 chartTitle = 'Yıllık Ziyaretçi Sayıları (Aylara Göre)';
                 xAxisLabel = 'Ay';
                 labels = chartData.map(item => {
-                    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                    const monthNames = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
                     return monthNames[item.label - 1];
                 });
                 counts = chartData.map(item => item.count);
@@ -276,88 +287,30 @@
                 counts = chartData.map(item => item.count);
             }
 
-            if (window.myReportChart) {
-                window.myReportChart.destroy();
-            }
+            if (window.myReportChart) window.myReportChart.destroy();
 
             window.myReportChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Ziyaretçi Sayısı',
-                        data: counts,
-                        backgroundColor: 'rgba(0, 51, 102, 0.7)',
-                        borderColor: 'rgba(0, 51, 102, 1)',
-                        borderWidth: 1
-                    }]
-                },
+                data: { labels, datasets: [{ label: 'Ziyaretçi Sayısı', data: counts, backgroundColor: 'rgba(0, 51, 102, 0.7)', borderColor: 'rgba(0, 51, 102, 1)', borderWidth: 1 }] },
                 options: {
                     responsive: true,
                     plugins: {
-                        title: {
-                            display: true,
-                            text: chartTitle,
-                            font: {
-                                size: 18,
-                                weight: 'bold'
-                            },
-                            color: '#003366'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.raw}`;
-                                }
-                            }
-                        }
+                        title: { display: true, text: chartTitle, font: { size: 18, weight: 'bold' }, color: '#003366' },
+                        tooltip: { mode: 'index', intersect: false, callbacks: { label: (c)=> `${c.dataset.label}: ${c.raw}` } }
                     },
                     scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: xAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            },
-                            ticks: {
-                                autoSkip: false,
-                                maxRotation: 45,
-                                minRotation: 0
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Ziyaretçi Sayısı',
-                                font: {
-                                    size: 14
-                                }
-                            },
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
+                        x: { title: { display: true, text: xAxisLabel, font: { size: 14 } }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
+                        y: { title: { display: true, text: 'Ziyaretçi Sayısı', font: { size: 14 } }, beginAtZero: true, ticks: { precision: 0 } }
                     }
                 }
             });
         }
 
-        document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+        document.getElementById('downloadPdfBtn')?.addEventListener('click', () => {
             const chartCanvas = document.getElementById('reportChart');
+            if (!chartCanvas || !window.myReportChart) return alert('Grafik henüz oluşturulmadı veya bulunamadı!');
 
-            if (!chartCanvas || !window.myReportChart) {
-                alert('Grafik henüz oluşturulmadı veya bulunamadı!');
-                return;
-            }
-
-            html2canvas(chartCanvas, {
-                scale: 2
-            }).then(canvas => {
+            html2canvas(chartCanvas, { scale: 2 }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
@@ -371,22 +324,12 @@
                 let currentY = margin;
 
                 const today = new Date();
-                const dateStr = today.toLocaleDateString('tr-TR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                doc.setFontSize(10);
-                doc.setTextColor(100);
+                const dateStr = today.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                doc.setFontSize(10); doc.setTextColor(100);
                 doc.text(`Rapor Tarihi: ${dateStr}`, pdfWidth - margin, currentY, { align: 'right' });
                 currentY += 15;
 
-                if (imgHeight > pdfHeight - currentY - margin) {
-                    doc.addPage();
-                    currentY = margin;
-                }
+                if (imgHeight > pdfHeight - currentY - margin) { doc.addPage(); currentY = margin; }
                 doc.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
 
                 let reportTypeForFileName = "{{ $dateFilter ?? 'all' }}";
@@ -398,10 +341,7 @@
                     default: fileNamePrefix = 'Tum-Ziyaretci-Grafigi'; break;
                 }
                 doc.save(`${fileNamePrefix}-${today.toISOString().slice(0,10)}.pdf`);
-            }).catch(error => {
-                console.error('Grafik PDF olarak indirilirken hata oluştu:', error);
-                alert('Grafik PDF olarak indirilirken bir hata oluştu.');
-            });
+            }).catch(() => alert('Grafik PDF olarak indirilirken bir hata oluştu.'));
         });
     </script>
 </x-app-layout>

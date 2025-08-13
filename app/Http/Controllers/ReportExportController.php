@@ -5,85 +5,48 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Exports\ReportExport;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Log;
-use Throwable;
+use App\Models\Visit;
 
 class ReportExportController extends Controller
 {
     /**
-     * Excel dışa aktarımı (maskeli/maskesiz) – sade log formatı.
+     * Excel dışa aktarımı (sayfadaki görünümle birebir).
      */
     public function export(Request $request)
     {
-        try {
-            // Alanları hazırla
-            $fields = $request->input('fields', []);
-            if (is_string($fields)) {
-                $fields = explode(',', $fields);
-            }
-            $fields = array_values(array_filter(array_map('trim', $fields)));
+        // Alanlar
+        $allFields      = ['entry_time','name','tc_no','phone','plate','purpose','person_to_visit','approved_by'];
+        $selectedFields = $request->input('fields', $allFields);
 
-            $dateFilter = $request->input('date_filter', '');
-            $sortOrder  = $request->input('sort_order', 'desc');
-            $unmasked   = $request->boolean('unmasked');
-
-            // Geçersiz sort_order uyarısı
-            if (!in_array($sortOrder, ['asc', 'desc'], true)) {
-                Log::channel('admin')->warning('Geçersiz sıralama', $this->logContext([
-                    'action'  => 'excel_export',
-                    'status'  => 'warning',
-                    'message' => 'sort_order geçersiz, desc olarak değiştirildi',
-                    'given'   => $sortOrder,
-                ]));
-                $sortOrder = 'desc';
-            }
-
-            // Boş alan listesi uyarısı
-            if (empty($fields)) {
-                Log::channel('admin')->warning('Dışarı aktarma alanları boş', $this->logContext([
-                    'action'  => 'excel_export',
-                    'status'  => 'warning',
-                    'message' => 'Alan listesi boş, varsayılan alanlar kullanılacak',
-                ]));
-            }
-
-            // Tek başarı logu
-            Log::channel('admin')->info('Excel raporu tamamlandı', $this->logContext([
-                'action'      => 'excel_export',
-                'status'      => 'success',
-                'fields'      => $fields,
-                'date_filter' => $dateFilter,
-                'sort_order'  => $sortOrder,
-                'unmasked'    => $unmasked,
-            ]));
-
-            return Excel::download(
-                new ReportExport($fields, $dateFilter, $sortOrder, $unmasked),
-                'rapor.xlsx'
-            );
-
-        } catch (Throwable $e) {
-            Log::channel('admin')->error('Excel raporu oluşturulamadı', $this->logContext([
-                'action'  => 'excel_export',
-                'status'  => 'failed',
-                'message' => $e->getMessage(),
-            ]));
-            throw $e;
+        // >>> MASKE NORMALİZASYONU — Varsayılan: BOŞ (mask seçmediysen maskesiz indir)
+        $maskedInput = $request->input('mask', []);
+        if (is_array($maskedInput)) {
+            $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
+            $masked  = $isAssoc
+                ? array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true))
+                : $maskedInput;
+        } else {
+            $masked = [];
         }
+        // <<<
+
+        // (İstersen burada AdminReportController’daki filtrelerin aynısını uygula)
+        $visits = Visit::with(['visitor','approver'])
+            ->orderBy('entry_time', $request->input('sort_order','desc'))
+            ->get();
+
+        return Excel::download(
+            new \App\Exports\ReportExport($visits, $selectedFields, $masked),
+            'rapor.xlsx'
+        );
     }
 
     /**
-     * Ortak log context bilgisi.
+     * (İsteğe bağlı) Her zaman maskeli "Güvenli Excel" için ikinci endpoint.
      */
-    private function logContext(array $extra = []): array
+    public function exportSecure(Request $request)
     {
-        $user = auth()->user();
-
-        return array_merge([
-            'user_id'  => $user->id ?? null,
-            'username' => $user->username ?? 'Anonim',
-            'ip'       => request()->ip(),
-            'time'     => now()->toDateTimeString(),
-        ], $extra);
+        $request->merge(['mask' => ['name','tc_no','phone','plate','person_to_visit']]);
+        return $this->export($request);
     }
 }
