@@ -17,6 +17,12 @@ class AdminUserController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::user();
+        
+        // YENİ: Her iki rol için de kullanıcıları getir
+        $adminUsers = User::where('role', 'admin')->get();
+        $securityUsers = User::where('role', 'security')->get();
+        
+        // MEVCUT: Eski kod korundu
         $users = User::where('role', 'admin')->get();
 
         $editUser = null;
@@ -32,7 +38,8 @@ class AdminUserController extends Controller
             'count'   => $users->count(),
         ]));
 
-        return view('admin.users.index', compact('users', 'currentUser', 'editUser'));
+        // YENİ: Her iki veri setini de gönder
+        return view('admin.users.index', compact('adminUsers', 'securityUsers', 'users', 'currentUser', 'editUser'));
     }
 
     /**
