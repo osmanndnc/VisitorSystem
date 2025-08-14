@@ -3,6 +3,7 @@
         html { zoom: 80%; }
         body { background: #f1f5f9; }
         .center-box {
+            overflow: visible !important;   /* << panel artık taşmayı kesmiyor */
             position: relative; width: 90%; max-width: 1500px; margin: 2rem auto;
             background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 2.5rem;
         }
@@ -19,6 +20,7 @@
         .dropdown-menu { display: none; position: absolute; top: 3rem; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#fff 0%,#f8fafc 100%);
             border:1px solid #e5e7eb; border-radius:1rem; box-shadow:0 20px 40px rgba(0,0,0,.1),0 10px 20px rgba(0,0,0,.05);
             width:320px; z-index:50; padding:0; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.2);
+            z-index: 9999 !important;
         }
         .dropdown-menu.active{display:block}
         .dropdown-menu ul{list-style:none;padding:0;margin:0}
@@ -51,7 +53,6 @@
         .clear-btn:hover .clear-icon{ transform:scale(1.1); animation:clearPulse .6s ease-in-out}
         @keyframes clearPulse{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1.1)}}
 
-        /* default tablo stilleri (genel) */
         table{ width:100%; }
         table th,table td{ padding:1rem; text-align:left }
         table th{ background:#f9fafb; font-weight:600 }
@@ -76,76 +77,48 @@
         .date-filter-inputs{ display:none }
         .date-filter-inputs input[type="date"]{ padding:.5rem; border:1px solid #ccc; border-radius:.5rem; font-size:.95rem; width:100%; box-sizing:border-box }
 
-        /* --------- MODERN TABLO (kart görünüm + yan yana okunaklı) ---------- */
         .data-table{
             width:100%;
             border-collapse:separate !important;
             border-spacing:0 10px !important;
             table-layout:fixed;
         }
-
-        /* TABLO BAŞLIKLARI – soft gri, kutusuz */
         .data-table thead th{
-        background:#f7fafc;          /* yumuşak gri */
-        color:#334155;               /* slate/duman */
-        font-weight:700;
-        padding:12px 14px;
-
-        /* kutu görünümünü kaldır */
-        border-radius:0;
-        box-shadow:none;
-
-        /* sadece ince alt çizgi */
-        border:0;
-        border-bottom:1px solid #e5e7eb;
+            background:#f7fafc;
+            color:#334155;
+            font-weight:700;
+            padding:12px 14px;
+            border-radius:0;
+            box-shadow:none;
+            border:0;
+            border-bottom:1px solid #e5e7eb;
         }
-        
         .data-table tbody tr{
             background:#fff;
             box-shadow:0 6px 20px rgba(0,0,0,.06);
             transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
         }
-        .data-table tbody td{
-            padding:14px;
-            border:0;
-        }
-        .data-table tbody tr:hover{
-            transform:translateY(-2px);
-            box-shadow:0 12px 28px rgba(0,0,0,.1);
-        }
-        /* Sayısal kolonlar hizalı/tek satır
-        .data-table tbody td:nth-child(3),
-        .data-table tbody td:nth-child(4),
-        .data-table tbody td:nth-child(5){
-            font-variant-numeric: tabular-nums;
-            letter-spacing:.2px;
-            white-space:nowrap;
-        } */
-        /* === Tek satır + eşit satır yüksekliği + ellipsis === */
-        :root{ --row-h:56px; }                    /* istersen 48–64px oynatabilirsin */
+        .data-table tbody td{ padding:14px; border:0; }
+        .data-table tbody tr:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.1); }
 
-        .data-table{ table-layout: fixed; }       /* ellipsis için şart */
-
-        .data-table th,
-        .data-table td{
-        white-space: nowrap !important;         /* tek satır */
-        overflow: hidden !important;            /* taşanı gizle */
-        text-overflow: ellipsis !important;     /* … */
-        height: var(--row-h);                   /* eşit yükseklik */
-        line-height: 1.1;
-        vertical-align: middle;
+        :root{ --row-h:56px; }
+        .data-table th, .data-table td{
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            height: var(--row-h);
+            line-height: 1.1;
+            vertical-align: middle;
         }
 
-        /* İsteğe bağlı: kolon genişlikleri (8 sütunlu örneğe göre) */
-        .data-table th:nth-child(1), .data-table td:nth-child(1){ width:14%; } /* Giriş Tarihi */
-        .data-table th:nth-child(2), .data-table td:nth-child(2){ width:16%; } /* Ad Soyad */
-        .data-table th:nth-child(3), .data-table td:nth-child(3){ width:12%; } /* T.C. No */
-        .data-table th:nth-child(4), .data-table td:nth-child(4){ width:12%; } /* Telefon */
-        .data-table th:nth-child(5), .data-table td:nth-child(5){ width:10%; } /* Plaka */
-        .data-table th:nth-child(6), .data-table td:nth-child(6){ width:14%; } /* Ziyaret Sebebi */
-        .data-table th:nth-child(7), .data-table td:nth-child(7){ width:14%; } /* Ziyaret Edilen */
-        .data-table th:nth-child(8), .data-table td:nth-child(8){ width:8%;  } /* Ekleyen */
-
+        .data-table th:nth-child(1), .data-table td:nth-child(1){ width:14%; }
+        .data-table th:nth-child(2), .data-table td:nth-child(2){ width:16%; }
+        .data-table th:nth-child(3), .data-table td:nth-child(3){ width:12%; }
+        .data-table th:nth-child(4), .data-table td:nth-child(4){ width:12%; }
+        .data-table th:nth-child(5), .data-table td:nth-child(5){ width:10%; }
+        .data-table th:nth-child(6), .data-table td:nth-child(6){ width:14%; }
+        .data-table th:nth-child(7), .data-table td:nth-child(7){ width:14%; }
+        .data-table th:nth-child(8), .data-table td:nth-child(8){ width:8%;  }
 
         @media (max-width: 920px){
           .data-table thead{ display:none; }
@@ -158,14 +131,12 @@
           }
         }
 
-        /* --------- MODAL: soft fade + scale ---------- */
         .modal-overlay{
             position:fixed; inset:0;
             background:rgba(0,0,0,.35);
             backdrop-filter:saturate(120%) blur(2px);
             display:flex; align-items:flex-start; justify-content:center;
             padding:7vh 16px; z-index:1000;
-
             opacity:0; visibility:hidden; pointer-events:none;
             transition:opacity .22s ease, visibility .22s ease;
         }
@@ -179,7 +150,6 @@
         }
         .modal-overlay.open .modal-card{ transform:translateY(0) scale(1); }
 
-        /* --------- CHIPS (modern mask seçimi) ---------- */
         :root{
             --chip-border:#e3e7ef; --chip-bg:#f5f7fb; --chip-on:#0b4a88;
             --chip-on-bg:linear-gradient(135deg,#0b4a88 0%,#1a73e8 100%);
@@ -205,67 +175,54 @@
         .chip-check:focus + .chip{outline:2px solid rgba(26,115,232,.35);outline-offset:2px}
         .chip-check:checked + .chip{color:#fff;border-color:transparent;background:var(--chip-on-bg);box-shadow:0 10px 20px rgba(26,115,232,.25)}
         .chip-check:checked + .chip .tick{background:#fff;color:var(--chip-on);transform:scale(1)}
-        /* === Daha geniş + daha sıkı tablo (tek satır, ellipsis) === */
+
         :root{
-        --table-font: 13px;      /* hücre yazısı */
-        --table-head: 12.5px;    /* başlık yazısı */
-        --pad-y: 7px;            /* hücre dikey padding */
-        --pad-x: 10px;           /* hücre yatay padding */
-        --row-gap: 6px;          /* satırlar arası boşluk (card boşluğu) */
+            --table-font: 13px;
+            --table-head: 12.5px;
+            --pad-y: 7px;
+            --pad-x: 10px;
+            --row-gap: 6px;
         }
-
-        /* Kutu biraz genişlesin ve gerekirse yatay scroll versin */
         .center-box{
-        width: 96% !important;
-        max-width: 1700px !important;
-        overflow-x: auto; /* sonu kesilmesin */
+            width: 96% !important;
+            max-width: 1700px !important;
+            overflow-x: auto;
         }
-
-        /* Tablo genel yoğunluğu */
         .data-table{
-        table-layout: fixed;                 /* sütunlar eşit ve tek satır */
-        border-spacing: 0 var(--row-gap) !important;
-        font-size: var(--table-font);
+            table-layout: fixed;
+            border-spacing: 0 var(--row-gap) !important;
+            font-size: var(--table-font);
         }
-
-        /* Başlık ve hücreler daha küçük ve yakın */
         .data-table thead th{
-        font-size: var(--table-head);
-        padding: var(--pad-y) var(--pad-x) !important;
+            font-size: var(--table-head);
+            padding: var(--pad-y) var(--pad-x) !important;
         }
         .data-table th, .data-table td{
-        padding: var(--pad-y) var(--pad-x) !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        height: 56px;                /* satır yüksekliği sabit, istersen 52-58 yap */
-        vertical-align: middle;
+            padding: var(--pad-y) var(--pad-x) !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            height: 56px;
+            vertical-align: middle;
         }
+        .data-table tbody tr{ box-shadow: 0 4px 14px rgba(0,0,0,.06); }
 
-        /* Hafif daha sıkı kart gölgesi/boşluğu (isteğe bağlı) */
-        .data-table tbody tr{
-        box-shadow: 0 4px 14px rgba(0,0,0,.06);
-        }
+        .data-table th:nth-child(1), .data-table td:nth-child(1){ width: 170px; } /* Giriş Tarihi */
+        .data-table th:nth-child(2), .data-table td:nth-child(2){ width: 220px; } /* Ad Soyad */
+        .data-table th:nth-child(3), .data-table td:nth-child(3){ width: 140px; } /* T.C. No */
+        .data-table th:nth-child(4), .data-table td:nth-child(4){ width: 135px; } /* Telefon */
+        .data-table th:nth-child(5), .data-table td:nth-child(5){ width: 110px; } /* Plaka */
+        .data-table th:nth-child(6), .data-table td:nth-child(6){ width: 170px; } /* Ziyaret Sebebi */
+        .data-table th:nth-child(7), .data-table td:nth-child(7){ width: 170px; } /* Ziyaret Edilen */
+        .data-table th:nth-child(8), .data-table td:nth-child(8){ width: 140px; } /* Ekleyen */
 
-        /* --- Sütun genişliklerini ince ayar (8 kolonlu tabloya göre) --- */
-        /* Giriş Tarihi | Ad Soyad | TC | Tel | Plaka | Sebep | Ziyaret Edilen | Ekleyen */
-        .data-table th:nth-child(1), .data-table td:nth-child(1){ width: 170px; }
-        .data-table th:nth-child(2), .data-table td:nth-child(2){ width: 220px; }
-        .data-table th:nth-child(3), .data-table td:nth-child(3){ width: 140px; }
-        .data-table th:nth-child(4), .data-table td:nth-child(4){ width: 135px; }
-        .data-table th:nth-child(5), .data-table td:nth-child(5){ width: 110px; }
-        .data-table th:nth-child(6), .data-table td:nth-child(6){ width: 170px; }
-        .data-table th:nth-child(7), .data-table td:nth-child(7){ width: 170px; }
-        .data-table th:nth-child(8), .data-table td:nth-child(8){ width: 140px; }
+        .data-table .empty-cell{ text-align:center; padding:28px 8px; color:#64748b; }
 
-        /* Mobilde eski davranışı koru (kartlaştır) */
         @media (max-width: 920px){
-        .center-box{ overflow-x: hidden; }
-        .data-table{ table-layout: auto; } /* mobilde esnek kalsın */
+            .center-box{ overflow-x: hidden; }
+            .data-table{ table-layout: auto; }
         }
-
     </style>
-
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
@@ -345,7 +302,32 @@
                 </div>
             </div>
 
+            {{-- ID sütununu her durumda garanti et --}}
+            @php
+                $fields = array_values(array_unique(array_merge(['id'], $fields ?? [])));
+            @endphp
+
             <table class="data-table">
+                {{-- === KOLON GENİŞLİKLERİ: colgroup === --}}
+                @php
+                    $colWidth = [
+                        'id'              => '64px',
+                        'entry_time'      => '170px',
+                        'name'            => '220px',
+                        'tc_no'           => '140px',
+                        'phone'           => '135px',
+                        'plate'           => '110px',
+                        'purpose'         => '170px',
+                        'person_to_visit' => '170px',
+                        'approved_by'     => '140px',
+                    ];
+                @endphp
+                <colgroup>
+                    @foreach ($fields as $f)
+                        <col style="width: {{ $colWidth[$f] ?? '140px' }};">
+                    @endforeach
+                </colgroup>
+
                 <thead>
                     <tr>
                         @foreach($fields as $field)
@@ -366,8 +348,9 @@
                         @endforeach
                     </tr>
                 </thead>
+
                 <tbody>
-                    @foreach($visits as $visit)
+                    @forelse($visits as $visit)
                         <tr>
                             @foreach($fields as $field)
                                 @php
@@ -400,7 +383,11 @@
                                 </td>
                             @endforeach
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr class="empty-row">
+                            <td class="empty-cell" colspan="{{ count($fields) }}">Kayıt bulunamadı</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
 
@@ -416,7 +403,7 @@
         </div>
     </div>
 
-    <!-- Güvenli Rapor Modal (animasyonlu) -->
+    <!-- Güvenli Rapor Modal -->
     <div id="maskModal" class="modal-overlay">
       <div class="modal-card">
         <div style="padding:16px 20px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; gap:10px;">
@@ -463,7 +450,6 @@
     <script>
     'use strict';
 
-    // ==== Kısayol referanslar ====
     const filterBtn  = document.getElementById('filterBtn');
     const filterMenu = document.getElementById('filterMenu');
     const reportBtn  = document.getElementById('reportBtn');
@@ -479,7 +465,6 @@
     const dateRangeInputs = document.getElementById('dateRangeInputs');
     const applyDateRangeBtn = document.getElementById('applyDateRange');
 
-    // ==== Modal ====
     const maskModal        = document.getElementById('maskModal');
     const maskCloseBtn     = document.getElementById('maskCloseBtn');
     const maskCancelBtn    = document.getElementById('maskCancelBtn');
@@ -487,7 +472,6 @@
     const maskSelectNone   = document.getElementById('maskSelectNone');
     const confirmGenerateReport = document.getElementById('confirmGenerateReport');
 
-    // CHIPS
     const maskChipGrid = document.getElementById('maskChipGrid');
     const maskCountEl  = document.getElementById('maskCount');
 
@@ -524,7 +508,6 @@
     maskSelectNone?.addEventListener('click', () => { getMaskInputsNodeList().forEach(i => i.checked = false); updateMaskCount(); });
     maskChipGrid?.addEventListener('change', updateMaskCount);
 
-    // ==== Filtre menüleri ====
     filterBtn?.addEventListener('click', () => filterMenu?.classList.toggle('active'));
     reportBtn?.addEventListener('click', () => reportMenu?.classList.toggle('active'));
 
@@ -551,22 +534,28 @@
       window.location.href = window.location.pathname + '?' + params.toString();
     });
 
+    // Görünüm (daily/monthly/...) değiştirirken: ID'yi filter'a her zaman ekle
     document.querySelectorAll('#reportMenu li').forEach(item => {
       item.addEventListener('click', () => {
         if (item.id === 'dateRangeOption') return;
         const type = item.dataset.type;
         const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('start_date'); urlParams.delete('end_date'); urlParams.set('date_filter', type);
 
+        urlParams.delete('start_date');
+        urlParams.delete('end_date');
+        urlParams.set('date_filter', type);
+
+        // Seçili alan input değerlerini taşı
         document.querySelectorAll('.filter-option.selected input').forEach(input => {
           const fieldName = input.id.replace('_value', '');
           if (input.value.trim() !== '') urlParams.set(fieldName + '_value', input.value.trim());
           else urlParams.delete(fieldName + '_value');
         });
 
+        // Seçilmiş alan listesi + ID'yi zorunlu ekle
         const selectedFieldsFromFilter = [...document.querySelectorAll('.filter-option.selected')].map(opt => opt.getAttribute('data-field'));
-        if (selectedFieldsFromFilter.length > 0) urlParams.set('filter', selectedFieldsFromFilter.join(','));
-        else urlParams.delete('filter');
+        if (!selectedFieldsFromFilter.includes('id')) selectedFieldsFromFilter.unshift('id');
+        urlParams.set('filter', selectedFieldsFromFilter.join(','));
 
         window.location.href = window.location.pathname + '?' + urlParams.toString();
       });
@@ -576,7 +565,6 @@
       window.location.href = window.location.pathname + '?date_filter=daily';
     });
 
-    // ==== Global Search ====
     document.getElementById('globalSearch')?.addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase().trim();
       document.querySelectorAll('.highlight').forEach(el => { el.outerHTML = el.innerHTML; });
@@ -597,7 +585,6 @@
       if (searchTerm === '') tableRows.forEach(row => row.classList.remove('highlight-row'));
     });
 
-    // ==== Temizle ====
     document.getElementById('clearFilters')?.addEventListener('click', () => {
       document.querySelectorAll('.filter-option input').forEach(input => input.value = '');
       document.querySelectorAll('.filter-option').forEach(option => option.classList.add('selected'));
@@ -607,7 +594,6 @@
       window.location.href = window.location.pathname + '?date_filter=daily';
     });
 
-    // ==== Başlangıç durumları ====
     window.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.filter-option').forEach(option => option.classList.add('selected'));
 
@@ -645,7 +631,6 @@
       updateMaskCount();
     });
 
-    // ==== Filtre satırı tıklama ====
     document.querySelectorAll('.filter-option').forEach(option => {
       option.addEventListener('click', (e) => {
           if (e.target.tagName.toLowerCase() === 'input') return;
@@ -658,13 +643,15 @@
       });
     });
 
-    // ==== Filtreleri uygula ====
+    // Filtreleri uygula: ID'yi filter paramına her zaman ekle
     document.getElementById('applyFilters')?.addEventListener('click', () => {
       const selectedOptions = [...document.querySelectorAll('.filter-option.selected')];
       if (selectedOptions.length === 0) { alert('Lütfen en az bir filtre seçiniz.'); return; }
 
       const params = new URLSearchParams(window.location.search);
+
       const selectedFields = selectedOptions.map(opt => opt.getAttribute('data-field'));
+      if (!selectedFields.includes('id')) selectedFields.unshift('id');  // <<< ZORUNLU ID
       params.set('filter', selectedFields.join(','));
 
       selectedOptions.forEach(opt => {
@@ -674,9 +661,10 @@
           else params.delete(field + '_value');
       });
 
-      const dateFilterParam = new URLSearchParams(window.location.search).get('date_filter');
-      const startDateParam  = new URLSearchParams(window.location.search).get('start_date');
-      const endDateParam    = new URLSearchParams(window.location.search).get('end_date');
+      const url = new URLSearchParams(window.location.search);
+      const dateFilterParam = url.get('date_filter');
+      const startDateParam  = url.get('start_date');
+      const endDateParam    = url.get('end_date');
       if (startDateParam) { params.set('start_date', startDateParam); params.delete('date_filter'); }
       if (endDateParam) params.set('end_date', endDateParam);
       if (dateFilterParam && !startDateParam) params.set('date_filter', dateFilterParam);
@@ -685,17 +673,6 @@
       window.location.href = window.location.pathname + '?' + params.toString();
     });
 
-    // ==== Dışarı tıklayınca menüleri kapat ====
-    document.addEventListener('click', e => {
-      if (!filterBtn?.contains(e.target) && !filterMenu?.contains(e.target)) filterMenu?.classList.remove('active');
-      if (!reportBtn?.contains(e.target) && !reportMenu?.contains(e.target) && !dateRangeInputs?.contains(e.target)) {
-          reportMenu?.classList.remove('active');
-          if (dateRangeInputs) dateRangeInputs.style.display = 'none';
-          document.querySelectorAll('#reportMenu li').forEach(li => li.style.display = 'block');
-      }
-    });
-
-    // ==== Export ortak paramlar ====
     function getCommonExportParams(isReportPage = false) {
       const urlParams = new URLSearchParams(window.location.search);
       const exportParams = new URLSearchParams();
@@ -722,10 +699,8 @@
       return exportParams;
     }
 
-    // ==== Güvenli Rapor (modal aç) ====
     generateReportBtn?.addEventListener('click', () => { hydrateMaskFromUrl(); openMaskModal(); });
 
-    // ==== Modal onay: maskeleri ekle ve rapora git ====
     confirmGenerateReport?.addEventListener('click', () => {
       const reportParams = getCommonExportParams(true);
       const maskParams   = getMaskParamsFromModal();
@@ -737,7 +712,6 @@
       window.location.href = `/admin/generate-report?` + reportParams.toString();
     });
 
-    // ==== Excel/PDF export (maskesiz) ====
     exportUnmaskedExcelBtn?.addEventListener('click', () => {
       const exportParams = getCommonExportParams(false);
       exportParams.set('unmasked','true');
@@ -748,29 +722,27 @@
       window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
     });
 
-    // --- YAZDIR: sade tablo şablonu
     function printTableLikeReport(opts = {}) {
         const table = document.querySelector('table');
         if (!table) return alert('Yazdırılacak tablo bulunamadı.');
 
         const {
-        titleText = 'Ziyaretçi Raporu',
-        rangeSelector = null,
-        dateLocale = 'tr-TR',
-        compact = true // <<< küçük font + dar padding
+          titleText = 'Ziyaretçi Raporu',
+          rangeSelector = null,
+          dateLocale = 'tr-TR',
+          compact = true
         } = opts;
 
         const todayStr = new Date().toLocaleDateString(dateLocale, {
-        day: '2-digit', month: '2-digit', year: 'numeric'
+          day: '2-digit', month: '2-digit', year: 'numeric'
         });
 
         let finalTitle = titleText;
         if (rangeSelector) {
-        const r = document.querySelector(rangeSelector)?.innerText.trim();
-        if (r) finalTitle += ' ' + r;
+          const r = document.querySelector(rangeSelector)?.innerText.trim();
+          if (r) finalTitle += ' ' + r;
         }
 
-        // Compact boyutlar
         const MARGIN = compact ? '0.7cm' : '1cm';
         const TITLE_FS = compact ? '18px' : '24px';
         const CELL_FS  = compact ? '9px'  : '10px';
@@ -786,28 +758,28 @@
                 * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 body { margin: ${MARGIN}; font-family: Arial, Helvetica, sans-serif; }
                 h2.page-title {
-                text-align: center; font-size: ${TITLE_FS}; font-weight: bold;
-                color: #003366; margin-bottom: 14px;
+                  text-align: center; font-size: ${TITLE_FS}; font-weight: bold;
+                  color: #003366; margin-bottom: 14px;
                 }
                 .date { text-align: right; font-size: 9px; margin-bottom: 4px; color:#333; }
                 table {
-                width: 100%; border-collapse: collapse; border-spacing: 0;
-                table-layout: fixed; word-break: break-word; hyphens: auto;
+                  width: 100%; border-collapse: collapse; border-spacing: 0;
+                  table-layout: fixed; word-break: break-word; hyphens: auto;
                 }
                 thead th {
-                background-color: #003366; color: #ffffff;
-                padding: ${PAD}; border: 1px solid #ccc; font-size: ${CELL_FS}; vertical-align: top;
+                  background-color: #003366; color: #ffffff;
+                  padding: ${PAD}; border: 1px solid #ccc; font-size: ${CELL_FS}; vertical-align: top;
                 }
                 tbody td {
-                padding: ${PAD}; border: 1px solid #ccc; font-size: ${CELL_FS}; vertical-align: top;
+                  padding: ${PAD}; border: 1px solid #ccc; font-size: ${CELL_FS}; vertical-align: top;
                 }
                 tr { page-break-inside: avoid; }
             </style>
             </head>
             <body>
-            <div class="date">${todayStr}</div>
-            <h2 class="page-title">${finalTitle}</h2>
-            ${table.outerHTML}
+              <div class="date">${todayStr}</div>
+              <h2 class="page-title">${finalTitle}</h2>
+              ${table.outerHTML}
             </body>
         </html>
         `;
@@ -821,18 +793,16 @@
         setTimeout(() => { try { w.close(); } catch(e){} }, 300);
     }
 
-    // Rapor sayfasındaki buton
     document.getElementById('printReportBtn')?.addEventListener('click', () => {
         const h2 = document.querySelector('h2');
         const titleOnly = (h2?.childNodes[0]?.textContent || 'Ziyaretçi Raporu').trim();
         printTableLikeReport({
-        titleText: titleOnly,
-        rangeSelector: 'h2 span',
-        compact: true
+          titleText: titleOnly,
+          rangeSelector: 'h2 span',
+          compact: true
         });
     });
 
-    // Liste sayfasındaki buton
     document.getElementById('printUnmaskedBtn')?.addEventListener('click', () => {
         printTableLikeReport({ titleText: 'Ziyaretçi Listesi', compact: true });
     });
