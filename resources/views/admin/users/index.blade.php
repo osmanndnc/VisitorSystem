@@ -51,10 +51,16 @@
         }
         .table tbody td {
             text-align: center;
-            padding: 20px 16px;
-            font-size: 14px;
+            padding: 16px 16px;
+            font-size: 16px;
             color: #475569;
             vertical-align: middle;
+
+        }
+        /* Her satırın altında border */
+        .table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
         }
         .table tbody tr:nth-child(even) {
             background: #fafbfc;
