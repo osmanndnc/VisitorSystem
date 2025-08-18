@@ -43,7 +43,7 @@ class SecurityController extends Controller
                 'tc_no'          => ['required', 'string', new ValidTcNo()],
                 'name'           => 'required|string',
                 'phone'          => 'required|string',
-                'plate'          => 'required|string',
+                'plate'          => 'nullable|string',
                 'person_to_visit'=> 'required|string',
                 'purpose'        => 'required|string',
             ]);
@@ -62,7 +62,7 @@ class SecurityController extends Controller
                 'purpose'        => $validated['purpose'],
                 'approved_by'    => $user->id,
                 'phone'          => $validated['phone'],
-                'plate'          => strtoupper($validated['plate']),
+                'plate' => $validated['plate'] ? strtoupper($validated['plate']) : null,
             ]);
 
             Log::channel('security')->info('Ziyaret kaydı oluşturuldu', $this->logContext([
