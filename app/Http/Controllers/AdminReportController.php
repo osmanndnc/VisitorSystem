@@ -60,8 +60,10 @@ class AdminReportController extends Controller
         //     $masked = [];
         // }
 
-
-
+        //iLK AÇILDIĞINDA GELEN GÜNLÜK KAYITLARIN RAPORLARDA DA GÖRÜNMESİ İÇİN 
+        if (!$request->has('date_filter')) {
+        $request->merge(['date_filter' => 'daily']);}
+        
         $visitsQuery = Visit::with(['visitor', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);

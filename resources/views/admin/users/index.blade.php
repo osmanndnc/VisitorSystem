@@ -603,7 +603,7 @@
                                 <label class="block text-sm font-medium text-gray-700">Rol</label>
                                 <select name="role" x-model="formData.role" class="w-full" :disabled="!isEditing" :class="{'role-locked': !isEditing}">
                                     <option value="admin">Admin</option>
-                                    <option value="super_admin">Super Admin</option>
+                                    <option value="security">Güvenlik</option>
                                 </select>
                                 <template x-if="!isEditing">
                                    <input type="hidden" name="role" x-model="formData.role">

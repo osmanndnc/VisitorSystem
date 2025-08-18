@@ -727,26 +727,20 @@
         if (!table) return alert('Yazdırılacak tablo bulunamadı.');
 
         const {
-          titleText = 'Ziyaretçi Raporu',
-          rangeSelector = null,
-          dateLocale = 'tr-TR',
-          compact = true
+        titleText = 'Ziyaretçi Raporu',
+        rangeSelector = null,
+        dateLocale = 'tr-TR'
         } = opts;
 
         const todayStr = new Date().toLocaleDateString(dateLocale, {
-          day: '2-digit', month: '2-digit', year: 'numeric'
+        day: '2-digit', month: '2-digit', year: 'numeric'
         });
 
         let finalTitle = titleText;
         if (rangeSelector) {
-          const r = document.querySelector(rangeSelector)?.innerText.trim();
-          if (r) finalTitle += ' ' + r;
+        const r = document.querySelector(rangeSelector)?.innerText.trim();
+        if (r) finalTitle += ' ' + r;
         }
-
-        const MARGIN = compact ? '0.7cm' : '1cm';
-        const TITLE_FS = compact ? '18px' : '24px';
-        const CELL_FS  = compact ? '9px'  : '10px';
-        const PAD      = compact ? '3px'  : '5px';
 
         const html = `
         <html>
@@ -754,44 +748,36 @@
             <meta charset="utf-8" />
             <title>Yazdır - ${finalTitle}</title>
             <style>
-                @page { size: A4 portrait; margin: ${MARGIN}; }
-                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                body { margin: ${MARGIN}; font-family: Arial, Helvetica, sans-serif; }
-                h2.page-title {
-                  text-align: center; font-size: ${TITLE_FS}; font-weight: bold;
-                  color: #003366; margin-bottom: 14px;
-                }
-                .date { text-align: right; font-size: 9px; margin-bottom: 4px; color:#333; }
-                table {
-                  width: 100%; border-collapse: collapse; border-spacing: 0;
-                  table-layout: fixed; word-break: break-word; hyphens: auto;
-                }
+                @page { size: A4 landscape; margin: 1cm; }
+                body { font-family: Arial, sans-serif; font-size: 11px; margin:0; }
+                h2 { text-align: center; font-size: 14px; margin: 6px 0; color:#003366; }
+                .date { text-align:right; font-size:10px; margin:4px 0; }
+                table { width:100%; border-collapse: collapse; }
                 thead th {
-                  background-color: #003366; color: #ffffff;
-                  padding: ${PAD}; border: 1px solid #ccc; font-size: ${CELL_FS}; vertical-align: top;
+                    background:#003366; color:#fff;
+                    padding:4px; border:1px solid #ccc; font-size:10px;
                 }
                 tbody td {
-                  padding: ${PAD}; border: 1px solid #ccc; font-size: ${CELL_FS}; vertical-align: top;
+                    padding:3px; border:1px solid #ccc; font-size:9px;
                 }
                 tr { page-break-inside: avoid; }
             </style>
             </head>
             <body>
-              <div class="date">${todayStr}</div>
-              <h2 class="page-title">${finalTitle}</h2>
-              ${table.outerHTML}
+            <div class="date">${todayStr}</div>
+            <h2>${finalTitle}</h2>
+            ${table.outerHTML}
             </body>
         </html>
         `;
 
         const w = window.open('', '_blank');
-        w.document.open();
         w.document.write(html);
         w.document.close();
-        w.focus();
         w.print();
-        setTimeout(() => { try { w.close(); } catch(e){} }, 300);
+        w.close();
     }
+
 
     document.getElementById('printReportBtn')?.addEventListener('click', () => {
         const h2 = document.querySelector('h2');

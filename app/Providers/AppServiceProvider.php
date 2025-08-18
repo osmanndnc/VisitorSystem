@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
+        mb_internal_encoding("UTF-8");
+
         // Global Context ekle.
         app()->singleton('request_uid', fn() => (string) Str::uuid());
 
