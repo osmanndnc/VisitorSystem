@@ -56,59 +56,170 @@
             color: #475569;
             vertical-align: middle;
         }
+        .table tbody tr:nth-child(even) {
+            background: #fafbfc;
+        }
+        .table tbody tr.passive-row {
+            background: #f9fafb;
+            opacity: 0.7;
+        }
+        
+        /* Sütun Genişlikleri */
         .id-column { width: 80px; }
         .name-column { width: 200px; }
         .username-column { width: 150px; }
         .phone-column { width: 150px; }
         .status-column { width: 120px; }
         .detail-column { width: 100px; }
-        .action-column { width: 130px; }
-        .status-badge-inline {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .actions-column { width: 130px; }
+
+        /* Durum Sütunu Hizalama */
+        .status-column {
+            text-align: center;
+            vertical-align: middle;
         }
-        .status-badge-inline.aktif {
-            background: rgba(34, 197, 94, 0.15);
-            color: #15803d;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-        }
-        .status-badge-inline.pasif {
-            background: rgba(239, 68, 68, 0.15);
-            color: #991b1b;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+        
+        /* Toggle Switch Container */
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
         }
 
-        /* Buton Stilleri */
+        /* Toggle Switch */
+        .toggle-switch {
+            width: 80px; 
+            height: 36px; 
+            background: #f1f5f9; 
+            border-radius: 999px; 
+            border: 2px solid #e2e8f0;
+            cursor: pointer; 
+            position: relative; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            outline: none;
+            margin: 0 auto;
+        }
+
+        .toggle-switch:hover {
+            transform: scale(1.05);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .toggle-switch.active { 
+            background: linear-gradient(135deg, #22c55e, #16a34a); 
+            border-color: #16a34a;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .toggle-switch:not(.active) {
+            background: linear-gradient(135deg, #f87171, #ef4444);
+            border-color: #ef4444;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .toggle-switch .circle {
+            position: absolute; 
+            top: 2px; 
+            left: 2px; 
+            width: 28px; 
+            height: 28px; 
+            background: #ffffff;
+            border-radius: 50%; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .circle { 
+            left: 48px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        .toggle-switch .label {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%,-50%);
+            font-size: 11px; 
+            color: #ffffff; 
+            font-weight: 700; 
+            pointer-events: none; 
+            z-index: 1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-switch.readonly {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .toggle-switch.readonly:hover {
+            transform: none;
+        }
+
+        /* Düzenle Butonu */
         .btn-edit {
             background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
             color: #0369a1;
-            padding: 9px 18px;
+            padding: 10px 20px;
             border-radius: 12px;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
             border: 1px solid #0ea5e9;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-block;
-            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
+            position: relative;
+            overflow: hidden;
         }
+
+        .btn-edit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-edit:hover::before {
+            left: 100%;
+        }
+
         .btn-edit:hover {
             background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
         }
-        .btn-edit:active { transform: translateY(0); }
+
+        .btn-edit:active { 
+            transform: translateY(-1px); 
+        }
+
+        /* Kullanıcı Ekle Butonu */
         .btn-style905 {
-            background:#1d4ed8; border:none; color:#fff; padding:12px 24px; font-size:16px; font-weight:600;
-            border-radius:16px; cursor:pointer; transition:.3s; box-shadow:0 6-px 12px rgba(0,0,0,.15)
+            background:#1d4ed8; 
+            border:none; 
+            color:#fff; 
+            padding:12px 24px; 
+            font-size:16px; 
+            font-weight:600;
+            border-radius:16px; 
+            cursor:pointer; 
+            transition:.3s; 
+            box-shadow:0 6px 12px rgba(0,0,0,.15)
         }
-        .btn-style905:hover { background:#1746c1; transform:translateY(-2px) }
+        .btn-style905:hover { 
+            background:#1746c1; 
+            transform:translateY(-2px) 
+        }
+
+        /* Toggle Buton */
         .toggle-btn {
             width: 280px; padding: 16px 24px; border-radius: 20px; font-weight: 700;
             font-size: 15px; text-align: center; transition: all 0.4s;
@@ -124,7 +235,7 @@
             background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
             color: white; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
         }
-        .toggle-btn.pasif:hover { transform: translateY(-3px) scale(1.02); box-shadow:0 15px 35px rgba(16, 185, 129, 0.5); }
+        .toggle-btn.pasif:hover { transform: translateY(-3px) scale(1.02); box-shadow:0 15px 35px rgba(16, 185, 129,0.5); }
         .toggle-btn:active { transform: translateY(-1px) scale(0.98); }
 
         /* Form Elemanları */
@@ -133,6 +244,8 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,.05); transition: border-color .3s ease;
         }
         input:focus, select:focus { border-color:#2563eb; outline:none; box-shadow:0 0 0 2px rgba(37,99,235,.2); }
+        
+        /* Submit Butonu */
         .submit-animated {
             width: 200px; height: 50px; border-radius: 50px;
             background: linear-gradient(135deg,#1d4ed8 0%,#2563eb 100%);
@@ -155,8 +268,16 @@
         }
         @keyframes disappear { 0% {opacity:1;} 100% {opacity:0;} }
         @keyframes appear { 0% {opacity:0;} 100% {opacity:1;} }
+        
+        /* Rol Kilitli */
+        .role-locked{
+            pointer-events: none; background-color: #f9fafb; color:#111827;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: none;
+        }
+        .role-locked::-ms-expand{ display:none; }
 
-        /* Kullanıcı Detay Kartı Modalı */
+        /* Kullanıcı Detay Kartı */
         .user-detail-card {
             position: fixed; 
             top: 50%; left: 50%; 
@@ -200,7 +321,7 @@
         .card-content { padding: 20px; }
         .card-actions { padding: 20px; text-align: center; }
 
-        /* Kullanıcı Form Modalı */
+        /* Kullanıcı Form Kartı */
         .user-form-card {
             position: fixed;
             top: 50%; left: 50%;
@@ -234,7 +355,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Sadece form submit animasyonunu yöneten kısım
             const submitBtn = document.getElementById('submit-button');
             if (submitBtn) {
                 const form = submitBtn.closest('form');
@@ -246,12 +366,22 @@
                             submitBtn.focus();
                             setTimeout(() => form.submit(), 1000);
                         });
+                    } else {
+                        form.reportValidity();
                     }
                 });
             }
+            
+            // Toggle form submit functionality
+            document.querySelectorAll('.toggle-form').forEach(form => {
+                form.querySelector('.toggle-switch').addEventListener('click', function (e) {
+                    e.preventDefault(); 
+                    form.submit();
+                });
+            });
         });
     </script>
-    
+
     <div class="py-6 max-w-7xl mx-auto" 
          x-data="{ 
              showDetailCard: false, 
@@ -294,13 +424,13 @@
             <h2 class="text-2xl font-bold text-gray-800">Admin Listesi</h2>
         </div>
 
-        <div class="text-right mb-6">
-            @if(auth()->user()->role === 'super_admin')
+        @if(auth()->user()->role === 'super_admin')
+            <div class="text-right mb-6">
                 <button class="btn-style905" type="button" @click="openCreateForm()">
                     + Kullanıcı Kaydı Ekle
                 </button>
-            @endif
-        </div>
+            </div>
+        @endif
 
         <div class="card overflow-hidden">
             <div class="overflow-x-auto">
@@ -314,26 +444,38 @@
                             <th class="status-column">Durum</th>
                             <th class="detail-column">Detay</th>
                             @if(auth()->user()->role === 'super_admin')
-                                <th class="action-column">İşlem</th>
+                                <th class="actions-column">İşlemler</th>
                             @endif
                         </tr>
                     </thead>
-                    <tbody class="text-sm">
+                    <tbody>
                         @foreach($users as $user)
-                            <tr class="border-t border-white/30 {{ !$user->is_active ? 'opacity-60' : '' }}">
+                            <tr class="border-t border-white/30 {{ !$user->is_active ? 'passive-row' : '' }}">
                                 <td>{{ $user->id }}</td>
                                 <td>{{ $user->ad_soyad ?? '-' }}</td>
                                 <td>{{ $user->username }}</td>
                                 <td>{{ $user->user_phone ?? '-' }}</td>
                                 <td>
-                                    <span class="status-badge-inline {{ $user->is_active ? 'aktif' : 'pasif' }}">
-                                        {{ $user->is_active ? 'Aktif' : 'Pasif' }}
-                                    </span>
+                                    @if(auth()->user()->role === 'super_admin')
+                                        <form class="toggle-form" action="{{ route('admin.users.toggle', $user->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="toggle-switch {{ $user->is_active ? 'active' : '' }}">
+                                                <div class="circle"></div>
+                                                <span class="label">{{ $user->is_active ? 'Aktif' : 'Pasif' }}</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <div class="toggle-switch {{ $user->is_active ? 'active' : '' }} readonly">
+                                            <div class="circle"></div>
+                                            <span class="label">{{ $user->is_active ? 'Aktif' : 'Pasif' }}</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <img src="{{ asset('images/touch.gif') }}" 
                                         class="w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-200 mx-auto"
-                                        alt="Detay"
+                                        alt="Detay Görüntüle"
                                         title="Detayları Görüntüle"
                                         @click="
                                             currentUser = {
@@ -353,7 +495,6 @@
                                 @if(auth()->user()->role === 'super_admin')
                                     <td>
                                         <button @click="openEditForm({
-                                                    id: {{ $user->id }},
                                                     ad_soyad: @js($user->ad_soyad ?? ''),
                                                     user_phone: @js($user->user_phone ?? ''),
                                                     username: @js($user->username),
@@ -383,11 +524,26 @@
                 <div class="user-username" x-text="currentUser?.username || ''"></div>
             </div>
             <div class="card-content">
-                <div class="info-row"><div class="info-label">Rol</div><div class="info-value" x-text="currentUser?.role || '-'"></div></div>
-                <div class="info-row"><div class="info-label">Telefon</div><div class="info-value" x-text="currentUser?.email || '-'"></div></div>
-                <div class="info-row"><div class="info-label">Email</div><div class="info-value" x-text="currentUser?.email || '-'"></div></div>
-                <div class="info-row"><div class="info-label">Oluşturulma Tarihi</div><div class="info-value" x-text="currentUser?.created || '-'"></div></div>
-                <div class="info-row"><div class="info-label">Güncellenme Tarihi</div><div class="info-value" x-text="currentUser?.updated || '-'"></div></div>
+                <div class="info-row">
+                    <div class="info-label">Rol</div>
+                    <div class="info-value" x-text="currentUser?.role || '-'"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Telefon</div>
+                    <div class="info-value" x-text="currentUser?.phone || '-'"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" x-text="currentUser?.email || '-'"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Oluşturulma</div>
+                    <div class="info-value" x-text="currentUser?.created || '-'"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Güncellenme</div>
+                    <div class="info-value" x-text="currentUser?.updated || '-'"></div>
+                </div>
             </div>
             <div class="card-actions">
                 @if(auth()->user()->role === 'super_admin')
@@ -439,7 +595,7 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Rol</label>
-                                <select name="role" x-model="formData.role" class="w-full" :disabled="!isEditing">
+                                <select name="role" x-model="formData.role" class="w-full" :disabled="!isEditing" :class="{'role-locked': !isEditing}">
                                     <option value="admin">Admin</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
