@@ -1,23 +1,45 @@
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-md">
-    <!-- Navigation Container -->
     <div class="w-full px-6 sm:px-8 lg:px-16 max-w-full">
         <div class="flex justify-between items-center h-20">
-            <!-- Logo -->
             <div class="flex items-center gap-14">
-                <!-- Logo -->
                 <a href="{{ route('dashboard') }}">
                     <img src="{{ asset('images/ata_icon.png') }}" alt="Ata Logo" class="h-16 w-auto hover:scale-105 transition duration-300">
                 </a>
 
-                <!-- Menü Bağlantıları -->
                 @if(auth()->user()->role === 'super_admin' || auth()->user()->role === 'admin')
                     <div class="hidden md:flex gap-8 items-center">
-                        <!-- Ziyaretçi Listesi Butonu -->
                         <x-nav-link href="{{ route('admin.index') }}" :active="request()->routeIs('admin.visitor.*')" class="text-[1.1rem] font-semibold text-blue-900 backdrop-blur-md bg-white/60 px-4 py-2 rounded-xl hover:text-indigo-700 transition duration-200">
                             Ziyaretçi Listesi
                         </x-nav-link>
-                        
-                        <!-- Kullanıcılar Dropdown -->
+
+                        <div class="relative group">
+                            <button class="text-[1.1rem] font-semibold text-gray-700 backdrop-blur-md bg-white/60 px-4 py-2 rounded-xl hover:text-indigo-700 transition duration-200 flex items-center gap-2">
+                                Birim ve Kişiler
+                                <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            
+                            <div class="absolute left-0 mt-2 w-48 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div class="py-2">
+                                    <a href="{{ route('admin.persons.index') }}" 
+                                       class="block px-4 py-3 text-base text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 rounded-lg mx-2 flex items-center gap-3">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                        Kişiler
+                                    </a>
+                                    <a href="{{ route('admin.departments.index') }}" 
+                                       class="block px-4 py-3 text-base text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 rounded-lg mx-2 flex items-center gap-3">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m0 0l7 7 7 7M19 18a2 2 0 01-2 2H7a2 2 0 01-2-2v-3m11-1a3 3 0 00-3-3h-2a3 3 0 00-3 3v2h8v-2z" />
+                                        </svg>
+                                        Birimler
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="relative group">
                             <button class="text-[1.1rem] font-semibold text-gray-700 backdrop-blur-md bg-white/60 px-4 py-2 rounded-xl hover:text-indigo-700 transition duration-200 flex items-center gap-2">
                                 Kullanıcılar
@@ -26,7 +48,6 @@
                                 </svg>
                             </button>
                             
-                            <!-- Dropdown Menu -->
                             <div class="absolute left-0 mt-2 w-48 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                                 <div class="py-2">
                                     <a href="{{ route('admin.users.index') }}" 
@@ -50,14 +71,11 @@
                 @endif
             </div>
 
-            <!-- Özel Profil Dropdown -->
-            <!-- Modern ve Tıklanabilir Profil Dropdown -->
             <div x-data="{ open: false }" class="relative">
                 <button @click="open = !open" class="flex items-center justify-center w-11 h-11 rounded-full border-2 border-indigo-500 shadow-lg hover:scale-105 transition duration-300 focus:outline-none">
                     <img class="w-full h-full object-cover rounded-full" src="{{ asset('images/profile.gif') }}" alt="Profil">
                 </button>
 
-                <!-- Menü Kutusu -->
                 <div
                     x-show="open"
                     @click.away="open = false"
@@ -82,7 +100,6 @@
                 </div>
             </div>
 
-            <!-- Hamburger Menü -->
             <div class="md:hidden flex items-center">
                 <button @click="open = ! open" class="text-gray-500 dark:text-gray-300 hover:text-indigo-600 focus:outline-none">
                     <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,14 +115,19 @@
         </div>
     </div>
 
-    <!-- Responsive Menü -->
     <div :class="{ 'block': open, 'hidden': !open }" class="md:hidden px-4 pt-3 pb-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         @if(auth()->user()->role === 'super_admin' || auth()->user()->role === 'admin')
             <x-responsive-nav-link href="{{ route('admin.index') }}" :active="request()->routeIs('admin.visitor.*')">
                 Ziyaretçi Listesi
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link href="{{ route('admin.persons.index') }}" :active="request()->routeIs('admin.persons.*')">
+                Kişiler
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('admin.departments.index') }}" :active="request()->routeIs('admin.departments.*')">
+                Birimler
+            </x-responsive-nav-link>
             
-            <!-- Responsive Adminler ve Güvenlikler -->
             <x-responsive-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')">
                 Adminler
             </x-responsive-nav-link>

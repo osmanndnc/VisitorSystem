@@ -9,6 +9,8 @@ use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\SecurityUserController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\PersonController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,6 +67,8 @@ Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
     Route::get('/report/export', [ReportExportController::class, 'export'])->withoutMiddleware([\App\Http\Middleware\PreventBackHistory::class])->name('report.export');
     Route::get('/admin/export-pdf-unmasked', [AdminController::class, 'exportPdfUnmasked'])->name('admin.exportPdfUnmasked');
     Route::get('/admin/reports/masked-pdf', [AdminReportController::class, 'exportMaskedPdf'])->name('report.maskedPdf');
+    Route::resource('departments', DepartmentController::class)->names('admin.departments');
+    Route::resource('persons', PersonController::class)->names('admin.persons');
 });
 
 
@@ -93,6 +97,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
 Route::middleware(['auth', 'role:admin,super_admin'])->prefix('security')->name('security.')->group(function () {
     Route::post('/security-users', [SecurityUserController::class, 'store'])->name('users.store');
 });
+
 
 Route::get('/security/visitor-by-tc/{tc}', [SecurityController::class, 'getVisitorData']);
 
