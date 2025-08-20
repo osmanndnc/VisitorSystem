@@ -51,9 +51,10 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:security'])->group(function () {
     Route::get('/security/create', [SecurityController::class, 'create'])->name('security.create');
     Route::post('/security/store', [SecurityController::class, 'store'])->name('security.store');
-    Route::get('/security/{id}/edit', [SecurityController::class, 'edit'])->name('security.edit');
-    Route::put('/security/{id}', [SecurityController::class, 'update'])->name('security.update');
-    Route::delete('/security/{id}', [SecurityController::class, 'destroy'])->name('security.destroy');
+    // {id}' den solid'e göre {visit}' e değiştirildi.
+    Route::get('/security/{visit}/edit', [SecurityController::class, 'edit'])->name('security.edit');
+    Route::put('/security/{visit}',      [SecurityController::class, 'update'])->name('security.update');
+    Route::delete('/security/{visit}',   [SecurityController::class, 'destroy'])->name('security.destroy');
 });
 
 // Admin işlemleri (sadece admin rolüne sahip ve giriş yapmış kullanıcılar)
