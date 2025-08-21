@@ -21,6 +21,7 @@ class Visit extends Model
         'exit_time',
         'person_to_visit',
         'purpose',
+        'purpose_note',
         'approved_by',
     ];
     //Varsayılan olarak visits arandığı için visit olarak belirtildi

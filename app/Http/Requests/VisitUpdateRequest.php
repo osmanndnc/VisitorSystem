@@ -21,6 +21,7 @@ class VisitUpdateRequest extends FormRequest
             'plate'           => ['nullable', 'string', 'max:20'], // opsiyonel (kritik fark)
             'person_to_visit' => ['required', 'string'],
             'purpose'         => ['required', 'string'],
+            'purpose_note'    => ['nullable','string','max:500'],
         ];
     }
 

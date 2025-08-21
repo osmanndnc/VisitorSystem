@@ -10,9 +10,8 @@
 @endif
 
 @php
-    // View içinde tekrar eden hesaplamalar tek yerde tutuluyor.
     $isEdit     = isset($editVisit);
-    $formAction = $isEdit ? route('security.update', $editVisit->id) : route('security.store'); // web.php {id} kullanıyor
+    $formAction = $isEdit ? route('security.update', $editVisit->id) : route('security.store');
     $cancelUrl  = route('security.create');
 @endphp
 
@@ -62,15 +61,16 @@
             position: absolute; top: 12px; right: 12px;
             width: 36px; height: 36px; border-radius: 50%;
             border: none; background: rgba(17,24,39,.06); color:#374151;
-            cursor: pointer; transition: .2s;
+            cursor: pointer; transition: .2s; display:grid; place-items:center; text-decoration:none;
         }
         .modal-close:hover{ background: rgba(17,24,39,.12); transform: rotate(90deg); }
         .modal-body{ padding: 18px 20px 6px }
-        .modal-footer{ display:none } /* buton altı çizgiyi tamamen kaldırıyoruz */
+        .modal-footer{ display:none }
 
         /* ====== 3) SAYFA KARTI & TABLO ====== */
         .center-box{
-            max-width:1300px; margin:3rem auto; padding:2.8rem 3rem; border-radius:2rem;
+            max-width:1650px;            /* geniş pano */
+            margin:3rem auto; padding:2.8rem 3rem; border-radius:2rem;
             background: rgba(255,255,255,.65);
             backdrop-filter: blur(30px) saturate(160%);
             -webkit-backdrop-filter: blur(30px) saturate(160%);
@@ -81,7 +81,7 @@
         .center-box h2,.center-box h3{ font-size:1.9rem; font-weight:800; margin-bottom:1.8rem; color:#0f172a }
         .center-box label{ font-weight:600; color:#1e293b }
 
-        /* ====== 4) FORM ELEMANLARI (tek stil: pill) ====== */
+        /* ====== 4) FORM ELEMANLARI (pill stil) ====== */
         .modal-card input,
         .modal-card select,
         .modal-card textarea,
@@ -97,13 +97,16 @@
         .modal-card input:focus,
         .modal-card select:focus,
         .center-box input:focus,
-        .center-box select:focus{
+        .center-box select:focus,
+        .modal-card textarea:focus{
             outline:none; background:#fff; border-color:#22c55e;
             box-shadow:0 0 0 4px rgba(34,197,94,.18);
         }
         .modal-card input::placeholder{ color:#94a3b8 }
 
         /* ====== 5) TABLO ====== */
+        .table-scroll{ width:100%; overflow-x:auto; }     /* yatay scroll */
+        .table-scroll table{ min-width:1400px; }          /* dar ekranda sarmasın */
         .center-box table{
             width:100%; border-collapse: separate !important;
             border-spacing: 0 !important; border: 0 !important;
@@ -114,7 +117,10 @@
         .center-box thead th{
             background:#f3f4f6; color:#374151; font-weight:700; border:0 !important;
         }
-        .center-box th,.center-box td{ padding:1rem 1.2rem; font-size:.95rem; text-align:center; color:#1e293b; border:0 !important; }
+        .center-box th,.center-box td{
+            padding:1rem 1.2rem; font-size:.95rem; text-align:center; color:#1e293b; border:0 !important;
+            white-space:nowrap;                         /* satıra sarmasın */
+        }
         .center-box tbody tr + tr td{ box-shadow: inset 0 -1px 0 rgba(226,232,240,.6); }
         .center-box tbody tr:last-child td{ box-shadow:none; }
 
@@ -158,7 +164,7 @@
     </style>
 
     <div class="py-6" 
-         data-edit="{{ $isEdit ? '1' : '0' }}" 
+         data-edit="{{ $isEdit ? '1' : '0' }}"
          data-cancel-url="{{ $cancelUrl }}">
         <div class="center-box">
             <!-- Sağ üstte Kayıt Ekle -->
@@ -169,48 +175,60 @@
             <!-- GÜNLÜK ZİYARETÇİ LİSTESİ -->
             <div class="glass-panel">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Bugünün Ziyaretçi Listesi</h2>
-                <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-700">
-                    <thead class="text-left">
-                        <tr>
-                            <th class="px-4 py-2">Ad Soyad</th>
-                            <th class="px-4 py-2">T.C.</th>
-                            <th class="px-4 py-2">Telefon</th>
-                            <th class="px-4 py-2">Plaka</th>
-                            <th class="px-4 py-2">Giriş Saati</th>
-                            <th class="px-4 py-2">Ziyaret Sebebi</th>
-                            <th class="px-4 py-2">Ziyaret Edilen</th>
-                            <th class="px-4 py-2">İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-300">
-                        @forelse ($visits as $visit)
-                            <tr class="group">
-                                <td class="px-4 py-2">{{ $visit->visitor->name }}</td>
-                                <td class="px-4 py-2">{{ $visit->visitor->tc_no }}</td>
-                                <td class="px-4 py-2">{{ $visit->phone }}</td>
-                                <td class="px-4 py-2">{{ $visit->plate }}</td>
-                                <td class="px-4 py-2">{{ \Carbon\Carbon::parse($visit->entry_time)->format('Y-m-d H:i') }}</td>
-                                <td class="px-4 py-2">{{ $visit->purpose }}</td>
-                                <td class="px-4 py-2">{{ $visit->person_to_visit }}</td>
-                                <td class="px-4 py-2 text-center">
-                                    <a href="{{ route('security.edit', $visit->id) }}" class="edit-button">Düzenle</a>
-                                </td>
+
+                <div class="table-scroll">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-700">
+                        <thead class="text-left">
+                            <tr>
+                                <th class="px-4 py-2">Ad Soyad</th>
+                                <th class="px-4 py-2">T.C.</th>
+                                <th class="px-4 py-2">Telefon</th>
+                                <th class="px-4 py-2">Plaka</th>
+                                <th class="px-4 py-2">Giriş Saati</th>
+                                <th class="px-4 py-2">Ziyaret Sebebi</th>
+                                <th class="px-4 py-2">Açıklama</th>
+                                <th class="px-4 py-2">Ziyaret Edilen</th>
+                                <th class="px-4 py-2">İşlem</th>
                             </tr>
-                        @empty
-                            <tr><td colspan="8" class="px-4 py-2 text-center">Bugün kayıtlı ziyaretçi yok.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-gray-300">
+                            @forelse ($visits as $visit)
+                                <tr class="group">
+                                    <td class="px-4 py-2">{{ $visit->visitor->name }}</td>
+                                    <td class="px-4 py-2">{{ $visit->visitor->tc_no }}</td>
+                                    <td class="px-4 py-2">{{ $visit->phone }}</td>
+                                    <td class="px-4 py-2">{{ $visit->plate }}</td>
+                                    <td class="px-4 py-2">{{ \Carbon\Carbon::parse($visit->entry_time)->format('Y-m-d H:i') }}</td>
+                                    <td class="px-4 py-2">{{ $visit->purpose }}</td>
+                                    <td class="px-4 py-2">{{ $visit->purpose_note }}</td>
+                                    <td class="px-4 py-2">{{ $visit->person_to_visit }}</td>
+                                    <td class="px-4 py-2 text-center">
+                                        <a href="{{ route('security.edit', $visit->id) }}" class="edit-button">Düzenle</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="9" class="px-4 py-2 text-center">Bugün kayıtlı ziyaretçi yok.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- === BACKDROP + MODAL (erişilebilirlik için role/aria) === -->
+        <!-- === BACKDROP + MODAL === -->
         <div id="visit-backdrop" class="backdrop" aria-hidden="true"></div>
 
         <div id="visit-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="visit-modal-title">
             <div class="modal-card">
                 <div class="modal-header">
-                    <button class="modal-close" type="button" id="close-modal" aria-label="Kapat">&times;</button>
+                    @if($isEdit)
+                        {{-- EDIT modunda X = İptal ile aynı: direkt link --}}
+                        <a class="modal-close" id="close-modal" href="{{ $cancelUrl }}" aria-label="Kapat" title="İptal">&times;</a>
+                    @else
+                        {{-- CREATE modunda X sadece popup kapatsın --}}
+                        <button class="modal-close" type="button" id="close-modal" aria-label="Kapat">&times;</button>
+                    @endif
+
                     <div id="visit-modal-title" class="modal-title">
                         {{ $isEdit ? 'Ziyaret Kaydı Güncelle' : 'Yeni Ziyaret Kaydı' }}
                     </div>
@@ -277,9 +295,10 @@
                                 <select name="person_to_visit" id="person_to_visit" required>
                                     <option value="">Kişi Seçiniz</option>
                                     @foreach($people as $person)
-                                        <option value="{{ $person->person_name }}"
-                                            @selected(old('person_to_visit', $editVisit->person_to_visit ?? '') == $person->person_name)>
-                                            {{ $person->person_name }}
+                                        @php $pname = $person->name ?? $person->person_name; @endphp
+                                        <option value="{{ $pname }}"
+                                            @selected(old('person_to_visit', $editVisit->person_to_visit ?? '') == $pname)>
+                                            {{ $pname }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -300,6 +319,15 @@
                                 </select>
                                 @error('purpose') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
                             </div>
+
+                            <!-- Açıklama -->
+                            <div>
+                                <x-input-label for="purpose_note" :value="'Ziyaret Sebebi Açıklaması (opsiyonel)'" />
+                                <input id="purpose_note" name="purpose_note" type="text" maxlength="255"
+                                       placeholder="Kısa not / ek açıklama"
+                                       value="{{ old('purpose_note', $isEdit ? $editVisit->purpose_note : '') }}">
+                                @error('purpose_note') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                            </div>
                         </div>
 
                         <div class="mt-6 flex items-center gap-4">
@@ -318,54 +346,51 @@
         </div>
     </div>
 
-    <!-- ====== JS: davranışlar tek yerde (SRP) ====== -->
+    <!-- ====== JS ====== -->
     <script>
     (function () {
-        const $  = (sel, ctx=document) => ctx.querySelector(sel);
-        const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+        const $ = (sel, ctx=document) => ctx.querySelector(sel);
 
-        const root        = document.currentScript.closest('div.py-6');
-        const isEdit      = root?.dataset.edit === '1';
-        const cancelUrl   = root?.dataset.cancelUrl;
+        const root      = document.currentScript.closest('div.py-6');
+        const isEdit    = root?.dataset.edit === '1';
+        const cancelUrl = root?.dataset.cancelUrl || "{{ route('security.create') }}";
 
-        const backdrop    = $('#visit-backdrop');
-        const modal       = $('#visit-modal');
-        const openBtn     = $('#toggleForm');
-        const closeBtn    = $('#close-modal');
-        const submitBtn   = $('#submit-button');
-        const form        = $('#visit-form');
+        const backdrop  = $('#visit-backdrop');
+        const modal     = $('#visit-modal');
+        const openBtn   = $('#toggleForm');
+        const closeBtn  = $('#close-modal'); // EDIT'te <a>, CREATE'te <button>
+        const submitBtn = $('#submit-button');
+        const form      = $('#visit-form');
 
-        function openModal()  { backdrop.classList.add('show'); modal.classList.add('show'); }
-        function closeModal() { backdrop.classList.remove('show'); modal.classList.remove('show'); }
+        function openModal(){ backdrop.classList.add('show'); modal.classList.add('show'); }
+        function closeModal(){ backdrop.classList.remove('show'); modal.classList.remove('show'); }
 
-        function handleClose() {
-            if (isEdit) {
-                window.location.href = cancelUrl; // İptal ile aynı
-            } else {
-                closeModal();
-            }
+        // CREATE modunda X buton; EDIT modunda X zaten <a href> => İptal ile aynı
+        if (openBtn) openBtn.addEventListener('click', openModal);
+        if (!isEdit && closeBtn && closeBtn.tagName === 'BUTTON') {
+            closeBtn.addEventListener('click', closeModal);
         }
 
-        // --- Event binding
-        if (openBtn)  openBtn.addEventListener('click', openModal);
-        if (closeBtn) closeBtn.addEventListener('click', handleClose);
-        if (backdrop) backdrop.addEventListener('click', handleClose);
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') handleClose(); });
+        // Backdrop & ESC: edit'te iptal gibi davransın, create'te sadece kapat
+        function handleCloseAmbient(){
+            if (isEdit) window.location.assign(cancelUrl);
+            else closeModal();
+        }
+        if (backdrop) backdrop.addEventListener('click', handleCloseAmbient);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') handleCloseAmbient(); });
 
-        // --- Animasyonlu submit
+        // Submit animasyonu + submit
         if (submitBtn && form) {
-            submitBtn.addEventListener('click', function () {
-                submitBtn.focus(); // animasyonu tetiklemek için
+            submitBtn.addEventListener('click', () => {
+                submitBtn.focus();
                 setTimeout(() => form.submit(), 1000);
             });
         }
 
-        // --- Page-load: edit modunda veya validasyon hatasında modal otomatik açılsın
-        @if ($isEdit || $errors->any())
-            openModal();
-        @endif
+        // Açılışta gerekiyorsa modalı aç
+        @if ($isEdit || $errors->any()) openModal(); @endif
 
-        // === TC değişince geçmiş veriyi getir (global fonksiyon ismi korunuyor) ===
+        // TC -> geçmiş verileri doldur
         window.getVisitorData = function () {
             const tcInput = $('#tc_no');
             if (!tcInput) return;
@@ -376,34 +401,28 @@
                 .then(res => res.json())
                 .then(data => {
                     if (!data) return;
-
                     const nameInput = $('#name');
-                    const phoneList = $('#phone_list');
-                    const plateList = $('#plate_list');
+                    const phoneList = document.getElementById('phone_list');
+                    const plateList = document.getElementById('plate_list');
 
-                    if (nameInput && !nameInput.value) {
-                        nameInput.value = data.name || '';
-                    }
+                    if (nameInput && !nameInput.value) nameInput.value = data.name || '';
 
                     if (phoneList) {
                         phoneList.innerHTML = '';
                         (data.phones || []).forEach(p => {
-                            const opt = document.createElement('option');
-                            opt.value = p; phoneList.appendChild(opt);
+                            const opt = document.createElement('option'); opt.value = p; phoneList.appendChild(opt);
                         });
                     }
                     if (plateList) {
                         plateList.innerHTML = '';
                         (data.plates || []).forEach(pl => {
-                            const opt = document.createElement('option');
-                            opt.value = pl; plateList.appendChild(opt);
+                            const opt = document.createElement('option'); opt.value = pl; plateList.appendChild(opt);
                         });
                     }
                 })
-                .catch(() => {});
+                .catch(()=>{});
         };
 
-        // TC alanı change’de de çalışsın
         const tcInput = $('#tc_no');
         if (tcInput) tcInput.addEventListener('change', window.getVisitorData);
     })();

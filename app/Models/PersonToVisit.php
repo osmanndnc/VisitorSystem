@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Models;
+// namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+// use Illuminate\Database\Eloquent\Factories\HasFactory;
+// use Illuminate\Database\Eloquent\Model;
 
-class PersonToVisit extends Model
-{
-    use HasFactory;
+// class PersonToVisit extends Model
+// {
+//     use HasFactory;
 
-    protected $table = 'person_to_visit';
-    protected $fillable = ['person_name', 'unit_name', 'phone_number'];
+//     protected $table = 'person_to_visit';
+//     protected $fillable = ['person_name', 'unit_name', 'phone_number'];
 
-}
+// }

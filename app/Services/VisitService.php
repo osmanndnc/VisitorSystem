@@ -30,6 +30,7 @@ class VisitService
                 'entry_time'      => now(),
                 'person_to_visit' => $data['person_to_visit'],
                 'purpose'         => $data['purpose'],
+                'purpose_note'    => $data['purpose_note'] ?? null,
                 'approved_by'     => $approvedByUserId,
                 'phone'           => $data['phone'],
                 'plate'           => $plate,
@@ -57,6 +58,7 @@ class VisitService
                 'entry_time'      => now(),
                 'person_to_visit' => $data['person_to_visit'],
                 'purpose'         => $data['purpose'],
+                'purpose_note'    => $data['purpose_note'] ?? null, 
                 'phone'           => $data['phone'],
                 'plate'           => $plate,
             ]);
