@@ -4,50 +4,51 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VisitStoreRequest;
 use App\Http\Requests\VisitUpdateRequest;
-use App\Models\PersonToVisit;
+use App\Models\Person;        // ✅ Artık Person kullanıyoruz
 use App\Models\Visit;
 use App\Models\VisitReason;
 use App\Services\VisitService;
-use Illuminate\Support\Carbon;
 
 class SecurityController extends Controller
 {
     /**
      * Controller sadece HTTP akışını yönetir:
-     * - Verileri ekrana gönderir
-     * - İstekleri doğrulama katmanına (FormRequest) ve iş katmanına (Service) delege eder
+     * - View’a veri hazırlar
+     * - Doğrulama (FormRequest) + iş mantığını (Service) delege eder
      * - View/Redirect döner
+     *
+     * DIP: İş mantığı VisitService’e enjekte edilir (constructor DI).
      */
     public function __construct(private VisitService $service)
     {
-        // Laravel otomatik DI ile VisitService'i enjekte eder.
+        //
     }
 
     /**
-     * Günlük ziyaret kayıtlarını ve dropdown verilerini getirir.
-     * SRP: Veri toplama ve işleme service katmanında; burada sadece ekrana hazırlama var.
+     * Günlük ziyaret kayıtları ve dropdown verileri.
+     * SRP: Veriyi sadece hazırlar; iş mantığı Service katmanındadır.
      */
     public function create()
     {
         $visits  = Visit::with('visitor')
-                    ->whereDate('created_at', Carbon::today())
-                    ->get();
+            ->whereDate('created_at', today())
+            ->get();
 
-        $people  = PersonToVisit::all();
-        $reasons = VisitReason::all();
+        // Kişi ve sebep listeleri (sade alanlarla, sıralı)
+        $people  = Person::query()->orderBy('name')->get(['id', 'name']);
+        $reasons = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
 
         return view('security.create', compact('visits', 'people', 'reasons'));
     }
 
     /**
-     * Yeni ziyaret kaydı oluşturma.
+     * Yeni ziyaret kaydı oluşturur.
      * - Doğrulama: VisitStoreRequest
      * - İş mantığı: VisitService::store
-     * - Sonuç: redirect + flash
      */
     public function store(VisitStoreRequest $request)
     {
-        $visit = $this->service->store(
+        $this->service->store(
             data: $request->validated(),
             approvedByUserId: auth()->id()
         );
@@ -58,24 +59,21 @@ class SecurityController extends Controller
     }
 
     /**
-     * Belirli bir ziyaret kaydı düzenlenmek üzere formda gösterilir.
-     * - Route Model Binding ile Visit otomatik çözümlenir.
+     * Düzenleme formu.
+     * Route Model Binding ile Visit otomatik çözülür.
      */
     public function edit(Visit $visit)
     {
-        $visits    = Visit::with('visitor')
-                        ->whereDate('created_at', Carbon::today())
-                        ->get();
-
-        $editVisit = $visit->load('visitor');
-        $people    = PersonToVisit::all();
-        $reasons   = VisitReason::all();
+        $visits     = Visit::with('visitor')->whereDate('created_at', today())->get();
+        $editVisit  = $visit->load('visitor');
+        $people     = Person::query()->orderBy('name')->get(['id', 'name']);
+        $reasons    = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
 
         return view('security.create', compact('visits', 'editVisit', 'people', 'reasons'));
     }
 
     /**
-     * Ziyaret kaydı güncelleme.
+     * Kaydı günceller.
      * - Doğrulama: VisitUpdateRequest
      * - İş mantığı: VisitService::update
      */
@@ -89,18 +87,12 @@ class SecurityController extends Controller
     }
 
     /**
-     * TC numarası ile önceki ziyaretçi bilgilerini getirir (AJAX).
-     * - İnce uç nokta: İş mantığı service'te.
-     * - Ziyaretçi yoksa null döndürür (mevcut davranış korunur).
+     * TC ile geçmiş ziyaretçi verisi (AJAX).
+     * Ziyaretçi yoksa null döner.
      */
     public function getVisitorData(string $tc)
     {
         $data = $this->service->getVisitorDataByTc($tc);
-
-        if (!$data) {
-            return response()->json(null);
-        }
-
-        return response()->json($data);
+        return response()->json($data ?: null);
     }
 }

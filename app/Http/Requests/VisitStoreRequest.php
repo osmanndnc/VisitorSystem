@@ -22,6 +22,7 @@ class VisitStoreRequest extends FormRequest
             'plate'           => ['nullable', 'string', 'max:20'], // opsiyonel
             'person_to_visit' => ['required', 'string'],
             'purpose'         => ['required', 'string'],
+            'purpose_note'    => ['nullable','string','max:500'],
         ];
     }
 
