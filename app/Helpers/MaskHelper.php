@@ -75,6 +75,18 @@ class MaskHelper
         return self::partialMask($p, 2, 0);
     }
 
+    // Departman: ilk 2 harf açık, geri kalan maskeli
+    public static function maskDepartment($department)
+    {
+        if (!$department) return '';
+        $text = (string)$department;
+        $length = mb_strlen($text);
+        if ($length <= 2) {
+            return $text . '***';
+        }
+        return mb_substr($text, 0, 2) . '***';
+    }
+
     // Alan adına göre uygula
     public static function apply(string $field, $value, array $maskedFields)
     {
@@ -87,6 +99,7 @@ class MaskHelper
             'tc_no'           => self::maskTc($value),
             'phone'           => self::maskPhone($value, 2),   // istersen 4 yap
             'plate'           => self::maskPlate($value),
+            'department'      => self::maskDepartment($value),
             'person_to_visit' => self::maskName($value),
             default           => self::partialMask((string)$value, 1, 1),
         };
@@ -107,6 +120,7 @@ class MaskHelper
                     'phone'            => $visit->phone ?? '-',
                     'plate'            => $visit->plate ?? '-',
                     'purpose'          => $visit->purpose ?? '-',
+                    'department'       => optional($visit->visitor)->department->name ?? '-',
                     'person_to_visit'  => $visit->person_to_visit ?? '-',
                     'approved_by'      => optional($visit->approver)->ad_soyad ?? ($visit->approved_by ?? '-'),
                     default            => $visit->$field ?? '-',

@@ -16,7 +16,7 @@ class AdminReportController extends Controller
      */
     public function index(Request $request)
     {
-        $fieldsForBlade = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit'];
+        $fieldsForBlade = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit'];
 
         Log::channel('admin')->info('Rapor sayfası açıldı', $this->logContext([
             'action'  => 'report_index',
@@ -33,7 +33,7 @@ class AdminReportController extends Controller
             'reportTitle'    => 'Tüm',
             'reportRange'    => 'Tüm zamanlar',
             // Varsayılan maskeler (UI açıldığında tikli gözüksün)
-            'masked'         => ['name','tc_no','phone','plate','person_to_visit'],
+            'masked'         => ['name','tc_no','phone','plate','department','person_to_visit'],
         ]);
     }
 
@@ -44,11 +44,11 @@ class AdminReportController extends Controller
     {
         Carbon::setLocale('tr');
 
-        $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
+        $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
 
         // Kullanıcının seçtiği maskeler (varsayılan hepsi tikli)
-        $masked = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
+        $masked = $request->input('mask', ['name','tc_no','phone','plate','department','person_to_visit']);
         // // Liste ekranında default: MASKE YOK
         // $maskedInput = $request->input('mask', []);
         // if (is_array($maskedInput)) {
@@ -62,9 +62,10 @@ class AdminReportController extends Controller
 
         //iLK AÇILDIĞINDA GELEN GÜNLÜK KAYITLARIN RAPORLARDA DA GÖRÜNMESİ İÇİN 
         if (!$request->has('date_filter')) {
-        $request->merge(['date_filter' => 'daily']);}
+            $request->merge(['date_filter' => 'daily']);
+        }
         
-        $visitsQuery = Visit::with(['visitor', 'approver']);
+        $visitsQuery = Visit::with(['visitor.department', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
@@ -108,12 +109,12 @@ class AdminReportController extends Controller
     {
         Carbon::setLocale('tr');
 
-        $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'person_to_visit', 'approved_by'];
+        $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
         
         //$masked         = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
         // >>> MASK NORMALİZASYONU (map + liste her ikisini de kabul eder)
-        $maskedInput = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
+        $maskedInput = $request->input('mask', ['name','tc_no','phone','plate','department','person_to_visit']);
         if (is_array($maskedInput)) {
             $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
             if ($isAssoc) {
@@ -122,12 +123,12 @@ class AdminReportController extends Controller
                 $masked = $maskedInput;
             }
         } else {
-            $masked = ['name','tc_no','phone','plate','person_to_visit'];
+            $masked = ['name','tc_no','phone','plate','department','person_to_visit'];
         }
         // <<<
 
 
-        $visitsQuery = Visit::with(['visitor', 'approver']);
+        $visitsQuery = Visit::with(['visitor.department', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 

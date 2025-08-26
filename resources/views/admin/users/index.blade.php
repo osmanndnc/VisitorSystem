@@ -299,12 +299,22 @@
             opacity: 1;
             pointer-events: auto;
         }
+        
+        /* User Avatar - Tablo renkleriyle uyumlu */
         .user-avatar {
-            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-            border: 2px solid rgba(255,255,255,0.5);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin: 0 auto 12px; background: #e5e7eb;
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            border: 3px solid #94a3b8;
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3);
+            margin: 0 auto 12px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
         }
+        
         .user-name { font-size: 22px; font-weight: 700; }
         .user-username { font-size: 14px; color: #555; }
         .status-badge {
@@ -479,24 +489,32 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <img src="{{ asset('images/touch.gif') }}" 
-                                        class="w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-200 mx-auto"
-                                        alt="Detay Görüntüle"
-                                        title="Detayları Görüntüle"
-                                        @click="
-                                            currentUser = {
-                                                id: {{ $user->id }},
-                                                ad: @js($user->ad_soyad ?? '-'),
-                                                username: @js($user->username),
-                                                phone: @js($user->user_phone ?? '-'),
-                                                email: @js($user->email),
-                                                role: @js(ucfirst($user->role)),
-                                                created: @js(optional($user->created_at)->format('Y-m-d H:i')),
-                                                updated: @js(optional($user->updated_at)->format('Y-m-d H:i')),
-                                                isActive: {{ $user->is_active ? 'true' : 'false' }},
-                                                toggleUrl: @js(route('admin.users.toggle', $user->id)),
-                                            };
-                                            showDetailCard = true;">
+                                    <!-- Büyüteç Icon'u -->
+                                    <svg class="w-8 h-8 cursor-pointer hover:scale-110 transition-transform duration-200 mx-auto text-blue-600 hover:text-blue-800" 
+                                         fill="none" 
+                                         stroke="currentColor" 
+                                         viewBox="0 0 24 24" 
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         @click="
+                                             currentUser = {
+                                                 id: {{ $user->id }},
+                                                 ad: @js($user->ad_soyad ?? '-'),
+                                                 username: @js($user->username),
+                                                 phone: @js($user->user_phone ?? '-'),
+                                                 email: @js($user->email),
+                                                 role: @js(ucfirst($user->role)),
+                                                 created: @js(optional($user->created_at)->format('Y-m-d H:i')),
+                                                 updated: @js(optional($user->updated_at)->format('Y-m-d H:i')),
+                                                 isActive: {{ $user->is_active ? 'true' : 'false' }},
+                                                 toggleUrl: @js(route('admin.users.toggle', $user->id)),
+                                             };
+                                             showDetailCard = true;">
+                                        <path stroke-linecap="round" 
+                                              stroke-linejoin="round" 
+                                              stroke-width="2" 
+                                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                        </path>
+                                    </svg>
                                 </td>
                                 @if(auth()->user()->role === 'super_admin')
                                     <td>
@@ -525,7 +543,14 @@
                 <span class="status-badge" :class="currentUser?.isActive ? 'aktif' : 'pasif'" 
                       x-text="currentUser?.isActive ? 'AKTİF' : 'PASİF'"></span>
                 <button class="modal-close" @click="showDetailCard = false">&times;</button>
-                <img src="{{ asset('images/id-badge.gif') }}" class="user-avatar" alt="Kullanıcı">
+                
+                <!-- User Avatar - Tablo renkleriyle uyumlu -->
+                <div class="user-avatar">
+                    <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                
                 <div class="user-name" x-text="currentUser?.ad || '-'"></div>
                 <div class="user-username" x-text="currentUser?.username || ''"></div>
             </div>
@@ -593,7 +618,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Email</label>
-                                <input type="email" name="email" x-model="formData.email" required class="w-full">
+                                <input type="text" name="email" x-model="formData.email" required class="w-full">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700" x-text="isEditing ? 'Yeni Şifre (Boş bırakın)' : 'Şifre'"></label>

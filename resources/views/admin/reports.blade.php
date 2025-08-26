@@ -25,6 +25,7 @@
                     'tc_no'           => 'T.C. No',
                     'phone'           => 'Telefon',
                     'plate'           => 'Plaka',
+                    'department'      => 'Ziyaret Edilen Birim',
                     'person_to_visit' => 'Ziyaret Edilen',
                     default           => $f,
                 };
@@ -72,6 +73,7 @@
                                             @case('phone') Telefon @break
                                             @case('plate') Plaka @break
                                             @case('purpose') Ziyaret Sebebi @break
+                                            @case('department') Ziyaret Edilen Birim @break
                                             @case('person_to_visit') Ziyaret Edilen Kişi @break
                                             @case('approved_by') Ekleyen @break
                                             @default {{ ucfirst(str_replace('_', ' ', $field)) }}
@@ -107,6 +109,14 @@
                                                             : (preg_match('/^\d{2}\s+[A-ZÇĞİÖŞÜ]{1,3}\s+\d{2,4}$/u', strtoupper(trim((string)$val)))
                                                                 ? preg_replace('/^(\d{2})\s+[A-ZÇĞİÖŞÜ]{1,3}\s+\d{2,4}$/u', '$1 ** ****', strtoupper(trim((string)$val)))
                                                                 : $val);
+                                                        break;
+                                                    case 'department':
+                                                        // Departman adını maskele (ilk 2 harf + ***)
+                                                        if (strlen($val) > 2) {
+                                                            $val = substr($val, 0, 2) . '***';
+                                                        } else {
+                                                            $val = $val . '***';
+                                                        }
                                                         break;
                                                     default:
                                                         // entry_time, purpose, approved_by vb. maskelenmiyor

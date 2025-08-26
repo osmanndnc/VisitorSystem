@@ -18,8 +18,8 @@ class ReportExport implements FromCollection, WithMapping, WithHeadings, WithSty
 
     /**
      * @param Collection $data   -> Visit koleksiyonu (with visitor, approver)
-     * @param array $fields      -> ['entry_time','name','tc_no','phone','plate','purpose','person_to_visit','approved_by']
-     * @param array $masked      -> ['name','tc_no','phone','plate','person_to_visit'] gibi
+     * @param array $fields      -> ['entry_time','name','tc_no','phone','plate','purpose','department','person_to_visit','approved_by']
+     * @param array $masked      -> ['name','tc_no','phone','plate','department','person_to_visit'] gibi
      */
     public function __construct(Collection $data, array $fields, array $masked = [])
     {
@@ -42,6 +42,7 @@ class ReportExport implements FromCollection, WithMapping, WithHeadings, WithSty
             'phone'           => 'Telefon',
             'plate'           => 'Plaka',
             'purpose'         => 'Ziyaret Sebebi',
+            'department'      => 'Ziyaret Edilen Birim',
             'person_to_visit' => 'Ziyaret Edilen Kişi',
             'approved_by'     => 'Ekleyen',
             default           => ucfirst(str_replace('_', ' ', $f)),
@@ -61,6 +62,7 @@ class ReportExport implements FromCollection, WithMapping, WithHeadings, WithSty
                 'phone'           => $row->phone ?? '-',
                 'plate'           => $row->plate ?? '-',
                 'purpose'         => $row->purpose ?? '-',
+                'department'      => optional($row->visitor)->department->name ?? '-',
                 'person_to_visit' => $row->person_to_visit ?? '-',
                 'approved_by'     => optional($row->approver)->ad_soyad ?? ($row->approved_by ?? '-'),
                 default           => data_get($row, $f, '-'),

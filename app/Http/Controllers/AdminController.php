@@ -6,41 +6,37 @@ use Illuminate\Http\Request;
 use App\Models\Visit;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
     private array $allFields = [
         'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
-        'purpose', 'person_to_visit', 'approved_by'
+        'purpose', 'department', 'person_to_visit', 'approved_by'
     ];
 
     /**
-     * Admin ziyaretçileri listeler (filtre + log).
+     * Admin ziyaretçileri listeler (filtre).
      */
     public function index(Request $request)
     {
         $fields = $this->determineFields($request);
-        $visitsQuery = Visit::with(['visitor', 'approver']);
+        $visitsQuery = Visit::with(['approver', 'visitor.department']); 
 
         $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request);
 
+        // ✅ person_to_visit üzerinden birim filtresi
+        if ($request->filled('unit_name')) {
+            $unit = $request->unit_name;
+            $visitsQuery->where('person_to_visit', 'like', "%{$unit}%");
+        }
+
         $visits = $visitsQuery->get();
 
-        Log::channel('admin')->info('Ziyaretçi listesi görüntülendi', $this->logContext([
-            'action'       => 'visitor_list',
-            'status'       => 'success',
-            'message'      => 'Admin ziyaretçi listeleme yaptı',
-            'filters'      => $request->except('_token'),
-            'filter_type'  => $request->filled('start_date') ? 'custom_range' : ($request->input('date_filter') ?? 'daily'),
-            'record_count' => $visits->count()
-        ]));
-
         return view('admin.index', [
-            'visits'    => $visits,
-            'fields'    => $fields,
-            'allFields' => $this->allFields,
+            'visits'      => $visits,
+            'fields'      => $fields,
+            'allFields'   => $this->allFields,
         ]);
     }
 
@@ -54,20 +50,20 @@ class AdminController extends Controller
             $selectedFields = array_diff($this->allFields, ['id']);
         }
 
-        $visitsQuery = Visit::with(['visitor', 'approver']);
+        $visitsQuery = Visit::with(['approver', 'visitor.department']);
         $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request);
+
+        // ✅ person_to_visit üzerinden birim filtresi
+        if ($request->filled('unit_name')) {
+            $unit = $request->unit_name;
+            $visitsQuery->where('person_to_visit', 'like', "%{$unit}%");
+        }
+
         $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'));
         $visits = $visitsQuery->get();
 
         if ($visits->isEmpty()) {
-            Log::channel('admin')->warning('PDF export denemesi - veri yok', $this->logContext([
-                'action'  => 'pdf_export_unmasked',
-                'status'  => 'failed',
-                'message' => 'Filtreye uygun kayıt bulunamadı',
-                'filters' => $request->except('_token')
-            ]));
-
             return back()->with('error', 'Seçilen filtrelere uygun kayıt bulunamadı.');
         }
 
@@ -76,32 +72,8 @@ class AdminController extends Controller
         $reportTitle     = $this->generateReportTitle($request);
         $fullReportTitle = $reportTitle . ' Ziyaretçi Listesi';
 
-        Log::channel('admin')->info('PDF export başarılı', $this->logContext([
-            'action'       => 'pdf_export_unmasked',
-            'status'       => 'success',
-            'message'      => 'Admin PDF (unmasked) dışa aktarımı yaptı',
-            'filters'      => $request->except('_token'),
-            'field_count'  => count($selectedFields),
-            'record_count' => $visits->count()
-        ]));
-
         $pdf = Pdf::loadView('pdf.unmasked_report', compact('pdfData', 'pdfHeadings', 'fullReportTitle'));
         return $pdf->download('ziyaretci_listesi.pdf');
-    }
-
-    /**
-     * Ortak log context bilgisi.
-     */
-    private function logContext(array $extra = []): array
-    {
-        $user = auth()->user();
-
-        return array_merge([
-            'user_id'  => $user->id ?? null,
-            'username' => $user->username ?? 'Anonim',
-            'ip'       => request()->ip(),
-            'time'     => now()->toDateTimeString(),
-        ], $extra);
     }
 
     /**
@@ -166,15 +138,16 @@ class AdminController extends Controller
             $row = [];
             foreach ($fields as $field) {
                 $row[$field] = match ($field) {
-                    'entry_time'     => optional($visit->entry_time)->format('Y-m-d H:i:s'),
-                    'name'           => $visit->visitor->name ?? '-',
-                    'tc_no'          => $visit->visitor->tc_no ?? '-',
+                    'entry_time'      => optional($visit->entry_time)->format('Y-m-d H:i:s'),
+                    'name'            => $visit->visitor->name ?? '-',
+                    'tc_no'           => $visit->visitor->tc_no ?? '-',
                     'phone',
                     'plate',
                     'purpose',
-                    'person_to_visit'=> $visit->$field ?? '-',
-                    'approved_by'    => $visit->approver->ad_soyad ?? $visit->approved_by ?? '-',
-                    default          => $visit->$field ?? '-',
+                    'person_to_visit' => $visit->$field ?? '-',
+                    'approved_by'     => $visit->approver->ad_soyad ?? $visit->approved_by ?? '-',
+                    'department'      => $visit->visitor->department->name ?? '-', 
+                    default           => $visit->$field ?? '-',
                 };
             }
             return $row;
@@ -195,6 +168,7 @@ class AdminController extends Controller
             'purpose'         => 'Ziyaret Sebebi',
             'person_to_visit' => 'Ziyaret Edilen Kişi',
             'approved_by'     => 'Ekleyen',
+            'department'      => 'Ziyaret Edilen Birim', 
             default           => ucfirst(str_replace('_', ' ', $field)),
         }, $fields);
     }

@@ -19,6 +19,7 @@ class Visitor extends Model
         'person_to_visit',
         'visit_reason',
         'approved_by',
+        'department_id', // �� Bu satırı ekleyin
     ];
 
     public function visits()
@@ -30,5 +31,10 @@ class Visitor extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 }

@@ -15,7 +15,7 @@ class ReportExportController extends Controller
     public function export(Request $request)
     {
         // Alanlar
-        $allFields      = ['entry_time','name','tc_no','phone','plate','purpose','person_to_visit','approved_by'];
+        $allFields      = ['entry_time','name','tc_no','phone','plate','purpose','department','person_to_visit','approved_by']; 
         $selectedFields = $request->input('fields', $allFields);
 
         // >>> MASKE NORMALİZASYONU — Varsayılan: BOŞ (mask seçmediysen maskesiz indir)
@@ -30,8 +30,8 @@ class ReportExportController extends Controller
         }
         // <<<
 
-        // (İstersen burada AdminReportController’daki filtrelerin aynısını uygula)
-        $visits = Visit::with(['visitor','approver'])
+        // (İstersen burada AdminReportController'daki filtrelerin aynısını uygula)
+        $visits = Visit::with(['visitor.department','approver']) 
             ->orderBy('entry_time', $request->input('sort_order','desc'))
             ->get();
 
@@ -46,7 +46,7 @@ class ReportExportController extends Controller
      */
     public function exportSecure(Request $request)
     {
-        $request->merge(['mask' => ['name','tc_no','phone','plate','person_to_visit']]);
+        $request->merge(['mask' => ['name','tc_no','phone','plate','department','person_to_visit']]); 
         return $this->export($request);
     }
 }

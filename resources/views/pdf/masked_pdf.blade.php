@@ -78,6 +78,7 @@
                             @case('phone') Telefon @break
                             @case('plate') Plaka @break
                             @case('purpose') Ziyaret Sebebi @break
+                            @case('department') Ziyaret Edilen Birim @break
                             @case('person_to_visit') Ziyaret Edilen Kişi @break
                             @case('approved_by') Ekleyen @break
                             @default {{ ucfirst(str_replace('_', ' ', $field)) }}
