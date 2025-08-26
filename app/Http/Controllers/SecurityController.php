@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VisitStoreRequest;
 use App\Http\Requests\VisitUpdateRequest;
-use App\Models\Person;        // ✅ Artık Person kullanıyoruz
+use App\Models\Person;        
 use App\Models\Visit;
 use App\Models\VisitReason;
 use App\Services\VisitService;
+
 
 class SecurityController extends Controller
 {
@@ -87,7 +88,7 @@ class SecurityController extends Controller
     }
 
     /**
-     * TC ile geçmiş ziyaretçi verisi (AJAX).
+     * TC ile geçmiş ziyaretçi verisi (AJAX)
      * Ziyaretçi yoksa null döner.
      */
     public function getVisitorData(string $tc)

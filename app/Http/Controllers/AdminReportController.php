@@ -7,22 +7,26 @@ use App\Models\Visit;
 use App\Helpers\MaskHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
+/**
+ * AdminReportController
+ *
+ * SRP:
+ *  - Rapor ekranını, filtreli/maskeli veri üretimini ve maskeli PDF export’u yönetir.
+ *
+ * Notlar:
+ *  - Maskelenmiş alanlar UI’dan yönetilir; helper ile uygulanır.
+ *  - Tarih filtresi hazır şablonlar (daily/monthly/yearly) ve özel aralık destekler.
+ */
 class AdminReportController extends Controller
 {
     /**
-     * Rapor ana sayfası – boş veri ile açılır.
+     * Rapor ana sayfası – varsayılan boş veri ile açılır.
+     * GET -> /admin/reports
      */
     public function index(Request $request)
     {
         $fieldsForBlade = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit'];
-
-        Log::channel('admin')->info('Rapor sayfası açıldı', $this->logContext([
-            'action'  => 'report_index',
-            'status'  => 'success',
-            'message' => 'Admin rapor sayfası görüntülendi'
-        ]));
 
         return view('admin.reports', [
             'visits'         => collect(),
@@ -32,13 +36,18 @@ class AdminReportController extends Controller
             'chartData'      => [],
             'reportTitle'    => 'Tüm',
             'reportRange'    => 'Tüm zamanlar',
-            // Varsayılan maskeler (UI açıldığında tikli gözüksün)
+            // UI başlangıcı için varsayılan maske alanları
             'masked'         => ['name','tc_no','phone','plate','department','person_to_visit'],
         ]);
     }
 
     /**
-     * Filtrelenmiş ve maskelenmiş rapor verisini getirir.
+     * Filtrelenmiş & maskelenmiş rapor verisini getirir.
+     * POST -> /admin/reports/generate
+     *
+     * Çıktılar:
+     *  - $data: MaskHelper::maskVisits(...) ile maskelenmiş veri
+     *  - $chartData: Tarih filtresine göre özet/istatistik verisi
      */
     public function generateReport(Request $request)
     {
@@ -47,51 +56,21 @@ class AdminReportController extends Controller
         $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
 
-        // Kullanıcının seçtiği maskeler (varsayılan hepsi tikli)
+        // Varsayılan maske davranışı (UI ilk yüklemede hepsi seçili kabul edilir)
         $masked = $request->input('mask', ['name','tc_no','phone','plate','department','person_to_visit']);
-        // // Liste ekranında default: MASKE YOK
-        // $maskedInput = $request->input('mask', []);
-        // if (is_array($maskedInput)) {
-        //     $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
-        //     $masked  = $isAssoc
-        //         ? array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true))
-        //         : $maskedInput;
-        // } else {
-        //     $masked = [];
-        // }
 
-        //iLK AÇILDIĞINDA GELEN GÜNLÜK KAYITLARIN RAPORLARDA DA GÖRÜNMESİ İÇİN 
+        // Sayfa ilk açıldığında günlük kayıtlar da gelsin
         if (!$request->has('date_filter')) {
             $request->merge(['date_filter' => 'daily']);
         }
-        
+
         $visitsQuery = Visit::with(['visitor.department', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
         $visits    = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
-        // === ÖNEMLİ: Helper çağrısına $masked de veriyoruz
-        $data      = MaskHelper::maskVisits($visits, $selectedFields, $masked);
+        $data      = MaskHelper::maskVisits($visits, $selectedFields, $masked); // Maskeyi uygula
         $chartData = $this->prepareChartData($visits, $request->input('date_filter', ''));
-
-        if ($visits->isEmpty()) {
-            Log::channel('admin')->warning('Rapor oluşturma – veri bulunamadı', $this->logContext([
-                'action'  => 'generate_report',
-                'status'  => 'warning',
-                'message' => 'Filtrelere uygun kayıt bulunamadı',
-                'filters' => $request->except('_token')
-            ]));
-        } else {
-            Log::channel('admin')->info('Maskeleme ile rapor oluşturuldu', $this->logContext([
-                'action'       => 'generate_report',
-                'status'       => 'success',
-                'message'      => 'Maskeleme ile rapor oluşturuldu',
-                'filters'      => $request->except('_token'),
-                'masked'       => $masked,
-                'fields'       => $selectedFields,
-                'record_count' => $visits->count()
-            ]));
-        }
 
         return view('admin.reports', compact('data', 'selectedFields', 'chartData', 'reportTitle', 'reportRange'))
             ->with([
@@ -103,7 +82,8 @@ class AdminReportController extends Controller
     }
 
     /**
-     * Maskelenmiş PDF çıktısı üretir.
+     * Maskelenmiş PDF üretir.
+     * POST -> /admin/reports/pdf-masked
      */
     public function exportMaskedPdf(Request $request)
     {
@@ -111,50 +91,28 @@ class AdminReportController extends Controller
 
         $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
-        
-        //$masked         = $request->input('mask', ['name','tc_no','phone','plate','person_to_visit']);
-        // >>> MASK NORMALİZASYONU (map + liste her ikisini de kabul eder)
+
+        // Maske girdisini normalize et (hem map hem liste formatını kabul et)
         $maskedInput = $request->input('mask', ['name','tc_no','phone','plate','department','person_to_visit']);
         if (is_array($maskedInput)) {
             $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
-            if ($isAssoc) {
-                $masked = array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true));
-            } else {
-                $masked = $maskedInput;
-            }
+            $masked  = $isAssoc
+                ? array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true))
+                : $maskedInput;
         } else {
             $masked = ['name','tc_no','phone','plate','department','person_to_visit'];
         }
-        // <<<
-
 
         $visitsQuery = Visit::with(['visitor.department', 'approver']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
         $visits = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
-        // === ÖNEMLİ: PDF için de aynı maske seti kullanılıyor
-        $data   = MaskHelper::maskVisits($visits, $selectedFields, $masked);
-
         if ($visits->isEmpty()) {
-            Log::channel('admin')->warning('PDF export denemesi – veri yok', $this->logContext([
-                'action'  => 'pdf_export_masked',
-                'status'  => 'warning',
-                'message' => 'PDF export için uygun veri bulunamadı',
-                'filters' => $request->except('_token')
-            ]));
-
             return back()->with('error', 'Seçilen filtrelere uygun kayıt bulunamadı.');
         }
 
-        Log::channel('admin')->info('PDF olarak güvenli (masked) rapor indirildi', $this->logContext([
-            'action'       => 'pdf_export_masked',
-            'status'       => 'success',
-            'message'      => 'PDF masked export başarılı',
-            'field_count'  => count($selectedFields),
-            'masked'       => $masked,
-            'record_count' => $visits->count()
-        ]));
+        $data = MaskHelper::maskVisits($visits, $selectedFields, $masked);
 
         $pdf = Pdf::loadView('pdf.masked_pdf', [
             'data'           => $data,
@@ -171,24 +129,7 @@ class AdminReportController extends Controller
         return $pdf->download('Guvenli_Rapor.pdf');
     }
 
-    /**
-     * Ortak log context bilgisi.
-     */
-    private function logContext(array $extra = []): array
-    {
-        $user = auth()->user();
-
-        return array_merge([
-            'user_id'  => $user->id ?? null,
-            'username' => $user->username ?? 'Anonim',
-            'ip'       => request()->ip(),
-            'time'     => now()->toDateTimeString(),
-        ], $extra);
-    }
-
-    /**
-     * Tarih filtreleme uygular ve rapor başlığı döner.
-     */
+    /** Tarih filtresi uygular ve rapor başlık/metnini döner. */
     private function applyDateFilter($query, Request $request): array
     {
         $startDate = $request->start_date;
@@ -210,39 +151,26 @@ class AdminReportController extends Controller
         switch ($filter) {
             case 'daily':
                 $query->whereDate('entry_time', today());
-                $title = 'Günlük';
-                $range = today()->format('d.m.Y');
-                break;
+                return ['Günlük', today()->format('d.m.Y')];
 
             case 'monthly':
                 $query->whereMonth('entry_time', now()->month)
-                    ->whereYear('entry_time', now()->year);
-                $title = 'Aylık';
-                $range = now()->isoFormat('MMMM YYYY');
-                break;
+                      ->whereYear('entry_time', now()->year);
+                return ['Aylık', now()->isoFormat('MMMM YYYY')];
 
             case 'yearly':
                 $query->whereYear('entry_time', now()->year);
-                $title = 'Yıllık';
-                $range = (string) now()->year;
-                break;
+                return ['Yıllık', now()->year];
 
-            case 'all':
             default:
-                $title = 'Tüm';
-                $range = 'Tüm zamanlar';
-                break;
+                return ['Tüm', 'Tüm zamanlar'];
         }
-
-        return [$title, $range];
     }
 
-    /**
-     * Alan bazlı filtreleme uygular.
-     */
-    private function applyFieldFilters($query, Request $request, array $fields): void
+    /** Alan bazlı filtre uygular (rapor tarafı). */
+    private function applyFieldFilters($query, Request $request, array $allFields): void
     {
-        foreach ($fields as $field) {
+        foreach ($allFields as $field) {
             $value = $request->input("{$field}_value");
             if (!$value) continue;
 
@@ -250,51 +178,22 @@ class AdminReportController extends Controller
                 $query->whereHas('visitor', fn($q) => $q->where($field, 'like', "%{$value}%"));
             } elseif ($field === 'approved_by') {
                 $query->whereHas('approver', fn($q) => $q->where('ad_soyad', 'like', "%{$value}%"));
-            } elseif (in_array($field, ['phone', 'plate', 'purpose', 'person_to_visit'])) {
+            } elseif ($field === 'id') {
+                $query->where('id', 'like', "%{$value}%");
+            } elseif (in_array($field, ['phone', 'plate', 'purpose', 'person_to_visit', 'department'])) {
                 $query->where($field, 'like', "%{$value}%");
             }
         }
     }
 
-    /**
-     * Grafik verisini hazırlar.
-     */
-    private function prepareChartData($visits, $filter): array
+    /** Grafik/özet verisi (örnek: günlük/aylık sayımlar). */
+    private function prepareChartData($visits, string $dateFilter): array
     {
-        return match ($filter) {
-            'daily'   => $this->groupChart($visits, 'H', 0, 23),
-            'monthly' => $this->groupChart($visits, 'd', 1, now()->daysInMonth),
-            'yearly'  => $this->groupChart($visits, 'n', 1, 12),
-            default   => $this->groupChartByYear($visits),
-        };
-    }
-
-    /**
-     * Saat/gün/ay gruplamalı chart verisi.
-     */
-    private function groupChart($visits, $format, $start, $end): array
-    {
-        $group = $visits->groupBy(fn($v) => $v->entry_time->format($format))->map->count();
-        $chart = [];
-
-        for ($i = $start; $i <= $end; $i++) {
-            $label    = $format === 'H' ? str_pad($i, 2, '0', STR_PAD_LEFT) : $i;
-            $chart[]  = ['label' => (int)$label, 'count' => $group[$label] ?? 0];
-        }
-
-        return $chart;
-    }
-
-    /**
-     * Yıllara göre chart verisi.
-     */
-    private function groupChartByYear($visits): array
-    {
-        $group = $visits->groupBy(fn($v) => $v->entry_time->format('Y'))->map->count();
-        $years = $visits->isNotEmpty()
-            ? range($visits->min('entry_time')->year, $visits->max('entry_time')->year)
-            : [];
-
-        return array_map(fn($year) => ['label' => $year, 'count' => $group[$year] ?? 0], $years);
+        // Basit örnek: tarih filtresine göre sayım döndür
+        // (Geliştirilebilir: gün/ay kırılımı, en sık ziyaret edilen birim/kişi vb.)
+        return [
+            'total'      => $visits->count(),
+            'dateFilter' => $dateFilter,
+        ];
     }
 }

@@ -7,71 +7,79 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
+/**
+ * ProfileController
+ *
+ * SRP (Single Responsibility Principle):
+ *  - Profil sayfasını göstermek, profil bilgilerini güncellemek ve hesabı silmekten sorumludur.
+ *  - Doğrulama ProfileUpdateRequest ve Laravel validator mekanizmalarına delege edilir.
+ */
 class ProfileController extends Controller
 {
     /**
      * Profil düzenleme formunu görüntüler.
+     * GET -> /profile
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        // View yalnızca oturumdaki kullanıcıyı alır.
+        return view('profile.edit', ['user' => $request->user()]);
     }
 
     /**
      * Kullanıcının profil bilgilerini günceller.
+     * PATCH -> /profile
+     *
+     * Akış:
+     *  1) Request validasyon (ProfileUpdateRequest::validated())
+     *  2) Modeli doldur (fill)
+     *  3) E-posta değişmişse doğrulamayı sıfırla (email_verified_at = null)
+     *  4) Kaydet ve geri dön
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $user = $request->user();
-        $validated = $request->validated();
+        $user      = $request->user();
+        $validated = $request->validated(); // kaynak: mevcut akış validasyon kullanıyor:contentReference[oaicite:8]{index=8}
 
         $user->fill($validated);
 
+        // Kaynakta e-posta değişiminde verify reset mantığı var, korunur
         if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+            $user->email_verified_at = null; //:contentReference[oaicite:9]{index=9}
         }
 
-        $user->save();
+        $user->save(); //:contentReference[oaicite:10]{index=10}
 
-        Log::info('Kullanıcı profili güncellendi', [
-            'user_id' => $user->id,
-            'username' => $user->username ?? $user->email,
-            'updated_fields' => array_keys($validated),
-            'timestamp' => now(),
-        ]);
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // UI için durum anahtarı
+        return Redirect::route('profile.edit')->with('status', 'profile-updated'); //:contentReference[oaicite:11]{index=11}
     }
 
     /**
-     * Kullanıcının hesabını siler.
+     * Kullanıcının hesabını kalıcı olarak siler.
+     * DELETE -> /profile
+     *
+     * Güvenlik:
+     *  - current_password kuralı ile parola doğrulaması yapılır.
+     *  - Çıkış + session invalidate + CSRF token yenileme.
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Parola doğrulaması (mevcut akışta var):contentReference[oaicite:12]{index=12}
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
 
-        Log::warning('Kullanıcı hesabı silindi', [
-            'user_id' => $user->id,
-            'username' => $user->username ?? $user->email,
-            'ip' => $request->ip(),
-            'time' => now(),
-        ]);
+        Auth::logout();         //:contentReference[oaicite:13]{index=13}
+        $user->delete();        //:contentReference[oaicite:14]{index=14}
 
-        Auth::logout();
-        $user->delete();
-
-        $request->session()->invalidate();
+        // Oturumu güvenle kapat
+        $request->session()->invalidate();   //:contentReference[oaicite:15]{index=15}
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return Redirect::to('/');            //:contentReference[oaicite:16]{index=16}
     }
 }

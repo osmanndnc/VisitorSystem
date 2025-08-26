@@ -7,19 +7,28 @@ use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+/**
+ * DepartmentController
+ * 
+ * Üniversite/kurum içindeki birimleri (departmanları) yönetmek için kullanılan controller.
+ * Tüm CRUD (Create, Read, Update, Delete) işlemlerini içerir.
+ */
 class DepartmentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Birim listesini görüntüler.
+     * GET -> /admin/departments
      */
     public function index()
     {
         $departments = Department::all();
+
         return view('admin.departments.index', compact('departments'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Yeni birim ekleme formunu gösterir.
+     * GET -> /admin/departments/create
      */
     public function create()
     {
@@ -27,21 +36,26 @@ class DepartmentController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Yeni birimi veritabanına kaydeder.
+     * POST -> /admin/departments
      */
     public function store(Request $request)
     {
+        // ✅ Validasyon kuralları
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:departments,name',
         ]);
-    
+
         Department::create($validated);
 
-        return redirect()->route('admin.departments.index')->with('success', 'Birim başarıyla eklendi.');
+        return redirect()
+            ->route('admin.departments.index')
+            ->with('success', 'Birim başarıyla eklendi.');
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Birim düzenleme formunu gösterir.
+     * GET -> /admin/departments/{id}/edit
      */
     public function edit(Department $department)
     {
@@ -49,26 +63,35 @@ class DepartmentController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Birim bilgisini günceller.
+     * PUT/PATCH -> /admin/departments/{id}
      */
     public function update(Request $request, Department $department)
     {
-        
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('departments')->ignore($department->id)],
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('departments')->ignore($department->id)
+            ],
         ]);
 
         $department->update($validated);
 
-        return redirect()->route('admin.departments.index')->with('success', 'Birim başarıyla güncellendi.');
+        return redirect()
+            ->route('admin.departments.index')
+            ->with('success', 'Birim başarıyla güncellendi.');
     }
-    
+
     /**
-     * Remove the specified resource from storage.
+     * Birimi kalıcı olarak siler.
+     * DELETE -> /admin/departments/{id}
      */
     public function destroy(Department $department)
     {
         $department->delete();
-        return redirect()->route('admin.departments.index')->with('success', 'Birim başarıyla silindi.');
+
+        return redirect()
+            ->route('admin.departments.index')
+            ->with('success', 'Birim başarıyla silindi.');
     }
 }

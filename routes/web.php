@@ -11,6 +11,8 @@ use App\Http\Controllers\SecurityUserController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PersonController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +103,16 @@ Route::middleware(['auth', 'role:admin,super_admin'])->prefix('security')->name(
 
 
 Route::get('/security/visitor-by-tc/{tc}', [SecurityController::class, 'getVisitorData']);
+
+// Bu route json post kabul eder.
+// Tarayıcı CSP violation raporunu json olarak gönderir.
+Route::post('/csp-report', function (Request $request) {
+    Log::channel('csp')->warning('CSP violation', [
+        'report' => $request->all(),
+        'ip'     => $request->ip(),
+    ]);
+    return response()->noContent();
+});
 
 require __DIR__.'/auth.php';
 

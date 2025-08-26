@@ -60,30 +60,13 @@ return [
             'days' => 30,
         ],
 
-        'auth' => [
+        'csp' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/auth.log'),
-            'level' => 'info',
+            'path' => storage_path('logs/csp.log'),
+            'level' => 'warning',
             'days' => 30,
         ],
-        'security' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/security.log'),
-            'level' => 'info',
-            'days' => 30,
-        ],
-        'admin' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/admin.log'),
-            'level' => 'info',
-            'days' => 30,
-        ],
-        'report' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/report.log'),
-            'level' => 'info',
-            'days' => 14,
-        ],
+
 
         /////////
 
