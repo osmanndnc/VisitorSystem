@@ -1,6 +1,5 @@
 <x-app-layout>
     <head>
-        <!-- DataTables CDN -->
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
@@ -55,13 +54,13 @@
 
         .center-box {
             overflow: visible !important;
-            position: relative; 
-            width: 95%; 
-            max-width: 1800px; 
+            position: relative;
+            width: 95%;
+            max-width: 1800px;
             margin: 2rem auto;
-            background: white; 
-            border-radius: 1.5rem; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             padding: 3rem;
         }
         
@@ -795,14 +794,14 @@
         @media (max-width:520px){.chip-grid{grid-template-columns:1fr}}
         .chip-check{position:absolute;opacity:0;pointer-events:none}
         .chip{
-          background:var(--chip-bg);border:1.5px solid var(--chip-border);border-radius:14px;
-          padding:12px 14px;min-height:44px;display:flex;align-items:center;gap:10px;
-          cursor:pointer;font-weight:700;color:#1f2a44;transition:.2s ease;box-shadow:0 1px 2px rgba(16,24,40,.04);position:relative;user-select:none;
+            background:var(--chip-bg);border:1.5px solid var(--chip-border);border-radius:14px;
+            padding:12px 14px;min-height:44px;display:flex;align-items:center;gap:10px;
+            cursor:pointer;font-weight:700;color:#1f2a44;transition:.2s ease;box-shadow:0 1px 2px rgba(16,24,40,.04);position:relative;user-select:none;
         }
         .chip i{font-size:18px;opacity:.9}
         .chip .tick{
-          margin-left:auto;width:22px;height:22px;border-radius:50%;background:#e9eef9;color:#4f5d7a;
-          display:flex;align-items:center;justify-content:center;transform:scale(.9);transition:.2s
+            margin-left:auto;width:22px;height:22px;border-radius:50%;background:#e9eef9;color:#4f5d7a;
+            display:flex;align-items:center;justify-content:center;transform:scale(.9);transition:.2s
         }
         .chip:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(16,24,40,.08)}
         .chip-check:focus + .chip{outline:2px solid rgba(26,115,232,.35);outline-offset:2px}
@@ -905,11 +904,8 @@
             <h2 class="page-title">Ziyaretçi Listesi</h2>
             <div class="active-filter-info"><span id="activeFilterText">Günlük Kayıtlar</span></div>
 
-            <!-- Ana İçerik Container -->
             <div class="main-content-container">
-                <!-- Sol Taraf: Filtreleme Paneli -->
                 <div class="filters-panel">
-                   <!-- SÜTUN SEÇİM PANELİ - AÇILIR PANEL -->
                     <div class="column-filter-section" id="columnFilterSection">
                         <h4 onclick="toggleColumnSection()">Sütun Seçimi</h4>
                         <div class="column-checkboxes">
@@ -945,41 +941,35 @@
                             Tüm Sütunları Göster
                         </button>
                     </div>
-                                        
+                                         
                     <h3 style="margin: 20px 0 16px 0; font-size: 16px; font-weight: 700; color: #334155; text-align: center;">Filtreleme</h3>
                     
-                    <!-- Giriş Tarihi -->
                     <div class="filter-section">
                         <h4>Giriş Tarihi</h4>
                         <input type="date" class="filter-input" id="filter_start_date" placeholder="Başlangıç Tarihi">
                         <input type="date" class="filter-input" id="filter_end_date" placeholder="Bitiş Tarihi">
                     </div>
 
-                    <!-- Ad Soyad -->
                     <div class="filter-section">
                         <h4>Ad Soyad</h4>
                         <input type="text" class="filter-input" id="filter_name" placeholder="Ad Soyad ara...">
                     </div>
 
-                    <!-- TC Kimlik No -->
                     <div class="filter-section">
                         <h4>TC Kimlik No</h4>
                         <input type="text" class="filter-input" id="filter_tc_no" placeholder="TC Kimlik No ara...">
                     </div>
 
-                    <!-- Telefon -->
                     <div class="filter-section">
                         <h4>Telefon</h4>
                         <input type="text" class="filter-input" id="filter_phone" placeholder="Telefon ara...">
                     </div>
 
-                    <!-- Üniversite Birimi -->
                     <div class="filter-section">
                         <h4>Üniversite Birimi</h4>
                         <input type="text" class="filter-input" id="filter_unit" placeholder="Birim ara...">
                     </div>
-                                        <!-- Mevki/Unvan - HİBRİT FİLTRELEME -->
-                    <div class="filter-section">
+                                         <div class="filter-section">
                         <h4>Mevki/Unvan</h4>
                         <div class="custom-select-wrapper">
                             <input type="text" class="filter-input custom-select-input" id="filter_title" placeholder="Unvan ara veya seç..." autocomplete="off">
@@ -1004,13 +994,11 @@
                         </div>
                     </div>
 
-                    <!-- Plaka -->
                     <div class="filter-section">
                         <h4>Plaka</h4>
                         <input type="text" class="filter-input" id="filter_plate" placeholder="Plaka ara...">
                     </div>
 
-                    <!-- Ziyaret Sebebi - HİBRİT FİLTRELEME -->
                     <div class="filter-section">
                         <h4>Ziyaret Sebebi</h4>
                         <div class="custom-select-wrapper">
@@ -1034,34 +1022,28 @@
                         </div>
                     </div>
 
-                    <!-- Ziyaret Edilen Birim -->
                     <div class="filter-section">
                         <h4>Ziyaret Edilen Birim</h4>
                         <input type="text" class="filter-input" id="filter_department" placeholder="Birim ara...">
                     </div>
 
-                    <!-- Ziyaret Edilen Kişi -->
                     <div class="filter-section">
                         <h4>Ziyaret Edilen Kişi</h4>
                         <input type="text" class="filter-input" id="filter_person_to_visit" placeholder="Kişi ara...">
                     </div>
 
-                    <!-- Ekleyen -->
                     <div class="filter-section">
                         <h4>Ekleyen</h4>
                         <input type="text" class="filter-input" id="filter_approved_by" placeholder="Ekleyen kişi ara...">
                     </div>
 
-                    <!-- Filtreleme Butonları -->
                     <div class="filter-buttons">
                         <button type="button" class="filter-apply" id="applyFilters">Filtreyi Uygula</button>
                         <button type="button" class="filter-clear" id="clearFilters">Temizle</button>
                     </div>
                 </div>
 
-                <!-- Sağ Taraf: Tablo Alanı -->
                 <div class="table-section">
-                    <!-- Kayıt Görüntüle ve Yenile Butonları - EN ÜSTTE -->
                     <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                         <div class="dropdown-container" style="position: relative;">
                             <button id="reportBtn" type="button" class="modern-btn">Kayıt Görüntüle</button>
@@ -1078,7 +1060,6 @@
                                     <li data-type="yearly">Yıllık</li>
                                     <li id="dateRangeOption">Tarih Aralığı</li>
                                 </ul>
-                                <!-- Tarih Aralığı Bölümü - Takvim ikonları kaldırıldı -->
                                 <div id="dateRangeInputs" class="date-filter-inputs">
                                     <label for="start_date">Başlangıç Tarihi:</label>
                                     <div class="date-input-wrapper">
@@ -1098,7 +1079,6 @@
                         </div>
                     </div>
 
-                    <!-- SABİT TABLO YAPISI - 9 sütun (Ziyaret Edilen Birim eklendi) -->
                     <table id="visitorTable" class="data-table">
                         <thead>
                             <tr>
@@ -1148,7 +1128,6 @@
         </div>
     </div>
 
-    <!-- Güvenli Rapor Modal -->
     <div id="maskModal" class="modal-overlay">
       <div class="modal-card">
         <div style="padding:16px 20px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; gap:10px;">
@@ -1168,11 +1147,11 @@
             </div>
 
             <div class="chip-grid" id="maskChipGrid">
-                <input id="mask_name"  class="chip-check" type="checkbox" name="mask[]" value="name" checked>
-                <label for="mask_name"  class="chip"><i class="bi bi-person"></i><span>Ad Soyad</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
+                <input id="mask_name" class="chip-check" type="checkbox" name="mask[]" value="name" checked>
+                <label for="mask_name" class="chip"><i class="bi bi-person"></i><span>Ad Soyad</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
 
-                <input id="mask_tc"    class="chip-check" type="checkbox" name="mask[]" value="tc_no" checked>
-                <label for="mask_tc"    class="chip"><i class="bi bi-card-text"></i><span>T.C. No</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
+                <input id="mask_tc" class="chip-check" type="checkbox" name="mask[]" value="tc_no" checked>
+                <label for="mask_tc" class="chip"><i class="bi bi-card-text"></i><span>T.C. No</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
 
                 <input id="mask_phone" class="chip-check" type="checkbox" name="mask[]" value="phone" checked>
                 <label for="mask_phone" class="chip"><i class="bi bi-telephone"></i><span>Telefon</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
@@ -1183,14 +1162,14 @@
                 <input id="mask_department" class="chip-check" type="checkbox" name="mask[]" value="department" checked>
                 <label for="mask_department" class="chip"><i class="bi bi-building"></i><span>Ziyaret Edilen Birim</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
 
-                <input id="mask_zed"   class="chip-check" type="checkbox" name="mask[]" value="person_to_visit" checked>
-                <label for="mask_zed"   class="chip"><i class="bi bi-person-check"></i><span>Ziyaret Edilen</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
+                <input id="mask_zed" class="chip-check" type="checkbox" name="mask[]" value="person_to_visit" checked>
+                <label for="mask_zed" class="chip"><i class="bi bi-person-check"></i><span>Ziyaret Edilen</span><span class="tick"><i class="bi bi-check-lg"></i></span></label>
             </div>
         </div>
 
         <div style="padding:16px 20px; border-top:1px solid #eef2f7; display:flex; gap:10px; justify-content:flex-end;">
                     <button id="maskCancelBtn" type="button" class="modern-btn" style="background:#e5e7eb; color:#111827;">Vazgeç</button>
-          <button id="confirmGenerateReport" type="button" class="modern-btn">Raporu Oluştur</button>
+            <button id="confirmGenerateReport" type="button" class="modern-btn">Raporu Oluştur</button>
         </div>
       </div>
     </div>
@@ -1334,6 +1313,10 @@
                     if (hasActiveFilters()) {
                         applyCustomFilters();
                     }
+                    
+                    // Sütun genişliklerini ayarla ve çiz
+                    table.columns.adjust().draw();
+
                 }
                 
                 // Aktif sütun bilgisini güncelle
@@ -1475,6 +1458,9 @@
             this.visible(true);
         });
         
+        // Sütun genişliklerini ayarla
+        table.columns.adjust().draw();
+
         // Tüm checkbox'ları seçili yap
         document.querySelectorAll('.column-checkbox').forEach(cb => {
             cb.classList.add('selected');
@@ -1903,7 +1889,7 @@
         window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
     });
 
-       function printTableLikeReport(opts = {}) {
+        function printTableLikeReport(opts = {}) {
         const table = document.querySelector('table');
         if (!table) return alert('Yazdırılacak tablo bulunamadı.');
 
