@@ -941,7 +941,7 @@
                             Tüm Sütunları Göster
                         </button>
                     </div>
-                                         
+                                            
                     <h3 style="margin: 20px 0 16px 0; font-size: 16px; font-weight: 700; color: #334155; text-align: center;">Filtreleme</h3>
                     
                     <div class="filter-section">
@@ -969,7 +969,7 @@
                         <h4>Üniversite Birimi</h4>
                         <input type="text" class="filter-input" id="filter_unit" placeholder="Birim ara...">
                     </div>
-                                         <div class="filter-section">
+                                        <div class="filter-section">
                         <h4>Mevki/Unvan</h4>
                         <div class="custom-select-wrapper">
                             <input type="text" class="filter-input custom-select-input" id="filter_title" placeholder="Unvan ara veya seç..." autocomplete="off">
@@ -1184,84 +1184,10 @@
     document.addEventListener('DOMContentLoaded', () => {
         updatePageTitleFromURL();
         initHybridDropdowns();
-    });
-
-    // URL'den mevcut filtre türünü al ve başlığı güncelle
-    function updatePageTitleFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const dateFilter = urlParams.get('date_filter');
-        const startDate = urlParams.get('start_date');
-        const endDate = urlParams.get('end_date');
-        
-        console.log('URL Parametreleri:', { dateFilter, startDate, endDate }); // Debug için
-        
-        if (dateFilter) {
-            updateActiveFilterText(dateFilter);
-        } else if (startDate || endDate) {
-            updateActiveFilterText('custom');
-        } else {
-            updateActiveFilterText('daily'); // Varsayılan olarak günlük
-        }
-    }
-
-    // Seçilen kayıt türüne göre başlık altındaki metni güncelle
-    function updateActiveFilterText(type) {
-        const activeFilterText = document.getElementById('activeFilterText');
-        if (!activeFilterText) return;
-
-        let text = '';
-        switch (type) {
-            case 'all':
-                text = 'Tüm Kayıtlar';
-                break;
-            case 'daily':
-                text = 'Günlük Kayıtlar';
-                break;
-            case 'monthly':
-                text = 'Aylık Kayıtlar';
-                break;
-            case 'yearly':
-                text = 'Yıllık Kayıtlar';
-                break;
-            case 'custom':
-                text = 'Özel Tarih Aralığı';
-                break;
-            default:
-                text = 'Günlük Kayıtlar';
-        }
-        
-        activeFilterText.textContent = text;
-        console.log('Başlık güncellendi:', text); // Debug için
-    }
-
-    // Sütun seçim panelini aç/kapat
-    function toggleColumnSection() {
-        const section = document.getElementById('columnFilterSection');
-        section.classList.toggle('expanded');
-    }
-
-    // DataTables Türkçe Başlatma
-    $(document).ready(function() {
-        // Önce tablo yapısını kontrol et
-        const tableElement = document.getElementById('visitorTable');
-        if (!tableElement) {
-            console.error('Tablo bulunamadı');
-            return;
-        }
-        
-        // Sütun sayısını kontrol et
-        const headerCells = tableElement.querySelectorAll('thead th');
-        const firstRowCells = tableElement.querySelectorAll('tbody tr:first-child td');
-        
-        console.log(`Header sütun sayısı: ${headerCells.length}`);
-        console.log(`Body sütun sayısı: ${firstRowCells.length}`);
-        
-        if (headerCells.length !== firstRowCells.length) {
-            console.error(`Sütun sayısı uyumsuz: Header: ${headerCells.length}, Body: ${firstRowCells.length}`);
-            return;
-        }
         
         // DataTables'ı başlat
+        // Bu kısım jQuery'ye bağımlı olduğu için bırakıldı.
+        // Hatanın sadece filtre drop-downlarında olduğunu varsayıyoruz.
         table = $('#visitorTable').DataTable({
             responsive: true,
             language: {
@@ -1298,7 +1224,7 @@
             stateSave: true,
             dom: 'lfrtip'
         });
-
+        
         // Sütun seçimi için click event'leri ekle
         document.querySelectorAll('.column-checkbox').forEach(checkbox => {
             checkbox.addEventListener('click', function() {
@@ -1309,126 +1235,151 @@
                     const isVisible = this.classList.contains('selected');
                     table.column(columnIndex).visible(isVisible);
                     
-                    // Sütun gizleme sonrası filtreleme yeniden uygula
                     if (hasActiveFilters()) {
                         applyCustomFilters();
                     }
                     
-                    // Sütun genişliklerini ayarla ve çiz
                     table.columns.adjust().draw();
-
                 }
                 
-                // Aktif sütun bilgisini güncelle
                 updateActiveColumnsInfo();
             });
         });
 
-        // İlk yüklemede tüm sütunları seçili yap
         document.querySelectorAll('.column-checkbox').forEach(checkbox => {
             checkbox.classList.add('selected');
         });
 
-        // İlk yüklemede aktif sütun bilgisini güncelle
         updateActiveColumnsInfo();
-
-        // Hibrit dropdown'ları başlat
-        initHybridDropdowns();
     });
 
-    // HİBRİT DROPDOWN FONKSİYONLARI - OK İKONUNA BASINCA AÇILSIN
-    function initHybridDropdowns() {
-        // Mevki/Unvan hibrit dropdown
-        initHybridDropdown('filter_title', 'titleDropdown', 'titleSearch', 'titleOptions');
+    // URL'den mevcut filtre türünü al ve başlığı güncelle
+    function updatePageTitleFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateFilter = urlParams.get('date_filter');
+        const startDate = urlParams.get('start_date');
+        const endDate = urlParams.get('end_date');
         
-        // Ziyaret Sebebi hibrit dropdown
+        if (dateFilter) {
+            updateActiveFilterText(dateFilter);
+        } else if (startDate || endDate) {
+            updateActiveFilterText('custom');
+        } else {
+            updateActiveFilterText('daily');
+        }
+    }
+
+    // Seçilen kayıt türüne göre başlık altındaki metni güncelle
+    function updateActiveFilterText(type) {
+        const activeFilterText = document.getElementById('activeFilterText');
+        if (!activeFilterText) return;
+
+        let text = '';
+        switch (type) {
+            case 'all':
+                text = 'Tüm Kayıtlar';
+                break;
+            case 'daily':
+                text = 'Günlük Kayıtlar';
+                break;
+            case 'monthly':
+                text = 'Aylık Kayıtlar';
+                break;
+            case 'yearly':
+                text = 'Yıllık Kayıtlar';
+                break;
+            case 'custom':
+                text = 'Özel Tarih Aralığı';
+                break;
+            default:
+                text = 'Günlük Kayıtlar';
+        }
+        
+        activeFilterText.textContent = text;
+    }
+    
+    // Sütun seçim panelini aç/kapat
+    function toggleColumnSection() {
+        const section = document.getElementById('columnFilterSection');
+        section.classList.toggle('expanded');
+    }
+
+    // HİBRİT DROPDOWN FONKSİYONLARI - DÜZELTİLMİŞ KOD
+    function initHybridDropdowns() {
+        initHybridDropdown('filter_title', 'titleDropdown', 'titleSearch', 'titleOptions');
         initHybridDropdown('filter_purpose', 'purposeDropdown', 'purposeSearch', 'purposeOptions');
     }
 
     function initHybridDropdown(inputId, dropdownId, searchId, optionsId) {
-        const input = document.getElementById(inputId);
-        const dropdown = document.getElementById(dropdownId);
-        const search = document.getElementById(searchId);
-        const options = Array.from(document.querySelectorAll(`#${optionsId} .custom-select-option`));
-        
-        // Ok ikonunu bul
-        const arrow = input.parentElement.querySelector('.custom-select-arrow');
-        
-        console.log('Arrow element bulundu:', arrow); // Debug için
+        const wrapper = document.getElementById(inputId).closest('.custom-select-wrapper');
+        const input = wrapper.querySelector('.custom-select-input');
+        const dropdown = wrapper.querySelector('.custom-select-dropdown');
+        const search = wrapper.querySelector('.search-input');
+        const options = Array.from(wrapper.querySelectorAll('.custom-select-option'));
+        const arrow = wrapper.querySelector('.custom-select-arrow');
 
-        // Input'a yazı yazıldığında
-        input.addEventListener('input', (e) => {
-            const value = e.target.value;
-            dropdown.style.display = 'none';
-            applyCustomFilters();
-        });
+        function toggleDropdown(e) {
+            e.stopPropagation();
 
-        // Ok ikonuna tıklandığında dropdown'ı aç/kapat
-        if (arrow) {
-            arrow.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Ok ikonuna tıklandı!'); // Debug için
-                
-                if (dropdown.style.display === 'block') {
-                    dropdown.style.display = 'none';
-                    console.log('Dropdown kapatıldı');
-                } else {
-                    dropdown.style.display = 'block';
-                    console.log('Dropdown açıldı');
-                    search.value = '';
-                    filterHybridOptions(options, '');
-                    search.focus();
+            const isVisible = dropdown.style.display === 'block';
+
+            document.querySelectorAll('.custom-select-dropdown').forEach(d => {
+                d.style.display = 'none';
+                const parentWrapper = d.closest('.custom-select-wrapper');
+                if (parentWrapper) {
+                    const parentArrow = parentWrapper.querySelector('.custom-select-arrow');
+                    if (parentArrow) {
+                        parentArrow.style.transform = 'translateY(-50%) rotate(0deg)';
+                    }
                 }
             });
-        } else {
-            console.error('Ok ikonu bulunamadı!');
+
+            if (!isVisible) {
+                dropdown.style.display = 'block';
+                arrow.style.transform = 'translateY(-50%) rotate(180deg)';
+                search.value = '';
+                filterHybridOptions('');
+                setTimeout(() => search.focus(), 50);
+            }
         }
 
-        // Input'a focus olduğunda dropdown'ı AÇMA
-        input.addEventListener('focus', () => {
-            // Focus'ta dropdown açılmasın
+        input.addEventListener('click', toggleDropdown);
+        arrow.addEventListener('click', toggleDropdown);
+        wrapper.addEventListener('click', e => {
+            if (e.target.matches('.custom-select-wrapper')) {
+                toggleDropdown(e);
+            }
         });
 
-        // Input'tan focus çıktığında
-        input.addEventListener('blur', () => {
-            setTimeout(() => {
-                if (!dropdown.contains(document.activeElement)) {
-                    dropdown.style.display = 'none';
-                }
-            }, 200);
+        search.addEventListener('input', e => {
+            filterHybridOptions(e.target.value);
         });
 
-        // Arama
-        function filterHybridOptions(optionList, term) {
+        function filterHybridOptions(term) {
             const t = term.toLowerCase();
-            optionList.forEach(o => {
+            options.forEach(o => {
                 const txt = o.textContent.toLowerCase();
                 o.style.display = txt.includes(t) ? 'block' : 'none';
             });
         }
-        
-        search.addEventListener('input', e => filterHybridOptions(options, e.target.value));
 
-        // Seçim
         options.forEach(o => {
             o.addEventListener('click', () => {
-                const value = o.dataset.value;
                 const text = o.textContent;
                 input.value = text;
                 dropdown.style.display = 'none';
+                arrow.style.transform = 'translateY(-50%) rotate(0deg)';
                 applyCustomFilters();
             });
         });
 
-        // Dışa tıklama
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.custom-select-wrapper')) {
+            if (!wrapper.contains(e.target)) {
                 dropdown.style.display = 'none';
+                arrow.style.transform = 'translateY(-50%) rotate(0deg)';
             }
         });
 
-        // Enter tuşu ile arama
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1453,28 +1404,21 @@
     function showAllColumns() {
         if (!table) return;
         
-        // Tüm sütunları göster
         table.columns().every(function() {
             this.visible(true);
         });
         
-        // Sütun genişliklerini ayarla
         table.columns.adjust().draw();
 
-        // Tüm checkbox'ları seçili yap
         document.querySelectorAll('.column-checkbox').forEach(cb => {
             cb.classList.add('selected');
         });
         
-        // Aktif sütun bilgisini güncelle
         updateActiveColumnsInfo();
         
-        // Eğer aktif filtre varsa filtrelemeyi yeniden uygula
         if (hasActiveFilters()) {
             applyCustomFilters();
         }
-        
-        console.log('Tüm sütunlar gösterildi');
     }
 
     // Aktif sütun bilgisini güncelle - 9 sütun
@@ -1483,7 +1427,6 @@
         
         const visibleColumns = [];
         
-        // Hangi sütunların görünür olduğunu kontrol et
         table.columns().every(function(index) {
             if (this.visible()) {
                 const columnName = getColumnName(index);
@@ -1493,13 +1436,11 @@
             }
         });
         
-        // Aktif filtre bilgisini güncelle
         const activeFilterText = document.getElementById('activeFilterText');
         if (activeFilterText) {
-            if (visibleColumns.length < 9) { // 9 sütun
+            if (visibleColumns.length < 9) {
                 activeFilterText.textContent = `Gösterilen Sütunlar: ${visibleColumns.join(', ')}`;
             } else {
-                // URL'den mevcut filtre türünü al ve metni güncelle
                 updatePageTitleFromURL();
             }
         }
@@ -1522,18 +1463,14 @@
         return columnNames[index] || '';
     }
 
-    // GÜNCELLENMİŞ FİLTRELEME SİSTEMİ - Hibrit filtreleme desteği
+    // GÜNCEL FİLTRELEME SİSTEMİ
     function applyCustomFilters() {
         if (!table) return;
         
-        console.log('Özel filtreleme sistemi çalıştı');
-        
-        // Önce tüm satırları göster
         table.rows().every(function() {
             this.node().style.display = '';
         });
         
-        // Filtreleme değerlerini al
         const nameFilter = document.getElementById('filter_name')?.value.toLowerCase().trim();
         const tcFilter = document.getElementById('filter_tc_no')?.value.toLowerCase().trim();
         const phoneFilter = document.getElementById('filter_phone')?.value.toLowerCase().trim();
@@ -1545,11 +1482,9 @@
         const titleFilter = document.getElementById('filter_title')?.value.toLowerCase().trim();
         const approvedByFilter = document.getElementById('filter_approved_by')?.value.toLowerCase().trim();
         
-        // Tarih filtreleri
         const startDate = document.getElementById('filter_start_date')?.value;
         const endDate = document.getElementById('filter_end_date')?.value;
         
-        // Görünür sütunları bul
         const visibleColumns = [];
         table.columns().every(function(index) {
             if (this.visible()) {
@@ -1557,7 +1492,6 @@
             }
         });
         
-        // Sütun indekslerini görünür sütunlara göre ayarla
         const columnMap = {
             'entry_time': visibleColumns.indexOf(0) >= 0 ? visibleColumns.indexOf(0) : -1,
             'name': visibleColumns.indexOf(1) >= 0 ? visibleColumns.indexOf(1) : -1,
@@ -1572,33 +1506,27 @@
         
         let hiddenRows = 0;
         
-        // Her satırı kontrol et
         table.rows().every(function() {
             const row = this.node();
             const cells = row.cells;
             let shouldHide = false;
             
-            // Ad Soyad sütunu
             if (nameFilter && columnMap.name >= 0 && cells[columnMap.name] && !cells[columnMap.name].textContent.toLowerCase().includes(nameFilter)) {
                 shouldHide = true;
             }
             
-            // TC Kimlik No sütunu
             if (tcFilter && columnMap.tc_no >= 0 && cells[columnMap.tc_no] && !cells[columnMap.tc_no].textContent.toLowerCase().includes(tcFilter)) {
                 shouldHide = true;
             }
             
-            // Telefon sütunu
             if (phoneFilter && columnMap.phone >= 0 && cells[columnMap.phone] && !cells[columnMap.phone].textContent.toLowerCase().includes(phoneFilter)) {
                 shouldHide = true;
             }
             
-            // Plaka sütunu
             if (plateFilter && columnMap.plate >= 0 && cells[columnMap.plate] && !cells[columnMap.plate].textContent.toLowerCase().includes(plateFilter)) {
                 shouldHide = true;
             }
             
-            // Ziyaret Sebebi sütunu - Hibrit filtreleme
             if (purposeFilter && columnMap.purpose >= 0 && cells[columnMap.purpose]) {
                 const cellContent = cells[columnMap.purpose].textContent.toLowerCase();
                 if (!cellContent.includes(purposeFilter)) {
@@ -1606,22 +1534,18 @@
                 }
             }
             
-            // Ziyaret Edilen Birim sütunu
             if (departmentFilter && columnMap.department >= 0 && cells[columnMap.department] && !cells[columnMap.department].textContent.toLowerCase().includes(departmentFilter)) {
                 shouldHide = true;
             }
             
-            // Ziyaret Edilen Kişi sütunu
             if (personFilter && columnMap.person_to_visit >= 0 && cells[columnMap.person_to_visit] && !cells[columnMap.person_to_visit].textContent.toLowerCase().includes(personFilter)) {
                 shouldHide = true;
             }
             
-            // Üniversite Birimi sütunu (eğer varsa)
             if (unitFilter && columnMap.unit >= 0 && cells[columnMap.unit] && !cells[columnMap.unit].textContent.toLowerCase().includes(unitFilter)) {
                 shouldHide = true;
             }
             
-            // Mevki/Unvan filtrelemesi - Hibrit filtreleme
             if (titleFilter && columnMap.person_to_visit >= 0 && cells[columnMap.person_to_visit]) {
                 const personToVisit = cells[columnMap.person_to_visit].textContent.toLowerCase();
                 
@@ -1632,12 +1556,10 @@
                 }
             }
             
-            // Ekleyen sütunu
             if (approvedByFilter && columnMap.approved_by >= 0 && cells[columnMap.approved_by] && !cells[columnMap.approved_by].textContent.toLowerCase().includes(approvedByFilter)) {
                 shouldHide = true;
             }
             
-            // Tarih filtreleme - Giriş Tarihi sütunu
             if ((startDate || endDate) && columnMap.entry_time >= 0) {
                 const entryDateCell = cells[columnMap.entry_time];
                 if (entryDateCell && entryDateCell.textContent.trim() !== '-') {
@@ -1665,24 +1587,19 @@
                 }
             }
             
-            // Satırı gizle veya göster
             if (shouldHide) {
                 row.style.display = 'none';
                 hiddenRows++;
             }
         });
         
-        // Filtreleme sonucunu göster
         const totalRows = table.rows().count();
         const visibleRows = totalRows - hiddenRows;
-        console.log(`Filtreleme tamamlandı: ${visibleRows}/${totalRows} satır görünüyor`);
         
-        // DataTables'ın info kısmını güncelle
         if (table.info) {
             table.info(`${visibleRows} kayıttan ${visibleRows} tanesi gösteriliyor`);
         }
         
-        // Aktif filtre bilgisini güncelle
         updateActiveFilterInfo();
     }
 
@@ -1715,26 +1632,21 @@
     applyFiltersBtn?.addEventListener('click', applyCustomFilters);
 
     clearFiltersBtn?.addEventListener('click', () => {
-        // Tüm filtreleme alanlarını temizle
         const filterInputs = document.querySelectorAll('.filter-input, .custom-select-input');
         filterInputs.forEach(input => {
             input.value = '';
         });
         
-        // Tüm satırları göster
         if (table) {
             table.rows().every(function() {
                 this.node().style.display = '';
             });
         }
         
-        // Aktif filtre bilgisini güncelle
         updateActiveFilterInfo();
-        
-        console.log('Tüm filtreler temizlendi');
     });
 
-    // ENTER İLE ARAMA YAPMA - TÜM FİLTRELEME ALANLARI İÇİN
+    // ENTER İLE ARAMA YAPMA
     function addEnterKeyListener(elementId) {
         const element = document.getElementById(elementId);
         if (element) {
@@ -1747,7 +1659,6 @@
         }
     }
 
-    // TÜM arama alanlarına Enter key listener ekle
     addEnterKeyListener('filter_name');
     addEnterKeyListener('filter_tc_no');
     addEnterKeyListener('filter_phone');
@@ -1759,11 +1670,9 @@
     addEnterKeyListener('filter_start_date');
     addEnterKeyListener('filter_end_date');
 
-    // Tarih alanları için change event
     document.getElementById('filter_start_date')?.addEventListener('change', applyCustomFilters);
     document.getElementById('filter_end_date')?.addEventListener('change', applyCustomFilters);
 
-    // Sayfa yüklendiğinde aktif filtre bilgisini güncelle
     updateActiveFilterInfo();
 
     const reportBtn = document.getElementById('reportBtn');
@@ -1843,7 +1752,6 @@
         window.location.href = window.location.pathname + '?' + params.toString();
     });
 
-    // Görünüm değiştirme (günlük/aylık/...) - GÜNCELLENDİ
     document.querySelectorAll('#reportMenu li').forEach(item => {
         item.addEventListener('click', () => {
             if (item.id === 'dateRangeOption') return;
@@ -1854,7 +1762,6 @@
             urlParams.delete('end_date');
             urlParams.set('date_filter', type);
 
-            // Başlık altındaki metni güncelle
             updateActiveFilterText(type);
 
             window.location.href = window.location.pathname + '?' + urlParams.toString();
@@ -1889,7 +1796,7 @@
         window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
     });
 
-        function printTableLikeReport(opts = {}) {
+    function printTableLikeReport(opts = {}) {
         const table = document.querySelector('table');
         if (!table) return alert('Yazdırılacak tablo bulunamadı.');
 
