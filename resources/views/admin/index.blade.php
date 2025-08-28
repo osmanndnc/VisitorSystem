@@ -991,7 +991,6 @@
                                 <div class="custom-select-options" id="titleOptions">
                                     <div class="custom-select-option" data-value="Prof">Profesör</div>
                                     <div class="custom-select-option" data-value="Dr">Doktor</div>
-                                    <div class="custom-select-option" data-value="Yrd.Doç">Yardımcı Doçent</div>
                                     <div class="custom-select-option" data-value="Doç">Doçent</div>
                                     <div class="custom-select-option" data-value="Öğr.Gör">Öğretim Görevlisi</div>
                                     <div class="custom-select-option" data-value="Arş.Gör">Araştırma Görevlisi</div>
