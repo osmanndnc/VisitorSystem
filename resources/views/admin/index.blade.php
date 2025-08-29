@@ -192,7 +192,7 @@
                         </div>
                         <button class="show-all-columns-btn" onclick="showAllColumns()">Tüm Sütunları Göster</button>
                     </div>
-                                        
+                                
                     <h3 style="margin: 20px 0 16px 0; font-size: 16px; font-weight: 700; color: #334155; text-align: center;">Filtreleme</h3>
                     
                     <div class="filter-section">
@@ -425,6 +425,29 @@
             updatePageTitleFromURL();
             initHybridDropdowns();
             
+            // Tarih filtrelemesi için özel bir DataTables filtreleme metodu ekliyoruz.
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    const startDate = $('#filter_start_date').val();
+                    const endDate = $('#filter_end_date').val();
+                    const entryDateStr = data[0] ? data[0].split(' ')[0] : '';
+                    if (!entryDateStr) return true; // Tarih yoksa filtreleme dışı bırak
+
+                    const parts = entryDateStr.split('.');
+                    if (parts.length !== 3) return true; // Geçersiz tarih formatı
+
+                    const entryDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    const filterStartDate = startDate ? new Date(startDate) : null;
+                    const filterEndDate = endDate ? new Date(endDate) : null;
+
+                    if ((!filterStartDate || entryDate >= filterStartDate) &&
+                        (!filterEndDate || entryDate <= filterEndDate)) {
+                        return true;
+                    }
+                    return false;
+                }
+            );
+
             table = $('#visitorTable').DataTable({
                 responsive: true,
                 language: {
@@ -434,29 +457,45 @@
                 },
                 pageLength: 10,
                 lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "Tümü"]],
-                order: [[0, 'desc']], info: true, searching: true, ordering: true, paging: true, stateSave: false, dom: 'lfrtip'
+                order: [[0, 'desc']], info: true, searching: true, ordering: true, paging: true, stateSave: false, dom: 'lfrtip',
+                columns: [
+                    { "width": "120px" }, { "width": "160px" }, { "width": "130px" }, { "width": "120px" }, { "width": "100px" },
+                    { "width": "140px" }, { "width": "180px" }, { "width": "160px" }, { "width": "120px" }
+                ]
             });
             
             document.querySelectorAll('.column-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('click', function() {
                     const columnIndex = parseInt(this.dataset.column);
-                    this.classList.toggle('selected');
+                    const isVisible = this.classList.toggle('selected');
                     
                     if (table) {
-                        const isVisible = this.classList.contains('selected');
                         table.column(columnIndex).visible(isVisible);
-                        if (hasActiveFilters()) {
-                            applyCustomFilters();
-                        }
-                        table.columns.adjust().draw();
+                        table.columns.adjust().draw(); // Sütun genişliklerini ayarla
                     }
                     updateActiveColumnsInfo();
                 });
             });
-            document.querySelectorAll('.column-checkbox').forEach(checkbox => { checkbox.classList.add('selected'); });
+            
+            document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+                const columnIndex = parseInt(checkbox.dataset.column);
+                if (table.column(columnIndex).visible()) {
+                    checkbox.classList.add('selected');
+                } else {
+                    checkbox.classList.remove('selected');
+                }
+            });
+            
             updateActiveColumnsInfo();
-            document.getElementById('filter_start_date')?.addEventListener('change', applyCustomFilters);
-            document.getElementById('filter_end_date')?.addEventListener('change', applyCustomFilters);
+
+            $('#applyFilters').on('click', applyCustomFilters);
+            $('#clearFilters').on('click', () => {
+                $('.filter-input').val('');
+                table.search('').columns().search('').draw();
+                updateActiveFilterInfo();
+            });
+
+            $('#filter_start_date, #filter_end_date').on('change', applyCustomFilters);
         });
 
         function updatePageTitleFromURL() {
@@ -560,21 +599,13 @@
             });
         }
 
-        function hasActiveFilters() {
-            const filterInputs = document.querySelectorAll('.filter-input, .custom-select-input');
-            for (let input of filterInputs) {
-                if (input.value && input.value.trim() !== '') { return true; }
-            }
-            return false;
-        }
-
         function showAllColumns() {
             if (!table) return;
             table.columns().every(function() { this.visible(true); });
             table.columns.adjust().draw();
             document.querySelectorAll('.column-checkbox').forEach(cb => { cb.classList.add('selected'); });
             updateActiveColumnsInfo();
-            if (hasActiveFilters()) { applyCustomFilters(); }
+            applyCustomFilters();
         }
 
         function updateActiveColumnsInfo() {
@@ -600,100 +631,74 @@
         
         function applyCustomFilters() {
             if (!table) return;
-            table.rows().every(function() { this.node().style.display = ''; });
-            const nameFilter = document.getElementById('filter_name')?.value.toLowerCase().trim();
-            const tcFilter = document.getElementById('filter_tc_no')?.value.toLowerCase().trim();
-            const phoneFilter = document.getElementById('filter_phone')?.value.toLowerCase().trim();
-            const plateFilter = document.getElementById('filter_plate')?.value.toLowerCase().trim();
-            const purposeFilter = document.getElementById('filter_purpose')?.value.toLowerCase().trim();
-            const departmentFilter = document.getElementById('filter_department')?.value.toLowerCase().trim();
-            const personFilter = document.getElementById('filter_person_to_visit')?.value.toLowerCase().trim();
-            const unitFilter = document.getElementById('filter_unit')?.value.toLowerCase().trim();
-            const titleFilter = document.getElementById('filter_title')?.value.toLowerCase().trim();
-            const approvedByFilter = document.getElementById('filter_approved_by')?.value.toLowerCase().trim();
-            const startDate = document.getElementById('filter_start_date')?.value;
-            const endDate = document.getElementById('filter_end_date')?.value;
-            const visibleColumns = [];
-            table.columns().every(function(index) { if (this.visible()) { visibleColumns.push(index); } });
-            const columnMap = { 'entry_time': visibleColumns.indexOf(0) >= 0 ? visibleColumns.indexOf(0) : -1, 'name': visibleColumns.indexOf(1) >= 0 ? visibleColumns.indexOf(1) : -1, 'tc_no': visibleColumns.indexOf(2) >= 0 ? visibleColumns.indexOf(2) : -1, 'phone': visibleColumns.indexOf(3) >= 0 ? visibleColumns.indexOf(3) : -1, 'plate': visibleColumns.indexOf(4) >= 0 ? visibleColumns.indexOf(4) : -1, 'purpose': visibleColumns.indexOf(5) >= 0 ? visibleColumns.indexOf(5) : -1, 'department': visibleColumns.indexOf(6) >= 0 ? visibleColumns.indexOf(6) : -1, 'person_to_visit': visibleColumns.indexOf(7) >= 0 ? visibleColumns.indexOf(7) : -1, 'approved_by': visibleColumns.indexOf(8) >= 0 ? visibleColumns.indexOf(8) : -1 };
-            let hiddenRows = 0;
-            table.rows().every(function() {
-                const row = this.node();
-                const cells = row.cells;
-                let shouldHide = false;
-                if (nameFilter && columnMap.name >= 0 && cells[columnMap.name] && !cells[columnMap.name].textContent.toLowerCase().includes(nameFilter)) { shouldHide = true; }
-                if (tcFilter && columnMap.tc_no >= 0 && cells[columnMap.tc_no] && !cells[columnMap.tc_no].textContent.toLowerCase().includes(tcFilter)) { shouldHide = true; }
-                if (phoneFilter && columnMap.phone >= 0 && cells[columnMap.phone] && !cells[columnMap.phone].textContent.toLowerCase().includes(phoneFilter)) { shouldHide = true; }
-                if (plateFilter && columnMap.plate >= 0 && cells[columnMap.plate] && !cells[columnMap.plate].textContent.toLowerCase().includes(plateFilter)) { shouldHide = true; }
-                if (purposeFilter && columnMap.purpose >= 0 && cells[columnMap.purpose]) {
-                    const cellContent = cells[columnMap.purpose].textContent.toLowerCase();
-                    if (!cellContent.includes(purposeFilter)) { shouldHide = true; }
-                }
-                if (departmentFilter && columnMap.department >= 0 && cells[columnMap.department] && !cells[columnMap.department].textContent.toLowerCase().includes(departmentFilter)) { shouldHide = true; }
-                if (personFilter && columnMap.person_to_visit >= 0 && cells[columnMap.person_to_visit] && !cells[columnMap.person_to_visit].textContent.toLowerCase().includes(personFilter)) { shouldHide = true; }
-                if (unitFilter && columnMap.unit >= 0 && cells[columnMap.unit] && !cells[columnMap.unit].textContent.toLowerCase().includes(unitFilter)) { shouldHide = true; }
-                if (titleFilter && columnMap.person_to_visit >= 0 && cells[columnMap.person_to_visit]) {
-                    const personToVisit = cells[columnMap.person_to_visit].textContent.toLowerCase();
-                    if (personToVisit && personToVisit !== '-') { if (!personToVisit.includes(titleFilter)) { shouldHide = true; } }
-                }
-                if (approvedByFilter && columnMap.approved_by >= 0 && cells[columnMap.approved_by] && !cells[columnMap.approved_by].textContent.toLowerCase().includes(approvedByFilter)) { shouldHide = true; }
-                
-                // Tarih filtreleme mantığı
-                if ((startDate || endDate) && columnMap.entry_time >= 0) {
-                    const entryDateCell = cells[columnMap.entry_time];
-                    if (entryDateCell && entryDateCell.textContent.trim() !== '-') {
-                        const cellDateStr = entryDateCell.textContent.trim().split(' ')[0]; // Sadece tarihi al
-                        const [day, month, year] = cellDateStr.split('.');
-                        const entryDate = new Date(`${year}-${month}-${day}`);
-                        const filterStartDate = startDate ? new Date(startDate) : null;
-                        const filterEndDate = endDate ? new Date(endDate) : null;
-
-                        if (filterStartDate && entryDate < filterStartDate) {
-                            shouldHide = true;
-                        }
-                        if (filterEndDate && entryDate > filterEndDate) {
-                            shouldHide = true;
-                        }
-                    }
-                }
-
-                if (shouldHide) { row.style.display = 'none'; hiddenRows++; }
+            
+            // DataTables'in kendi arama işlevini kullanma
+            table.column(1).search($('#filter_name').val() || '').draw();
+            table.column(2).search($('#filter_tc_no').val() || '').draw();
+            table.column(3).search($('#filter_phone').val() || '').draw();
+            table.column(4).search($('#filter_plate').val() || '').draw();
+            table.column(5).search($('#filter_purpose').val() || '').draw();
+            table.column(6).search($('#filter_department').val() || '').draw();
+            table.column(7).search($('#filter_person_to_visit').val() || '').draw();
+            table.column(8).search($('#filter_approved_by').val() || '').draw();
+            
+            // Özel filtrelemeler için title ve unit'i de arama fonksiyonuna ekleyelim.
+            // Bu iki alan için, `person_to_visit` ve `department` sütunlarını kullanıyoruz.
+            const titleFilter = $('#filter_title').val()?.toLowerCase().trim();
+            const unitFilter = $('#filter_unit').val()?.toLowerCase().trim();
+            
+            // Hem title hem de person_to_visit filtrelerini aynı sütunda birleştirme
+            table.columns(7).every(function() {
+                const personToVisitData = this.data();
+                const newSearch = personToVisitData.filter(function(value) {
+                    const includesTitle = !titleFilter || (value && value.toLowerCase().includes(titleFilter));
+                    const includesPerson = !personFilter || (value && value.toLowerCase().includes(personFilter));
+                    return includesTitle && includesPerson;
+                });
+                this.search(newSearch.join('|'), true, false).draw();
             });
-            const totalRows = table.rows().count();
-            const visibleRows = totalRows - hiddenRows;
-            if (table.info) { table.info(`${visibleRows} kayıttan ${visibleRows} tanesi gösteriliyor`); }
+
+            // Hem unit hem de department filtrelerini aynı sütunda birleştirme
+            table.columns(6).every(function() {
+                const departmentData = this.data();
+                const newSearch = departmentData.filter(function(value) {
+                    const includesUnit = !unitFilter || (value && value.toLowerCase().includes(unitFilter));
+                    const includesDepartment = !departmentFilter || (value && value.toLowerCase().includes(departmentFilter));
+                    return includesUnit && includesDepartment;
+                });
+                this.search(newSearch.join('|'), true, false).draw();
+            });
+            
+            table.draw();
             updateActiveFilterInfo();
         }
 
         function updateActiveFilterInfo() {
             const activeFilters = [];
-            if (document.getElementById('filter_name')?.value) activeFilters.push('Ad Soyad');
-            if (document.getElementById('filter_tc_no')?.value) activeFilters.push('TC Kimlik No');
-            if (document.getElementById('filter_phone')?.value) activeFilters.push('Telefon');
-            if (document.getElementById('filter_plate')?.value) activeFilters.push('Plaka');
-            if (document.getElementById('filter_purpose')?.value) activeFilters.push('Ziyaret Sebebi');
-            if (document.getElementById('filter_department')?.value) activeFilters.push('Ziyaret Edilen Birim');
-            if (document.getElementById('filter_person_to_visit')?.value) activeFilters.push('Ziyaret Edilen Kişi');
-            if (document.getElementById('filter_unit')?.value) activeFilters.push('Üniversite Birimi');
-            if (document.getElementById('filter_title')?.value) activeFilters.push('Mevki/Unvan');
-            if (document.getElementById('filter_approved_by')?.value) activeFilters.push('Ekleyen');
-            if (document.getElementById('filter_start_date')?.value || document.getElementById('filter_end_date')?.value) { activeFilters.push('Tarih Aralığı'); }
+            if ($('#filter_name').val()) activeFilters.push('Ad Soyad');
+            if ($('#filter_tc_no').val()) activeFilters.push('TC Kimlik No');
+            if ($('#filter_phone').val()) activeFilters.push('Telefon');
+            if ($('#filter_plate').val()) activeFilters.push('Plaka');
+            if ($('#filter_purpose').val()) activeFilters.push('Ziyaret Sebebi');
+            if ($('#filter_department').val()) activeFilters.push('Ziyaret Edilen Birim');
+            if ($('#filter_person_to_visit').val()) activeFilters.push('Ziyaret Edilen Kişi');
+            if ($('#filter_unit').val()) activeFilters.push('Üniversite Birimi');
+            if ($('#filter_title').val()) activeFilters.push('Mevki/Unvan');
+            if ($('#filter_approved_by').val()) activeFilters.push('Ekleyen');
+            if ($('#filter_start_date').val() || $('#filter_end_date').val()) { activeFilters.push('Tarih Aralığı'); }
             const filterText = activeFilters.length > 0 ? `Aktif Filtreler: ${activeFilters.join(', ')}` : 'Günlük Kayıtlar';
-            document.getElementById('activeFilterText').textContent = filterText;
+            $('#activeFilterText').text(filterText);
         }
 
         const applyFiltersBtn = document.getElementById('applyFilters');
         const clearFiltersBtn = document.getElementById('clearFilters');
+        
         applyFiltersBtn?.addEventListener('click', applyCustomFilters);
         clearFiltersBtn?.addEventListener('click', () => {
-            const filterInputs = document.querySelectorAll('.filter-input, .custom-select-input');
+            const filterInputs = document.querySelectorAll('.filter-input');
             filterInputs.forEach(input => { input.value = ''; });
             if (table) { 
-                table.rows().every(function() { this.node().style.display = ''; }); 
-                // Sütun seçimlerini de temizle
-                table.columns().every(function() { this.visible(true); });
-                document.querySelectorAll('.column-checkbox').forEach(cb => { cb.classList.add('selected'); });
-                table.columns.adjust().draw();
+                table.search('').columns().search('').draw();
             }
             updateActiveFilterInfo();
         });
@@ -865,7 +870,6 @@
             let selectedFields = filterParam ? filterParam.split(',') : allFields;
 
             
-
             selectedFields.forEach(field => {
                 exportParams.append('fields[]', field);
                 const value = urlParams.get(field + '_value');
