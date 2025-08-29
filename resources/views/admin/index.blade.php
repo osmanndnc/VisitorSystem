@@ -192,7 +192,7 @@
                         </div>
                         <button class="show-all-columns-btn" onclick="showAllColumns()">Tüm Sütunları Göster</button>
                     </div>
-                                                
+                                        
                     <h3 style="margin: 20px 0 16px 0; font-size: 16px; font-weight: 700; color: #334155; text-align: center;">Filtreleme</h3>
                     
                     <div class="filter-section">
@@ -455,6 +455,10 @@
             });
             document.querySelectorAll('.column-checkbox').forEach(checkbox => { checkbox.classList.add('selected'); });
             updateActiveColumnsInfo();
+
+            // Tarih filtrelerine anlık olay dinleyicileri ekle
+            document.getElementById('filter_start_date')?.addEventListener('change', applyCustomFilters);
+            document.getElementById('filter_end_date')?.addEventListener('change', applyCustomFilters);
         });
 
         function updatePageTitleFromURL() {
@@ -595,7 +599,7 @@
             const columnNames = { 0: 'Giriş Tarihi', 1: 'Ad Soyad', 2: 'TC No', 3: 'Telefon', 4: 'Plaka', 5: 'Ziyaret Sebebi', 6: 'Ziyaret Edilen Birim', 7: 'Ziyaret Edilen', 8: 'Ekleyen' };
             return columnNames[index] || '';
         }
-
+        
         function applyCustomFilters() {
             if (!table) return;
             table.rows().every(function() { this.node().style.display = ''; });
@@ -635,25 +639,26 @@
                     if (personToVisit && personToVisit !== '-') { if (!personToVisit.includes(titleFilter)) { shouldHide = true; } }
                 }
                 if (approvedByFilter && columnMap.approved_by >= 0 && cells[columnMap.approved_by] && !cells[columnMap.approved_by].textContent.toLowerCase().includes(approvedByFilter)) { shouldHide = true; }
+                
+                // Tarih filtreleme mantığı güncellendi
                 if ((startDate || endDate) && columnMap.entry_time >= 0) {
                     const entryDateCell = cells[columnMap.entry_time];
                     if (entryDateCell && entryDateCell.textContent.trim() !== '-') {
-                        const entryDate = new Date(entryDateCell.textContent);
-                        if (!isNaN(entryDate.getTime())) {
-                            if (startDate && endDate) {
-                                const start = new Date(startDate);
-                                const end = new Date(endDate);
-                                if (entryDate < start || entryDate > end) { shouldHide = true; }
-                            } else if (startDate) {
-                                const start = new Date(startDate);
-                                if (entryDate < start) { shouldHide = true; }
-                            } else if (endDate) {
-                                const end = new Date(endDate);
-                                if (entryDate > end) { shouldHide = true; }
-                            }
+                        const cellDateStr = entryDateCell.textContent.trim().split(' ')[0]; // Sadece tarihi al
+                        const [day, month, year] = cellDateStr.split('.');
+                        const entryDate = new Date(`${year}-${month}-${day}`);
+                        const filterStartDate = startDate ? new Date(startDate) : null;
+                        const filterEndDate = endDate ? new Date(endDate) : null;
+
+                        if (filterStartDate && entryDate < filterStartDate) {
+                            shouldHide = true;
+                        }
+                        if (filterEndDate && entryDate > filterEndDate) {
+                            shouldHide = true;
                         }
                     }
                 }
+
                 if (shouldHide) { row.style.display = 'none'; hiddenRows++; }
             });
             const totalRows = table.rows().count();
@@ -685,7 +690,13 @@
         clearFiltersBtn?.addEventListener('click', () => {
             const filterInputs = document.querySelectorAll('.filter-input, .custom-select-input');
             filterInputs.forEach(input => { input.value = ''; });
-            if (table) { table.rows().every(function() { this.node().style.display = ''; }); }
+            if (table) { 
+                table.rows().every(function() { this.node().style.display = ''; }); 
+                // Sütun seçimlerini de temizle
+                table.columns().every(function() { this.visible(true); });
+                document.querySelectorAll('.column-checkbox').forEach(cb => { cb.classList.add('selected'); });
+                table.columns.adjust().draw();
+            }
             updateActiveFilterInfo();
         });
 
@@ -700,9 +711,8 @@
                 });
             }
         }
-        addEnterKeyListener('filter_name'); addEnterKeyListener('filter_tc_no'); addEnterKeyListener('filter_phone'); addEnterKeyListener('filter_plate'); addEnterKeyListener('filter_department'); addEnterKeyListener('filter_person_to_visit'); addEnterKeyListener('filter_unit'); addEnterKeyListener('filter_approved_by'); addEnterKeyListener('filter_start_date'); addEnterKeyListener('filter_end_date');
-        document.getElementById('filter_start_date')?.addEventListener('change', applyCustomFilters);
-        document.getElementById('filter_end_date')?.addEventListener('change', applyCustomFilters);
+        addEnterKeyListener('filter_name'); addEnterKeyListener('filter_tc_no'); addEnterKeyListener('filter_phone'); addEnterKeyListener('filter_plate'); addEnterKeyListener('filter_department'); addEnterKeyListener('filter_person_to_visit'); addEnterKeyListener('filter_unit'); addEnterKeyListener('filter_approved_by');
+        
         updateActiveFilterInfo();
 
         const reportBtn = document.getElementById('reportBtn');
