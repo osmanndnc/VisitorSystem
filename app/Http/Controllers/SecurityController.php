@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VisitStoreRequest;
 use App\Http\Requests\VisitUpdateRequest;
-use App\Models\Person;        // ✅ Artık Person kullanıyoruz
+use App\Models\Person;
 use App\Models\Visit;
 use App\Models\VisitReason;
 use App\Services\VisitService;
@@ -12,11 +12,6 @@ use App\Services\VisitService;
 class SecurityController extends Controller
 {
     /**
-     * Controller sadece HTTP akışını yönetir:
-     * - View’a veri hazırlar
-     * - Doğrulama (FormRequest) + iş mantığını (Service) delege eder
-     * - View/Redirect döner
-     *
      * DIP: İş mantığı VisitService’e enjekte edilir (constructor DI).
      */
     public function __construct(private VisitService $service)
@@ -30,11 +25,11 @@ class SecurityController extends Controller
      */
     public function create()
     {
-        $visits  = Visit::with('visitor')
+        $visits = Visit::with('visitor')
             ->whereDate('created_at', today())
+            ->orderByDesc('created_at')
             ->get();
 
-        // Kişi ve sebep listeleri (sade alanlarla, sıralı)
         $people  = Person::query()->orderBy('name')->get(['id', 'name']);
         $reasons = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
 
@@ -60,14 +55,13 @@ class SecurityController extends Controller
 
     /**
      * Düzenleme formu.
-     * Route Model Binding ile Visit otomatik çözülür.
      */
     public function edit(Visit $visit)
     {
-        $visits     = Visit::with('visitor')->whereDate('created_at', today())->get();
-        $editVisit  = $visit->load('visitor');
-        $people     = Person::query()->orderBy('name')->get(['id', 'name']);
-        $reasons    = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
+        $visits    = Visit::with('visitor')->whereDate('created_at', today())->orderByDesc('created_at')->get();
+        $editVisit = $visit->load('visitor');
+        $people    = Person::query()->orderBy('name')->get(['id', 'name']);
+        $reasons   = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
 
         return view('security.create', compact('visits', 'editVisit', 'people', 'reasons'));
     }
@@ -87,8 +81,8 @@ class SecurityController extends Controller
     }
 
     /**
-     * TC ile geçmiş ziyaretçi verisi (AJAX).
-     * Ziyaretçi yoksa null döner.
+     * TC ile geçmiş ziyaretçi verisi (AJAX)
+     * Not: Bu sadece öneri döner; kayıt eklemeyi engellemez.
      */
     public function getVisitorData(string $tc)
     {

@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('person_to_visit', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // örnek kolon, önceki tablo yapına göre değiştir
+            $table->string('name');
             $table->timestamps();
         });
     }

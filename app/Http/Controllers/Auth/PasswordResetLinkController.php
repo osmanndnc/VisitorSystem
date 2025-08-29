@@ -7,12 +7,28 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\Log;
 
+/**
+ * PasswordResetLinkController
+ *
+ * Sorumluluk (SRP):
+ *  - Yalnızca "Şifre sıfırlama bağlantısı gönder" akışının HTTP kısmını yönetir.
+ *  - Doğrulama Laravel validator; e-posta gönderimi Password broker tarafından yapılır.
+ *
+ * Temiz Akış:
+ *  - create(): "Şifremi unuttum" formunu gösterir.
+ *  - store(): email doğrular, Password::sendResetLink(...) çağırır,
+ *             başarılıysa status ile, değilse hata ile geri döner.
+ *
+ * Notlar:
+ *  - Rate limiting için middleware (ör. throttle:6,1) route tarafında tanımlanmalıdır.
+ *  - Gizlilik: Geri dönüşlerde yalnızca 'email' alanını withInput ile taşır.
+ */
 class PasswordResetLinkController extends Controller
 {
     /**
-     * Display the password reset link request view.
+     * Şifre sıfırlama bağlantısı talep formunu gösterir.
+     * GET -> /forgot-password
      */
     public function create(): View
     {
@@ -20,38 +36,31 @@ class PasswordResetLinkController extends Controller
     }
 
     /**
-     * Handle an incoming password reset link request.
+     * Şifre sıfırlama bağlantısı gönderim talebini işler.
+     * POST -> /forgot-password
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Adımlar:
+     *  1) 'email' alanını doğrula.
+     *  2) Password broker ile reset linki gönder.
+     *  3) Başarılıysa status mesajı, değilse hata mesajı ile geri dön.
      */
     public function store(Request $request): RedirectResponse
     {
+        // 1) Giriş doğrulaması
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
+        // 2) Broker üzerinden reset linki gönder
         $status = Password::sendResetLink(
             $request->only('email')
         );
 
-        if ($status === Password::RESET_LINK_SENT) {
-            Log::info('Şifre sıfırlama bağlantısı gönderildi.', [
-                'email' => $request->email,
-                'ip' => $request->ip(),
-                'time' => now(),
-            ]);
-
-            return back()->with('status', __($status));
-        } else {
-            Log::warning('Şifre sıfırlama denemesi başarısız.', [
-                'email' => $request->email,
-                'ip' => $request->ip(),
-                'time' => now(),
-            ]);
-
-            return back()
+        // 3) Sonuç: başarılıysa status ile, değilse hatayı göster
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('status', __($status))
+            : back()
                 ->withInput($request->only('email'))
                 ->withErrors(['email' => __($status)]);
-        }
     }
 }

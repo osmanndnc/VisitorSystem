@@ -7,25 +7,44 @@ use App\Models\Visit;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+/**
+ * AdminController
+ *
+ * SRP:
+ *  - Admin ziyaret listesi sayfasının HTTP akışını yönetir (listeleme + PDF export).
+ *
+ * Not:
+ *  - Doğrulama temel seviyede Request ile yapılır.
+ *  - Filtreleme ve mapping işlemleri net, küçük metotlara bölünmüştür.
+ */
 class AdminController extends Controller
 {
+    /** Liste ve PDF işlemlerinde desteklenen tüm alanlar. */
     private array $allFields = [
         'id', 'entry_time', 'name', 'tc_no', 'phone', 'plate',
         'purpose', 'department', 'person_to_visit', 'approved_by'
     ];
 
     /**
-     * Admin ziyaretçileri listeler (filtre).
+     * Admin ziyaretçileri listeler (filtre + alan seçimi).
+     * GET -> /admin
+     *
+     * Akış:
+     *  1) Alan seçimi belirlenir
+     *  2) İlişkilerle zenginleştirilmiş sorgu oluşturulur
+     *  3) Tarih ve alan bazlı filtreler uygulanır
+     *  4) Opsiyonel birim filtresi uygulanır
+     *  5) Sonuçlar view'a gönderilir
      */
     public function index(Request $request)
     {
-        $fields = $this->determineFields($request);
-        $visitsQuery = Visit::with(['approver', 'visitor.department']); 
+        $fields      = $this->determineFields($request);                  // Seçili alanları belirle
+        $visitsQuery = Visit::with(['approver', 'visitor.department']);   // İlişkileri dahil et
 
-        $this->applyDateFilter($visitsQuery, $request);
-        $this->applyFieldFilters($visitsQuery, $request);
+        $this->applyDateFilter($visitsQuery, $request);                   // Tarih filtresi
+        $this->applyFieldFilters($visitsQuery, $request);                 // Alan bazlı filtreler
 
-        // ✅ person_to_visit üzerinden birim filtresi
+        // person_to_visit üzerinden birim (unit_name) filtresi
         if ($request->filled('unit_name')) {
             $unit = $request->unit_name;
             $visitsQuery->where('person_to_visit', 'like', "%{$unit}%");
@@ -34,14 +53,19 @@ class AdminController extends Controller
         $visits = $visitsQuery->get();
 
         return view('admin.index', [
-            'visits'      => $visits,
-            'fields'      => $fields,
-            'allFields'   => $this->allFields,
+            'visits'    => $visits,
+            'fields'    => $fields,
+            'allFields' => $this->allFields,
         ]);
     }
 
     /**
-     * PDF çıktısını filtrelenmemiş olarak üretir.
+     * Maske OLMADAN PDF çıktısı üretir.
+     * POST -> /admin/pdf-unmasked
+     *
+     * Not:
+     *  - Kullanıcıdan gelen field listesinde "id" PDF'e dahil edilmez.
+     *  - Filtreler listeleme ile aynı kurallar üzerinden uygulanır.
      */
     public function exportPdfUnmasked(Request $request)
     {
@@ -54,7 +78,7 @@ class AdminController extends Controller
         $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request);
 
-        // ✅ person_to_visit üzerinden birim filtresi
+        // Birim filtresi
         if ($request->filled('unit_name')) {
             $unit = $request->unit_name;
             $visitsQuery->where('person_to_visit', 'like', "%{$unit}%");
@@ -76,9 +100,7 @@ class AdminController extends Controller
         return $pdf->download('ziyaretci_listesi.pdf');
     }
 
-    /**
-     * Seçili alanları belirler.
-     */
+    /** Seçili alanları belirler (yoksa tüm alanlar). */
     private function determineFields(Request $request): array
     {
         $requested = $request->input('filter');
@@ -86,9 +108,7 @@ class AdminController extends Controller
         return empty($fields) ? $this->allFields : $fields;
     }
 
-    /**
-     * Tarih filtresi uygular.
-     */
+    /** Tarih filtresi uygular. Özel aralık yoksa günlük/aylık/yıllık hazır filtreleri kullanır. */
     private function applyDateFilter($query, Request $request): void
     {
         if ($request->filled('start_date')) {
@@ -97,19 +117,23 @@ class AdminController extends Controller
                         ? Carbon::parse($request->end_date)->endOfDay()
                         : Carbon::now()->endOfDay();
             $query->whereBetween('entry_time', [$start, $end]);
-        } else {
-            match ($request->input('date_filter', 'daily')) {
-                'daily'   => $query->whereDate('entry_time', Carbon::today()),
-                'monthly' => $query->whereMonth('entry_time', Carbon::now()->month)
-                                    ->whereYear('entry_time', Carbon::now()->year),
-                'yearly'  => $query->whereYear('entry_time', Carbon::now()->year),
-                default   => null,
-            };
+            return;
         }
+
+        match ($request->input('date_filter', 'daily')) {
+            'daily'   => $query->whereDate('entry_time', Carbon::today()),
+            'monthly' => $query->whereMonth('entry_time', Carbon::now()->month)
+                               ->whereYear('entry_time', Carbon::now()->year),
+            'yearly'  => $query->whereYear('entry_time', Carbon::now()->year),
+            default   => null,
+        };
     }
 
     /**
      * Alan bazlı filtre uygular.
+     * - visitor ilişkisi üzerinden name/tc_no
+     * - approver ilişkisi üzerinden approved_by (ad_soyad)
+     * - düz alanlarda LIKE
      */
     private function applyFieldFilters($query, Request $request): void
     {
@@ -129,9 +153,7 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * PDF veri setini mapler.
-     */
+    /** PDF veri setini seçili alanlara göre map’ler. */
     private function mapVisitsForPdf($visits, $fields)
     {
         return $visits->map(function ($visit) use ($fields) {
@@ -141,12 +163,12 @@ class AdminController extends Controller
                     'entry_time'      => optional($visit->entry_time)->format('Y-m-d H:i:s'),
                     'name'            => $visit->visitor->name ?? '-',
                     'tc_no'           => $visit->visitor->tc_no ?? '-',
-                    'phone',
-                    'plate',
-                    'purpose',
-                    'person_to_visit' => $visit->$field ?? '-',
+                    'phone'           => $visit->phone ?? '-',
+                    'plate'           => $visit->plate ?? '-',
+                    'purpose'         => $visit->purpose ?? '-',
+                    'person_to_visit' => $visit->person_to_visit ?? '-',
                     'approved_by'     => $visit->approver->ad_soyad ?? $visit->approved_by ?? '-',
-                    'department'      => $visit->visitor->department->name ?? '-', 
+                    'department'      => $visit->visitor->department->name ?? '-',
                     default           => $visit->$field ?? '-',
                 };
             }
@@ -154,12 +176,10 @@ class AdminController extends Controller
         });
     }
 
-    /**
-     * PDF başlıklarını Türkçeleştirir.
-     */
+    /** PDF başlıklarını Türkçeleştirir. */
     private function mapFieldLabels($fields): array
     {
-        return array_map(fn($field) => match($field) {
+        return array_map(fn($field) => match ($field) {
             'entry_time'      => 'Giriş Tarihi',
             'name'            => 'Ad Soyad',
             'tc_no'           => 'T.C. Kimlik No',
@@ -168,14 +188,12 @@ class AdminController extends Controller
             'purpose'         => 'Ziyaret Sebebi',
             'person_to_visit' => 'Ziyaret Edilen Kişi',
             'approved_by'     => 'Ekleyen',
-            'department'      => 'Ziyaret Edilen Birim', 
+            'department'      => 'Ziyaret Edilen Birim',
             default           => ucfirst(str_replace('_', ' ', $field)),
         }, $fields);
     }
 
-    /**
-     * Rapor başlığını oluşturur.
-     */
+    /** Rapor başlığını oluşturur (UI için). */
     private function generateReportTitle(Request $request): string
     {
         if ($request->filled('start_date')) {
