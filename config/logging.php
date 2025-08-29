@@ -52,23 +52,27 @@ return [
 
     'channels' => [
 
-        /////////
+        // Tüm HTTP isteklerini
         'request' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/request.log'),
-            'level' => 'info',
-            'days' => 30,
+            'driver' => 'single',
+            'path'   => storage_path('logs/request.log'),
+            'level'  => 'info',
         ],
 
+        // CSP ihlalleri
         'csp' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/csp.log'),
-            'level' => 'warning',
-            'days' => 30,
+            'driver' => 'single',
+            'path'   => storage_path('logs/csp.log'),
+            'level'  => 'warning',
         ],
 
+        'errors' => [
+            'driver' => 'single',
+            'path'   => storage_path('logs/errors.log'),
+            'level'  => 'error',   // sadece error+ 
+            'replace_placeholders' => true,
+        ],
 
-        /////////
 
         'stack' => [
             'driver' => 'stack',

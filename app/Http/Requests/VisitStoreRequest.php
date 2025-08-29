@@ -19,7 +19,7 @@ class VisitStoreRequest extends FormRequest
             'name'            => ['required', 'string'],
             'phone'           => ['required', 'string'],
             'plate'           => ['nullable', 'string', 'max:20'],
-            'department_id'   => ['required', 'integer', 'exists:departments,id'], // ✅ zorunlu
+            'department_id'   => ['required', 'integer', 'exists:departments,id'],
             'person_to_visit' => ['nullable', 'string'], 
             'purpose'         => ['required', 'string'],
             'purpose_note'    => ['nullable', 'string', 'max:500'],
