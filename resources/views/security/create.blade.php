@@ -17,150 +17,152 @@
 
 <x-app-layout>
     <style>
-        /* ====== 1) SAYFA GENEL ====== */
-        html { zoom: 80% }
-        body{
-            margin:0; padding:0;
-            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(180deg,#f7f9fc 0%, #f0f4f9 55%, #edf1f6 100%);
-            background-attachment: fixed; background-size: cover;
-        }
+    /* ====== 1) SAYFA GENEL ====== */
+    html { zoom: 80% }
+    body{
+        margin:0; padding:0;
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(180deg,#f7f9fc 0%, #f0f4f9 55%, #edf1f6 100%);
+        background-attachment: fixed; background-size: cover;
+    }
 
-        /* ====== 2) MODAL ALT YAPI ====== */
-        .backdrop{
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,.45);
-            -webkit-backdrop-filter: blur(2px);
-            backdrop-filter: blur(2px);
-            z-index: 60;
-            opacity: 0; pointer-events: none; transition: opacity .25s ease;
-        }
-        .backdrop.show{ opacity: 1; pointer-events: auto; }
+    /* ====== 2) MODAL ALT YAPI ====== */
+    .backdrop{
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,.45);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+        z-index: 60;
+        opacity: 0; pointer-events: none; transition: opacity .25s ease;
+    }
+    .backdrop.show{ opacity: 1; pointer-events: auto; }
 
-        .modal{
-            position: fixed; inset: 0; display: grid; place-items: center;
-            z-index: 70; opacity: 0; pointer-events: none;
-            transition: opacity .25s ease, transform .25s ease;
-        }
-        .modal.show{ opacity: 1; pointer-events: auto; }
+    .modal{
+        position: fixed; inset: 0; display: grid; place-items: center;
+        z-index: 70; opacity: 0; pointer-events: none;
+        transition: opacity .25s ease, transform .25s ease;
+    }
+    .modal.show{ opacity: 1; pointer-events: auto; }
 
-        .modal-card{
-            width: min(960px, 92vw);
-            max-height: 90vh; overflow-y: auto;
-            background: #fff; border-radius: 18px;
-            border: 1px solid rgba(0,0,0,.06);
-            box-shadow: 0 22px 60px rgba(0,0,0,.18);
-        }
-        .modal-header{
-            position: sticky; top: 0; z-index: 1;
-            background: #fff; border-bottom: 1px solid #e5e7eb;
-            padding: 16px 20px; text-align: center;
-        }
-        .modal-title{ font-size: 20px; font-weight: 700; color:#111827 }
-        .modal-close{
-            position: absolute; top: 12px; right: 12px;
-            width: 36px; height: 36px; border-radius: 50%;
-            border: none; background: rgba(17,24,39,.06); color:#374151;
-            cursor: pointer; transition: .2s; display:grid; place-items:center; text-decoration:none;
-        }
-        .modal-close:hover{ background: rgba(17,24,39,.12); transform: rotate(90deg); }
-        .modal-body{ padding: 18px 20px 6px }
-        .modal-footer{ display:none }
+    .modal-card{
+        width: min(960px, 92vw);
+        max-height: 90vh; overflow-y: auto;
+        background: #fff; border-radius: 18px;
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 22px 60px rgba(0,0,0,.18);
+    }
+    .modal-header{
+        position: sticky; top: 0; z-index: 1;
+        background: #fff; border-bottom: 1px solid #e5e7eb;
+        padding: 16px 20px; text-align: center;
+    }
+    .modal-title{ font-size: 20px; font-weight: 700; color:#111827 }
+    .modal-close{
+        position: absolute; top: 12px; right: 12px;
+        width: 36px; height: 36px; border-radius: 50%;
+        border: none; background: rgba(17,24,39,.06); color:#374151;
+        cursor: pointer; transition: .2s; display:grid; place-items:center; text-decoration:none;
+    }
+    .modal-close:hover{ background: rgba(17,24,39,.12); transform: rotate(90deg); }
+    .modal-body{ padding: 18px 20px 6px }
+    .modal-footer{ display:none }
 
-        /* ====== 3) SAYFA KARTI & TABLO ====== */
-        .center-box{
-            max-width:1650px;            /* geniş pano */
-            margin:3rem auto; padding:2.8rem 3rem; border-radius:2rem;
-            background: rgba(255,255,255,.65);
-            backdrop-filter: blur(30px) saturate(160%);
-            -webkit-backdrop-filter: blur(30px) saturate(160%);
-            border:1px solid rgba(255,255,255,.3);
-            box-shadow:0 40px 80px rgba(0,0,0,.1);
-            transition: all .4s ease;
-        }
-        .center-box h2,.center-box h3{ font-size:1.9rem; font-weight:800; margin-bottom:1.8rem; color:#0f172a }
-        .center-box label{ font-weight:600; color:#1e293b }
+    /* ====== 3) SAYFA KARTI & TABLO ====== */
+    .center-box{
+        width: 100%;              /* tam genişlik */
+        max-width: 100%;          /* kısıtlama yok */
+        margin:2rem auto; padding:2.5rem 2.8rem; border-radius:2rem;
+        background: rgba(255,255,255,.65);
+        backdrop-filter: blur(30px) saturate(160%);
+        -webkit-backdrop-filter: blur(30px) saturate(160%);
+        border:1px solid rgba(255,255,255,.3);
+        box-shadow:0 40px 80px rgba(0,0,0,.1);
+        transition: all .4s ease;
+    }
+    .center-box h2,.center-box h3{ font-size:1.9rem; font-weight:800; margin-bottom:1.8rem; color:#0f172a }
+    .center-box label{ font-weight:600; color:#1e293b }
 
-        /* ====== 4) FORM ELEMANLARI (pill stil) ====== */
-        .modal-card input,
-        .modal-card select,
-        .modal-card textarea,
-        .center-box input,
-        .center-box select,
-        .center-box textarea{
-            width:100%; padding:.9rem 1.3rem; margin-top:.4rem;
-            border-radius:9999px; font-size:1rem;
-            background:#f8fafc; color:#1e293b;
-            border:1px solid #d1d5db; box-shadow: inset 0 1px 3px rgba(0,0,0,.04);
-            transition: all .25s ease;
-        }
-        .modal-card input:focus,
-        .modal-card select:focus,
-        .center-box input:focus,
-        .center-box select:focus,
-        .modal-card textarea:focus{
-            outline:none; background:#fff; border-color:#22c55e;
-            box-shadow:0 0 0 4px rgba(34,197,94,.18);
-        }
-        .modal-card input::placeholder{ color:#94a3b8 }
+    /* ====== 4) FORM ELEMANLARI (pill stil) ====== */
+    .modal-card input,
+    .modal-card select,
+    .modal-card textarea,
+    .center-box input,
+    .center-box select,
+    .center-box textarea{
+        width:100%; padding:.9rem 1.3rem; margin-top:.4rem;
+        border-radius:9999px; font-size:1rem;
+        background:#f8fafc; color:#1e293b;
+        border:1px solid #d1d5db; box-shadow: inset 0 1px 3px rgba(0,0,0,.04);
+        transition: all .25s ease;
+    }
+    .modal-card input:focus,
+    .modal-card select:focus,
+    .center-box input:focus,
+    .center-box select:focus,
+    .modal-card textarea:focus{
+        outline:none; background:#fff; border-color:#22c55e;
+        box-shadow:0 0 0 4px rgba(34,197,94,.18);
+    }
+    .modal-card input::placeholder{ color:#94a3b8 }
 
-        /* ====== 5) TABLO ====== */
-        .table-scroll{ width:100%; overflow-x:auto; }     /* yatay scroll */
-        .table-scroll table{ min-width:1400px; }          /* dar ekranda sarmasın */
-        .center-box table{
-            width:100%; border-collapse: separate !important;
-            border-spacing: 0 !important; border: 0 !important;
-            background: rgba(255,255,255,.96);
-            border-radius: 22px; overflow: hidden;
-            margin-top: 2.2rem; box-shadow: none !important;
-        }
-        .center-box thead th{
-            background:#f3f4f6; color:#374151; font-weight:700; border:0 !important;
-        }
-        .center-box th,.center-box td{
-            padding:1rem 1.2rem; font-size:.95rem; text-align:center; color:#1e293b; border:0 !important;
-            white-space:nowrap;                         /* satıra sarmasın */
-        }
-        .center-box tbody tr + tr td{ box-shadow: inset 0 -1px 0 rgba(226,232,240,.6); }
-        .center-box tbody tr:last-child td{ box-shadow:none; }
+    /* ====== 5) TABLO ====== */
+    .table-scroll{ width:100%; overflow-x:auto; }  /* yatay scroll açık */
+    .table-scroll table{ min-width:1800px; }       /* geniş tablo */
 
-        .edit-button{
-            background: rgba(59,130,246,.08);
-            border:1px solid rgba(59,130,246,.22);
-            color:#2563eb; font-weight:600; padding:.6rem 1.2rem;
-            border-radius:9999px; backdrop-filter: blur(6px); transition:.3s;
-        }
-        .edit-button:hover{
-            background:linear-gradient(to right,#3b82f6,#2563eb);
-            color:#fff; transform:scale(1.05);
-            box-shadow:0 8px 18px rgba(59,130,246,.4)
-        }
+    .center-box table{
+        width:100%; border-collapse: separate !important;
+        border-spacing: 0 !important; border: 0 !important;
+        background: rgba(255,255,255,.96);
+        border-radius: 22px; overflow: hidden;
+        margin-top: 2.2rem; box-shadow: none !important;
+    }
+    .center-box thead th{
+        background:#f3f4f6; color:#374151; font-weight:700; border:0 !important;
+    }
+    .center-box th,.center-box td{
+        padding:1rem 1.2rem; font-size:.95rem; text-align:center; color:#1e293b; border:0 !important;
+        white-space:nowrap;       /* ✅ satır sarmayı kapat */
+    }
+    .center-box tbody tr + tr td{ box-shadow: inset 0 -1px 0 rgba(226,232,240,.6); }
+    .center-box tbody tr:last-child td{ box-shadow:none; }
 
-        /* ====== 6) Kayıt Ekle butonu ====== */
-        #toggleForm{
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            padding:.65rem 1.6rem; font-weight:800; border-radius:9999px;
-            color:#fff; font-size:1.02rem; letter-spacing:.2px;
-            box-shadow:0 10px 24px rgba(34,197,94,.28);
-            transition:.25s;
-        }
-        #toggleForm:hover{ transform: translateY(-1px) scale(1.02); background: linear-gradient(135deg,#15803d,#16a34a) }
+    .edit-button{
+        background: rgba(59,130,246,.08);
+        border:1px solid rgba(59,130,246,.22);
+        color:#2563eb; font-weight:600; padding:.6rem 1.2rem;
+        border-radius:9999px; backdrop-filter: blur(6px); transition:.3s;
+    }
+    .edit-button:hover{
+        background:linear-gradient(to right,#3b82f6,#2563eb);
+        color:#fff; transform:scale(1.05);
+        box-shadow:0 8px 18px rgba(59,130,246,.4)
+    }
 
-        /* ====== 7) Submit animasyonu ====== */
-        .submit-animated{
-            width:170px; height:48px; border-radius:9999px;
-            background: linear-gradient(135deg,#1d4ed8,#2563eb); border:none;
-            position:relative; overflow:hidden; font-size:14px; font-weight:700; color:#fff; cursor:pointer;
-            transition:all .25s ease; box-shadow:0 8px 20px rgba(0,80,160,.2);
-        }
-        .submit-animated:hover{ background:#1746c1 }
-        .submit-animated:focus{ animation:extend 1s ease-in-out forwards }
-        .submit-animated:focus span{ animation:disappear 1s ease-in-out forwards }
-        .submit-animated:focus img{ animation:appear 1s ease-in-out forwards }
-        .submit-animated img{ position:absolute; width:15px; height:15px; top:50%; left:50%; transform:translate(-50%,-50%); opacity:0 }
-        @keyframes extend{ 0%{width:170px;height:48px;border-radius:9999px} 50%{background:#22c55e} 100%{width:60px;height:60px;border-radius:50%;background:#22c55e} }
-        @keyframes disappear{ 0%{opacity:1} 100%{opacity:0} }
-        @keyframes appear{ 0%{opacity:0} 100%{opacity:1} }
+    /* ====== 6) Kayıt Ekle butonu ====== */
+    #toggleForm{
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        padding:.65rem 1.6rem; font-weight:800; border-radius:9999px;
+        color:#fff; font-size:1.02rem; letter-spacing:.2px;
+        box-shadow:0 10px 24px rgba(34,197,94,.28);
+        transition:.25s;
+    }
+    #toggleForm:hover{ transform: translateY(-1px) scale(1.02); background: linear-gradient(135deg,#15803d,#16a34a) }
+
+    /* ====== 7) Submit animasyonu ====== */
+    .submit-animated{
+        width:170px; height:48px; border-radius:9999px;
+        background: linear-gradient(135deg,#1d4ed8,#2563eb); border:none;
+        position:relative; overflow:hidden; font-size:14px; font-weight:700; color:#fff; cursor:pointer;
+        transition:all .25s ease; box-shadow:0 8px 20px rgba(0,80,160,.2);
+    }
+    .submit-animated:hover{ background:#1746c1 }
+    .submit-animated:focus{ animation:extend 1s ease-in-out forwards }
+    .submit-animated:focus span{ animation:disappear 1s ease-in-out forwards }
+    .submit-animated:focus img{ animation:appear 1s ease-in-out forwards }
+    .submit-animated img{ position:absolute; width:15px; height:15px; top:50%; left:50%; transform:translate(-50%,-50%); opacity:0 }
+    @keyframes extend{ 0%{width:170px;height:48px;border-radius:9999px} 50%{background:#22c55e} 100%{width:60px;height:60px;border-radius:50%;background:#22c55e} }
+    @keyframes disappear{ 0%{opacity:1} 100%{opacity:0} }
+    @keyframes appear{ 0%{opacity:0} 100%{opacity:1} }
     </style>
 
     <div class="py-6" 
@@ -180,6 +182,7 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-700">
                         <thead class="text-left">
                             <tr>
+                                <th class="px-3 py-2 w-20">#</th> <!-- YENİ: sıra/ID -->
                                 <th class="px-4 py-2">Ad Soyad</th>
                                 <th class="px-4 py-2">T.C.</th>
                                 <th class="px-4 py-2">Telefon</th>
@@ -195,6 +198,12 @@
                         <tbody class="divide-y divide-gray-300">
                             @forelse ($visits as $visit)
                                 <tr class="group">
+                                    <!-- YENİ: sıra + ID rozeti -->
+                                    <td class="px-3 py-2 text-center">
+                                        <div class="font-semibold">{{ $loop->iteration }}</div>
+                                        <div class="badge-id">ID: {{ $visit->id }}</div>
+                                    </td>
+
                                     <td class="px-4 py-2">{{ $visit->visitor->name }}</td>
                                     <td class="px-4 py-2">{{ $visit->visitor->tc_no }}</td>
                                     <td class="px-4 py-2">{{ $visit->phone }}</td>
@@ -209,7 +218,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="9" class="px-4 py-2 text-center">Bugün kayıtlı ziyaretçi yok.</td></tr>
+                                <tr><td colspan="11" class="px-4 py-2 text-center">Bugün kayıtlı ziyaretçi yok.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -433,7 +442,7 @@
 
         @if ($isEdit || $errors->any()) openModal(); @endif
 
-        // ✅ TC NO girilince geçmiş verileri getir
+        // TC NO girilince geçmiş verileri getir
         window.getVisitorData = function () {
             const tcInput = $('#tc_no');
             if (!tcInput) return;
@@ -474,7 +483,7 @@
         const tcInput = $('#tc_no');
         if (tcInput) tcInput.addEventListener('change', window.getVisitorData);
 
-        // ✅ Birim seçilince o birime bağlı kişileri getir
+        // Birim seçilince o birime bağlı kişileri getir
         const deptSelect = $('#department_id');
         const personSelect = $('#person_to_visit');
 
@@ -490,7 +499,7 @@
                     .then(data => {
                         (data.people || []).forEach(person => {
                             const option = document.createElement('option');
-                            option.value = person.id; // ✅ ID olarak atanmalı!
+                            option.value = person.id; // ID olarak atanıyor
                             option.textContent = person.name;
                             personSelect.appendChild(option);
                         });
