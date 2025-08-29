@@ -12,11 +12,11 @@ use Carbon\Carbon;
  * AdminReportController
  *
  * SRP:
- *  - Rapor ekranını, filtreli/maskeli veri üretimini ve maskeli PDF export’u yönetir.
+ * - Rapor ekranını, filtreli/maskeli veri üretimini ve maskeli PDF export’u yönetir.
  *
  * Notlar:
- *  - Maskelenmiş alanlar UI’dan yönetilir; helper ile uygulanır.
- *  - Tarih filtresi hazır şablonlar (daily/monthly/yearly) ve özel aralık destekler.
+ * - Maskelenmiş alanlar UI’dan yönetilir; helper ile uygulanır.
+ * - Tarih filtresi hazır şablonlar (daily/monthly/yearly) ve özel aralık destekler.
  */
 class AdminReportController extends Controller
 {
@@ -46,8 +46,8 @@ class AdminReportController extends Controller
      * POST -> /admin/reports/generate
      *
      * Çıktılar:
-     *  - $data: MaskHelper::maskVisits(...) ile maskelenmiş veri
-     *  - $chartData: Tarih filtresine göre özet/istatistik verisi
+     * - $data: MaskHelper::maskVisits(...) ile maskelenmiş veri
+     * - $chartData: Tarih filtresine göre özet/istatistik verisi
      */
     public function generateReport(Request $request)
     {
@@ -68,9 +68,11 @@ class AdminReportController extends Controller
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
-        $visits    = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
-        $data      = MaskHelper::maskVisits($visits, $selectedFields, $masked); // Maskeyi uygula
-        $chartData = $this->prepareChartData($visits, $request->input('date_filter', ''));
+        $visits      = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
+        $data        = MaskHelper::maskVisits($visits, $selectedFields, $masked); // Maskeyi uygula
+        
+        // Burası güncellendi
+        $chartData = $this->prepareChartData($visits, $request);
 
         return view('admin.reports', compact('data', 'selectedFields', 'chartData', 'reportTitle', 'reportRange'))
             ->with([
@@ -142,7 +144,7 @@ class AdminReportController extends Controller
             $end   = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
             $query->whereBetween('entry_time', [$start, $end]);
 
-            $title = '';
+            $title = 'Özel Tarih Aralığı';
             $range = Carbon::parse($startDate)->format('d.m.Y') . ' - ' . ($endDate ? Carbon::parse($endDate)->format('d.m.Y') : 'Bugün');
             return [$title, $range];
         }
@@ -154,8 +156,7 @@ class AdminReportController extends Controller
                 return ['Günlük', today()->format('d.m.Y')];
 
             case 'monthly':
-                $query->whereMonth('entry_time', now()->month)
-                      ->whereYear('entry_time', now()->year);
+                $query->whereMonth('entry_time', now()->month)->whereYear('entry_time', now()->year);
                 return ['Aylık', now()->isoFormat('MMMM YYYY')];
 
             case 'yearly':
@@ -186,14 +187,53 @@ class AdminReportController extends Controller
         }
     }
 
-    /** Grafik/özet verisi (örnek: günlük/aylık sayımlar). */
-    private function prepareChartData($visits, string $dateFilter): array
+    /**
+     * Grafik/özet verisi oluşturur.
+     * Bu metot, tarih filtresine göre ziyaretleri gruplar ve sayar.
+     */
+    private function prepareChartData($visits, Request $request): array
     {
-        // Basit örnek: tarih filtresine göre sayım döndür
-        // (Geliştirilebilir: gün/ay kırılımı, en sık ziyaret edilen birim/kişi vb.)
-        return [
-            'total'      => $visits->count(),
-            'dateFilter' => $dateFilter,
-        ];
+        $dateFilter = $request->input('date_filter', 'all');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Boş bir dizi, eğer veri yoksa
+        if ($visits->isEmpty()) {
+            return [];
+        }
+
+        if ($dateFilter === 'daily') {
+            return $visits->groupBy(fn($item) => Carbon::parse($item->entry_time)->format('G'))
+                          ->map(fn($group) => ['label' => (int) $group->first()->entry_time->format('G'), 'count' => $group->count()])
+                          ->values()
+                          ->toArray();
+        }
+
+        if ($dateFilter === 'monthly') {
+            return $visits->groupBy(fn($item) => Carbon::parse($item->entry_time)->format('j'))
+                          ->map(fn($group) => ['label' => (int) $group->first()->entry_time->format('j'), 'count' => $group->count()])
+                          ->values()
+                          ->toArray();
+        }
+
+        if ($dateFilter === 'yearly') {
+            return $visits->groupBy(fn($item) => Carbon::parse($item->entry_time)->format('n'))
+                          ->map(fn($group) => ['label' => (int) $group->first()->entry_time->format('n'), 'count' => $group->count()])
+                          ->values()
+                          ->toArray();
+        }
+
+        if ($startDate || $endDate) {
+            return $visits->groupBy(fn($item) => Carbon::parse($item->entry_time)->format('d.m.Y'))
+                          ->map(fn($group) => ['label' => $group->first()->entry_time->format('d.m.Y'), 'count' => $group->count()])
+                          ->values()
+                          ->toArray();
+        }
+
+        // Varsayılan: tüm zamanlar (yıllara göre)
+        return $visits->groupBy(fn($item) => Carbon::parse($item->entry_time)->format('Y'))
+                      ->map(fn($group) => ['label' => $group->first()->entry_time->format('Y'), 'count' => $group->count()])
+                      ->values()
+                      ->toArray();
     }
 }

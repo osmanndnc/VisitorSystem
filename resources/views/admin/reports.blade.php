@@ -10,32 +10,22 @@
         padding: 2.5rem;
     ">
         @php
-            // mask[] => ['name','tc_no',...]  veya  mask[name]=on => ['name'=>'on', ...]
             $maskInput  = (array) request()->input('mask', []);
+            $maskFields = collect($maskInput)->map(fn ($v, $k) => is_string($k) ? $k : $v)->filter()->values()->all();
 
-            // Dizi değerlerini "alan adları"na normalle
-            $maskFields = collect($maskInput)->map(function ($v, $k) {
-                return is_string($k) ? $k : $v; // anahtar string ise onu al, değilse değeri al
-            })->filter()->values()->all();
-
-            // Başlıkta gösterilecek liste
-            $maskedList = collect($maskFields)->map(function ($f) {
-                return match ($f) {
-                    'name'            => 'Ad Soyad',
-                    'tc_no'           => 'T.C. No',
-                    'phone'           => 'Telefon',
-                    'plate'           => 'Plaka',
-                    'department'      => 'Ziyaret Edilen Birim',
-                    'person_to_visit' => 'Ziyaret Edilen',
-                    default           => $f,
-                };
+            $maskedList = collect($maskFields)->map(fn ($f) => match ($f) {
+                'name'            => 'Ad Soyad',
+                'tc_no'           => 'T.C. No',
+                'phone'           => 'Telefon',
+                'plate'           => 'Plaka',
+                'department'      => 'Ziyaret Edilen Birim',
+                'person_to_visit' => 'Ziyaret Edilen',
+                default           => $f,
             })->implode(', ');
-
-            // Satır içi hızlı kontrol için set
             $maskSet = array_flip($maskFields);
         @endphp
 
-        <h2 class="mb-4 text-center" style="
+        <h2 class="page-title text-center" style="
             font-weight: bold;
             font-size: 2.8rem;
             color: #003366;
@@ -43,12 +33,12 @@
         ">
             {{ $reportTitle ? $reportTitle . ' ' : '' }} Ziyaretçi Raporu
             @if ($reportRange)
-                <span style="display: block; font-size: 1.2rem; font-weight: normal; margin-top: 5px; color: #555;">({{ $reportRange }})</span>
+                <span class="report-range" style="display: block; font-size: 1.2rem; font-weight: normal; margin-top: 5px; color: #555;">({{ $reportRange }})</span>
             @endif
         </h2>
 
         @if(!empty($maskFields))
-            <div class="text-center" style="color:#6b7280; margin-top:-10px; margin-bottom: 20px;">
+            <div class="masked-info text-center" style="color:#6b7280; margin-top:-10px; margin-bottom: 20px;">
                 Maskelenen alanlar: <strong>{{ $maskedList }}</strong>
             </div>
         @endif
@@ -58,14 +48,14 @@
                 Gösterilecek veri bulunamadı.
             </div>
         @else
-            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                <div class="table-responsive" style="max-width: 90%;">
-                    <table lang="tr" class="table table-striped table-hover table-bordered shadow-sm report-tight">
-                        <thead style="background-color: #003366; color: #ffffff;">
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table lang="tr" class="table table-striped table-hover table-bordered report-table">
+                        <thead class="report-thead">
                             <tr>
                                 <th class="text-center" style="min-width: 80px;">Kayıt No</th>
                                 @foreach ($fieldsForBlade as $field)
-                                    <th class="text-center" style="min-width: 150px;">
+                                    <th class="text-center">
                                         @switch($field)
                                             @case('entry_time') Giriş Tarihi @break
                                             @case('name') Ad-Soyad @break
@@ -89,8 +79,8 @@
                                     @foreach ($fieldsForBlade as $field)
                                         @php
                                             $val = $row[$field] ?? '-';
-                                            $shouldMask = isset($maskMap[$field]); // URL'de mask[field] varsa
-
+                                            $shouldMask = isset($maskSet[$field]);
+                                            
                                             if ($shouldMask && $val !== '-') {
                                                 switch ($field) {
                                                     case 'name':
@@ -111,7 +101,6 @@
                                                                 : $val);
                                                         break;
                                                     case 'department':
-                                                        // Departman adını maskele (ilk 2 harf + ***)
                                                         if (strlen($val) > 2) {
                                                             $val = substr($val, 0, 2) . '***';
                                                         } else {
@@ -119,7 +108,6 @@
                                                         }
                                                         break;
                                                     default:
-                                                        // entry_time, purpose, approved_by vb. maskelenmiyor
                                                         break;
                                                 }
                                             }
@@ -134,174 +122,102 @@
 
                 <div class="mt-5 d-flex flex-wrap justify-content-center print-hidden"
                     style="gap: 1.5rem 2rem; padding: 1rem 0;">
-                    {{-- Query tüm parametreleri (mask dahil) taşıyor --}}
-                    <a href="{{ route('report.export', request()->query()) }}"
-                       class="custom-btn btn-excel">
+                    <a href="{{ route('report.export', request()->query()) }}" class="custom-btn btn-excel">
                         <i class="bi bi-file-earmark-excel"></i> Excel
                     </a>
-                    <a href="{{ route('report.maskedPdf', request()->query()) }}"
-                       target="_blank"
-                       class="custom-btn btn-pdf">
+                    <a href="{{ route('report.maskedPdf', request()->query()) }}" target="_blank" class="custom-btn btn-pdf">
                         <i class="bi bi-file-earmark-pdf"></i> PDF
                     </a>
-
                     <button id="printReportBtn" class="custom-btn btn-print">
                         <i class="bi bi-printer"></i> Yazdır
                     </button>
-
                     <button id="showChartBtn" class="custom-btn btn-chart">
                         <i class="bi bi-graph-up-arrow"></i> Grafik
                     </button>
                 </div>
 
-                <div id="reportChartContainer" class="mt-5" style="width: 90%; display: none; position: relative;"
+                <div id="reportChartContainer" class="mt-5" style="width: 100%; display: none; position: relative;"
                      data-chart='@json($chartData ?? [])'
                      data-filter="{{ $dateFilter ?? '' }}">
                     <canvas id="reportChart"></canvas>
                     <button id="downloadPdfBtn" class="custom-btn btn-pdf"
-                        style="display: none; position: absolute; bottom: -20px; right: 5px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                         style="display: none; position: absolute; bottom: 20px; right: 20px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                         <i class="bi bi-file-earmark-pdf"></i> Grafik PDF İndir
                     </button>
                 </div>
-
             </div>
         @endif
     </div>
 
-<style>
-    html {
-        zoom: 80%;
-        height: 100%;
-        scroll-behavior: smooth;
-    }
-    body {
-        margin: 0;
-        padding: 0;
-        min-height: 100%;
-        background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: #333;
-    }
+    <style>
+        html { zoom: 80%; height: 100%; scroll-behavior: smooth; }
+        body { margin: 0; padding: 0; min-height: 100%; background: linear-gradient(to bottom right, #f8fafc, #e2e8f0); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
 
-    /* Container */
-    .container {
-        background: #ffffff;
-        border-radius: 1.5rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        padding: 3rem;
-        transition: all .3s ease;
-    }
-    .container:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-    }
+        .container { 
+            background: #ffffff; 
+            border-radius: 1.5rem; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            padding: 3rem; 
+            transition: all .3s ease; 
+            width: 90%; 
+            max-width: 1500px; 
+            margin: 2rem auto; 
+        }
+        .container:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0,0,0,0.12); }
 
-    /* Başlık */
-    h2 {
-        font-weight: 800;
-        font-size: 2.5rem;
-        color: #003366;
-        text-align: center;
-        margin-bottom: 1rem;
-        letter-spacing: -0.5px;
-    }
-    h2 span {
-        font-size: 1.1rem;
-        font-weight: 400;
-        color: #6b7280;
-    }
+        .page-title { font-weight: 800; font-size: 2.5rem; color: #003366; margin-bottom: 1rem; letter-spacing: -0.5px; }
+        .page-title .report-range { display: block; font-size: 1.1rem; font-weight: 400; color: #6b7280; margin-top: 5px; }
+        .masked-info { color:#6b7280; margin-top:-10px; margin-bottom: 20px; font-size: 0.9rem; }
+        
+        .table-container { 
+            width: 100%; 
+            max-width: 100%; 
+            margin: 0 auto; 
+            overflow-x: auto; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    /* Tablo */
-    .table {
-        border-radius: 10px;
-        overflow: hidden;
-        background: #fff;
-        border-collapse: collapse;
-        width: 100%;
-    }
+        .table-responsive { width: 100%; }
 
-    /* Başlık satırı */
-    .table thead th {
-        background: linear-gradient(90deg, #003366, #004080);
-        color: #fff;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.4px;
-        padding: 8px 10px;
-        white-space: nowrap;
-    }
+        .report-table { border-radius: 10px; overflow: hidden; background: #fff; border-collapse: collapse; width: 100%; table-layout: auto; }
+        .report-thead th { background: linear-gradient(90deg, #003366, #004080); color: #fff; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.4px; padding: 8px 10px; white-space: nowrap; }
+        .report-table td, .report-table th { vertical-align: middle; text-align: center; padding: 7px 10px; font-size: 0.85rem; line-height: 1.3; border: 1px solid #e5e7eb; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .report-table tbody tr:hover { background: #f8fafc; transition: background 0.15s ease; }
+        .report-table th:nth-child(1), .report-table td:nth-child(1) { width: 80px; }
+        .report-table th:nth-child(2), .report-table td:nth-child(2) { width: 140px; }
+        
+        .custom-btn { height: 44px; min-width: 150px; padding: 0 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 12px; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; margin: 0.5rem; cursor: pointer; border: none; text-decoration: none; transition: all 0.3s ease; color: white; }
+        .custom-btn i { font-size: 1.2rem; }
+        .btn-excel { background: #28a745; }
+        .btn-excel:hover { background: #218838; transform: scale(1.05); }
+        .btn-pdf { background: #dc3545; }
+        .btn-pdf:hover { background: #b02a37; transform: scale(1.05); }
+        .btn-print { background: #003366; }
+        .btn-print:hover { background: #002244; transform: scale(1.05); }
+        .btn-chart { background: #ffc107; color: #343a40; }
+        .btn-chart:hover { background: #e0a800; color: #212529; transform: scale(1.05); }
 
-    /* Hücreler */
-    .table td,
-    .table th {
-        vertical-align: middle;
-        text-align: center;
-        padding: 7px 10px;
-        font-size: 0.85rem;
-        line-height: 1.3;
-        border: 1px solid #e5e7eb;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-    }
+        #reportChartContainer { 
+            background: #fff; 
+            border-radius: 16px; 
+            padding: 2rem; 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
+            margin-top: 2rem;
+            width: 90%; /* Eski değerine döndürüldü */
+        }
+        #downloadPdfBtn {
+            bottom: 20px;
+            right: 20px;
+        }
 
-    /* Satır hover */
-    .table tbody tr:hover {
-        background: #f8fafc;
-        transition: background 0.15s ease;
-    }
-
-    /* Butonlar */
-    .custom-btn {
-        height: 44px;
-        min-width: 150px;
-        padding: 0 1.5rem;
-        font-size: 1rem;
-        font-weight: 600;
-        border-radius: 12px;
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
-        margin: 0.5rem;
-        cursor: pointer;
-        border: none;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        color: white;
-    }
-    .custom-btn i { font-size: 1.2rem; }
-
-    /* Renkler */
-    .btn-excel { background: #28a745; }
-    .btn-excel:hover { background: #218838; transform: scale(1.05); }
-
-    .btn-pdf { background: #dc3545; }
-    .btn-pdf:hover { background: #b02a37; transform: scale(1.05); }
-
-    .btn-print { background: #003366; }
-    .btn-print:hover { background: #002244; transform: scale(1.05); }
-
-    .btn-chart { background: #ffc107; color: #343a40; }
-    .btn-chart:hover { background: #e0a800; color: #212529; transform: scale(1.05); }
-
-    /* Grafik container */
-    #reportChartContainer {
-        background: #fff;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-        margin-top: 2rem;
-    }
-
-    /* Mobil uyum */
-    @media (max-width: 768px) {
-        h2 { font-size: 1.8rem; }
-        .table-responsive { max-width: 100%; }
-        .custom-btn { min-width: 120px; font-size: 0.9rem; }
-        .container { padding: 1.5rem; }
-    }
-</style>
+        @media (max-width: 768px) {
+            h2 { font-size: 1.8rem; }
+            .container { padding: 1.5rem; }
+            .custom-btn { min-width: 120px; font-size: 0.9rem; }
+        }
+    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
@@ -310,80 +226,62 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
-    // --- YAZDIR (A4 Landscape, kompakt tablo, başlık tekrarı) ---
     document.getElementById('printReportBtn')?.addEventListener('click', () => {
-      const table = document.querySelector('table');
-      if (!table) return alert('Yazdırılacak tablo bulunamadı.');
+        const table = document.querySelector('.report-table');
+        if (!table) return alert('Yazdırılacak tablo bulunamadı.');
 
-      const h2 = document.querySelector('h2');
-      const titleOnly = (h2?.childNodes[0]?.textContent || 'Ziyaretçi Raporu').trim();
-      const range = document.querySelector('h2 span')?.innerText.trim() || '';
-      const finalTitle = range ? `${titleOnly} ${range}` : titleOnly;
+        const h2 = document.querySelector('h2');
+        const titleOnly = (h2?.childNodes[0]?.textContent || 'Ziyaretçi Raporu').trim();
+        const range = document.querySelector('.report-range')?.innerText.trim() || '';
+        const finalTitle = range ? `${titleOnly} ${range}` : titleOnly;
 
-      const today = new Date();
-      const dateStr = today.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-      const w = window.open('', '_blank');
-      w.document.open();
-      w.document.write(`
-        <html lang="tr">
-        <head>
-          <meta charset="UTF-8" />
-          <title>Yazdır - ${finalTitle}</title>
-          <style>
-            @page { size: A4 landscape; margin: 8mm; }
-            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            html, body { height: auto; }
-            body { margin:0; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; }
-
-            .head {
-              display:flex; align-items:center; justify-content:space-between;
-              margin: 0 0 6px 0; padding: 0 2mm;
-            }
-            .date { font-size: 9px; color:#555; }
-            .title { font-size: 16px; font-weight: 800; color:#003366; margin:0 auto; text-align:center; }
-
-            table { width:100%; border-collapse: collapse; table-layout: fixed; }
-            thead { display: table-header-group; }
-            tfoot { display: table-footer-group; }
-            tr { page-break-inside: avoid; }
-
-            thead th {
-              background: #003366; color:#fff;
-              font-size: 9px; font-weight: 700; letter-spacing:.2px;
-              padding: 4px 5px; white-space: nowrap; border:1px solid #cfd6e0;
-              text-transform: uppercase;
-            }
-            tbody td {
-              font-size: 8.5px; line-height: 1.25;
-              padding: 3px 4px; white-space: nowrap;
-              overflow: hidden; text-overflow: ellipsis; border:1px solid #e1e6ef;
-            }
-            /* Sütun ipuçları (isteğe bağlı) */
-            td:nth-child(2){ width: 120px; }  /* giriş tarihi */
-            td:nth-child(3){ width: 140px; }  /* ad-soyad */
-            td:nth-child(7){ width: 95px;  }  /* ziyaret sebebi */
-            td:nth-child(8){ width: 140px; }  /* ziyaret edilen */
-            td:nth-child(9){ width: 110px; }  /* ekleyen */
-          </style>
-        </head>
-        <body>
-          <div class="head">
-            <div class="date">${dateStr}</div>
-            <h2 class="title">${finalTitle}</h2>
-            <div style="width:90px"></div>
-          </div>
-          ${table.outerHTML}
-        </body>
-        </html>
-      `);
-      w.document.close();
-      w.focus();
-      w.print();
-      setTimeout(() => { try { w.close(); } catch(e){} }, 300);
+        const w = window.open('', '_blank');
+        w.document.open();
+        w.document.write(`
+            <html lang="tr">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Yazdır - ${finalTitle}</title>
+                <style>
+                    @page { size: A4 landscape; margin: 8mm; }
+                    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    html, body { height: auto; }
+                    body { margin:0; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; }
+                    .head { display:flex; align-items:center; justify-content:space-between; margin: 0 0 6px 0; padding: 0 2mm; }
+                    .date { font-size: 9px; color:#555; }
+                    .title { font-size: 16px; font-weight: 800; color:#003366; margin:0 auto; text-align:center; }
+                    table { width:100%; border-collapse: collapse; table-layout: fixed; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                    tr { page-break-inside: avoid; }
+                    thead th { background: #003366; color:#fff; font-size: 9px; font-weight: 700; letter-spacing:.2px; padding: 4px 5px; white-space: nowrap; border:1px solid #cfd6e0; text-transform: uppercase; }
+                    tbody td { font-size: 8.5px; line-height: 1.25; padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border:1px solid #e1e6ef; }
+                    td:nth-child(2) { width: 120px; }
+                    td:nth-child(3) { width: 140px; }
+                    td:nth-child(7) { width: 95px; }
+                    td:nth-child(8) { width: 140px; }
+                    td:nth-child(9) { width: 110px; }
+                </style>
+            </head>
+            <body>
+                <div class="head">
+                    <div class="date">${dateStr}</div>
+                    <h2 class="title">${finalTitle}</h2>
+                    <div style="width:90px"></div>
+                </div>
+                ${table.outerHTML}
+            </body>
+            </html>
+        `);
+        w.document.close();
+        w.focus();
+        w.print();
+        setTimeout(() => { try { w.close(); } catch(e){} }, 300);
     });
 
-    // --- Grafik (değiştirilmedi) ---
     document.getElementById('showChartBtn')?.addEventListener('click', () => {
         const chartContainer = document.getElementById('reportChartContainer');
         const downloadPdfBtn = document.getElementById('downloadPdfBtn');
@@ -403,34 +301,71 @@
     function drawChart() {
         const ctx = document.getElementById('reportChart').getContext('2d');
         const chartContainer = document.getElementById('reportChartContainer');
-        let chartData = JSON.parse(chartContainer.dataset.chart || '[]');
-        let dateFilter = chartContainer.dataset.filter || '';
+        const rawChartData = chartContainer.dataset.chart;
+        let chartData = [];
+        try {
+            // Veri boş veya tanımsızsa, boş bir dizi olarak ayarla
+            chartData = rawChartData && rawChartData !== '[]' ? JSON.parse(rawChartData) : [];
+        } catch (e) {
+            console.error("Grafik verileri JSON olarak ayrıştırılırken hata oluştu: ", e);
+            console.log("Alınan veri:", rawChartData);
+            alert("Grafik verileri alınırken bir sorun oluştu.");
+            return;
+        }
+
+        const dateFilter = chartContainer.dataset.filter || '';
 
         let labels = [], counts = [], chartTitle = '', xAxisLabel = '';
 
         if (dateFilter === 'daily') {
             chartTitle = 'Günlük Ziyaretçi Sayıları (Saatlere Göre)';
             xAxisLabel = 'Saat';
-            labels = chartData.map(item => `${item.label}:00`);
-            counts = chartData.map(item => item.count);
+            labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+            counts = labels.map(label => {
+                const hour = parseInt(label.split(':')[0]);
+                const dataPoint = Array.isArray(chartData) ? chartData.find(item => item.label === hour) : null;
+                return dataPoint ? dataPoint.count : 0;
+            });
         } else if (dateFilter === 'monthly') {
             chartTitle = 'Aylık Ziyaretçi Sayıları (Günlere Göre)';
             xAxisLabel = 'Gün';
-            labels = chartData.map(item => item.label);
-            counts = chartData.map(item => item.count);
+            // Laravel'den gelen gün sayısı yerine anlık olarak hesaplanır.
+            const daysInMonth = moment().daysInMonth();
+            labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+            counts = labels.map(label => {
+                const day = parseInt(label);
+                const dataPoint = Array.isArray(chartData) ? chartData.find(item => item.label === day) : null;
+                return dataPoint ? dataPoint.count : 0;
+            });
         } else if (dateFilter === 'yearly') {
             chartTitle = 'Yıllık Ziyaretçi Sayıları (Aylara Göre)';
             xAxisLabel = 'Ay';
-            labels = chartData.map(item => {
-                const monthNames = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-                return monthNames[item.label - 1];
+            const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+            labels = monthNames;
+            counts = labels.map((_, index) => {
+                const month = index + 1;
+                const dataPoint = Array.isArray(chartData) ? chartData.find(item => item.label === month) : null;
+                return dataPoint ? dataPoint.count : 0;
             });
-            counts = chartData.map(item => item.count);
-        } else {
+        } else if (dateFilter === 'custom') {
+            chartTitle = 'Özel Tarih Aralığı Ziyaretçi Sayıları (Günlere Göre)';
+            xAxisLabel = 'Tarih';
+            const startDate = moment("{{ request('start_date') }}");
+            const endDate = moment("{{ request('end_date') }}");
+            let dates = [];
+            for (let d = moment(startDate); d.isSameOrBefore(endDate); d.add(1, 'days')) {
+                dates.push(d.format('DD.MM.YYYY'));
+            }
+            labels = dates;
+            counts = dates.map(dateStr => {
+                const dataPoint = Array.isArray(chartData) ? chartData.find(item => item.label === dateStr) : null;
+                return dataPoint ? dataPoint.count : 0;
+            });
+        } else { // Tüm zamanlar
             chartTitle = 'Tüm Zamanların Ziyaretçi Sayıları (Yıllara Göre)';
             xAxisLabel = 'Yıl';
-            labels = chartData.map(item => item.label);
-            counts = chartData.map(item => item.count);
+            labels = Array.isArray(chartData) ? chartData.map(item => item.label) : [];
+            counts = Array.isArray(chartData) ? chartData.map(item => item.count) : [];
         }
 
         if (window.myReportChart) window.myReportChart.destroy();
@@ -442,7 +377,7 @@
                 responsive: true,
                 plugins: {
                     title: { display: true, text: chartTitle, font: { size: 18, weight: 'bold' }, color: '#003366' },
-                    tooltip: { mode: 'index', intersect: false, callbacks: { label: (c)=> `${c.dataset.label}: ${c.raw}` } }
+                    tooltip: { mode: 'index', intersect: false, callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}` } }
                 },
                 scales: {
                     x: { title: { display: true, text: xAxisLabel, font: { size: 14 } }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
@@ -484,7 +419,8 @@
                 case 'daily': fileNamePrefix = 'Gunluk-Ziyaretci-Grafigi'; break;
                 case 'monthly': fileNamePrefix = 'Aylik-Ziyaretci-Grafigi'; break;
                 case 'yearly': fileNamePrefix = 'Yillik-Ziyaretci-Grafigi'; break;
-                default: fileNamePrefix = 'Tum-Ziyaretci-Grafigi'; break;
+                case 'custom': fileNamePrefix = 'Ozel-Tarih-Ziyaretci-Grafigi'; break;
+                default: fileNamePrefix = 'Tum-Zamanlar-Ziyaretci-Grafigi'; break;
             }
             doc.save(`${fileNamePrefix}-${today.toISOString().slice(0,10)}.pdf`);
         }).catch(() => alert('Grafik PDF olarak indirilirken bir hata oluştu.'));

@@ -41,8 +41,8 @@
         .column-filter-section.expanded .column-checkboxes { display: grid; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .column-checkbox { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 12px; font-weight: 500; padding: 10px 12px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; transition: all 0.3s ease; position: relative; user-select: none; height: auto; min-height: 44px; box-sizing: border-box; word-wrap: break-word; white-space: normal; line-height: 1.3; }
-        .column-checkbox:hover { background: #f1f5f9; border-color: #003366; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .column-checkbox.selected { background: #003366; color: white; border-color: #003366; box-shadow: 0 4px 12px rgba(0,51,102,0.3); }
+        .column-checkbox:hover { background: #f1f5f9; border-color: #003366; transform: translateY(-2px); box-shadow: 4px 12px rgba(0,0,0,0.1); }
+        .column-checkbox.selected { background: #003366; color: white; border-color: #003366; box-shadow: 4px 12px rgba(0,51,102,0.3); }
         .column-checkbox.selected::after { content: "✓"; position: absolute; right: 12px; font-weight: bold; color: white; font-size: 16px; }
         .show-all-columns-btn { display: none; width: 100%; padding: 12px 16px; background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 8px; color: #334155; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-align: center; }
         .column-filter-section.expanded .show-all-columns-btn { display: block; }
@@ -455,8 +455,6 @@
             });
             document.querySelectorAll('.column-checkbox').forEach(checkbox => { checkbox.classList.add('selected'); });
             updateActiveColumnsInfo();
-
-            // Tarih filtrelerine anlık olay dinleyicileri ekle
             document.getElementById('filter_start_date')?.addEventListener('change', applyCustomFilters);
             document.getElementById('filter_end_date')?.addEventListener('change', applyCustomFilters);
         });
@@ -640,7 +638,7 @@
                 }
                 if (approvedByFilter && columnMap.approved_by >= 0 && cells[columnMap.approved_by] && !cells[columnMap.approved_by].textContent.toLowerCase().includes(approvedByFilter)) { shouldHide = true; }
                 
-                // Tarih filtreleme mantığı güncellendi
+                // Tarih filtreleme mantığı
                 if ((startDate || endDate) && columnMap.entry_time >= 0) {
                     const entryDateCell = cells[columnMap.entry_time];
                     if (entryDateCell && entryDateCell.textContent.trim() !== '-') {
@@ -847,20 +845,33 @@
             const urlParams = new URLSearchParams(window.location.search);
             const exportParams = new URLSearchParams();
             const allFields = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
+
+            // Tarih filtrelerini URL'den al ve exportParams'e ekle
+            const startDateParam = urlParams.get('start_date');
+            const endDateParam = urlParams.get('end_date');
+            if (startDateParam) {
+                exportParams.set('start_date', startDateParam);
+            }
+            if (endDateParam) {
+                exportParams.set('end_date', endDateParam);
+            }
+            
+            const dateFilterParam = urlParams.get('date_filter');
+            if (dateFilterParam) {
+                exportParams.set('date_filter', dateFilterParam);
+            }
+
             const filterParam = urlParams.get('filter');
             let selectedFields = filterParam ? filterParam.split(',') : allFields;
-            if (isReportPage) selectedFields = selectedFields.filter(field => field !== 'entry_time');
+
+            
+
             selectedFields.forEach(field => {
                 exportParams.append('fields[]', field);
                 const value = urlParams.get(field + '_value');
                 if (value) exportParams.set(field + '_value', value);
             });
-            const dateFilterParam = urlParams.get('date_filter');
-            const startDateParam = urlParams.get('start_date');
-            const endDateParam = urlParams.get('end_date');
-            if (startDateParam) exportParams.set('start_date', startDateParam);
-            if (endDateParam) exportParams.set('end_date', endDateParam);
-            if (dateFilterParam) exportParams.set('date_filter', dateFilterParam);
+            
             exportParams.set('sort_order', 'desc');
             return exportParams;
         }
