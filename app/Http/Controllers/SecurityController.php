@@ -7,6 +7,7 @@ use App\Http\Requests\VisitUpdateRequest;
 use App\Models\Person;
 use App\Models\Visit;
 use App\Models\VisitReason;
+use App\Models\Department;
 use App\Services\VisitService;
 
 class SecurityController extends Controller
@@ -20,20 +21,22 @@ class SecurityController extends Controller
     }
 
     /**
-     * Günlük ziyaret kayıtları ve dropdown verileri.
-     * SRP: Veriyi sadece hazırlar; iş mantığı Service katmanındadır.
+     * Güvenlik ana form sayfası:
+     * - Bugünün ziyaretlerini listeler
+     * - Kişi ve sebep dropdown verilerini getirir
      */
     public function create()
     {
-        $visits = Visit::with('visitor')
+        $visits = Visit::with(['visitor','department'])
             ->whereDate('created_at', today())
             ->orderByDesc('created_at')
             ->get();
 
-        $people  = Person::query()->orderBy('name')->get(['id', 'name']);
-        $reasons = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
+        $people  = Person::orderBy('name')->get(['id', 'name']);
+        $reasons = VisitReason::orderBy('reason')->get(['id', 'reason']);
+        $departments = Department::orderBy('name')->get(['id', 'name']);
 
-        return view('security.create', compact('visits', 'people', 'reasons'));
+        return view('security.create', compact('visits', 'people', 'reasons','departments'));
     }
 
     /**
@@ -54,20 +57,26 @@ class SecurityController extends Controller
     }
 
     /**
-     * Düzenleme formu.
+     * Ziyaret düzenleme formu.
+     * Route model binding ile Visit ve ilişkileri çözülür.
      */
     public function edit(Visit $visit)
     {
-        $visits    = Visit::with('visitor')->whereDate('created_at', today())->orderByDesc('created_at')->get();
-        $editVisit = $visit->load('visitor');
-        $people    = Person::query()->orderBy('name')->get(['id', 'name']);
-        $reasons   = VisitReason::query()->orderBy('reason')->get(['id', 'reason']);
+        $visits = Visit::with(['visitor','department'])
+            ->whereDate('created_at', today())
+            ->orderByDesc('created_at')
+            ->get();
 
-        return view('security.create', compact('visits', 'editVisit', 'people', 'reasons'));
+        $editVisit = $visit->load('visitor');
+        $people    = Person::orderBy('name')->get(['id', 'name']);
+        $reasons   = VisitReason::orderBy('reason')->get(['id', 'reason']);
+        $departments = Department::orderBy('name')->get(['id', 'name']);
+
+        return view('security.create', compact('visits', 'editVisit', 'people', 'reasons','departments'));
     }
 
     /**
-     * Kaydı günceller.
+     * Mevcut ziyaret kaydını günceller.
      * - Doğrulama: VisitUpdateRequest
      * - İş mantığı: VisitService::update
      */
@@ -81,12 +90,35 @@ class SecurityController extends Controller
     }
 
     /**
-     * TC ile geçmiş ziyaretçi verisi (AJAX)
-     * Not: Bu sadece öneri döner; kayıt eklemeyi engellemez.
+     * AJAX: TC kimlik numarasına göre geçmiş ziyaretçi verilerini getirir.
+     * - İsim, geçmiş telefonlar, plakalar (öneri amaçlı)
      */
     public function getVisitorData(string $tc)
     {
         $data = $this->service->getVisitorDataByTc($tc);
         return response()->json($data ?: null);
+    }
+
+    /**
+     * AJAX: Seçilen birime bağlı kişileri getirir.
+     * - Tek birime bağlı kişiler (one-to-many)
+     */
+    public function getPersonsByDepartment(int $id)
+    {
+        $department = \App\Models\Department::find($id);
+
+        if (!$department) {
+            return response()->json(['people' => []]);
+        }
+
+        // belongsToMany ile ilişki üzerinden kişiler çekiliyor
+        $people = $department->persons()->orderBy('name')->get(['id', 'name']);
+
+        return response()->json([
+            'people' => $people->map(fn($p) => [
+                'id'   => $p->id,
+                'name' => $p->name,
+            ])->values()
+        ]);
     }
 }

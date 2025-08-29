@@ -9,7 +9,6 @@ class VisitStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Gerekirse policy ile sınırlandırılabilir.
         return true;
     }
 
@@ -19,17 +18,14 @@ class VisitStoreRequest extends FormRequest
             'tc_no'           => ['required', 'string', new ValidTcNo()],
             'name'            => ['required', 'string'],
             'phone'           => ['required', 'string'],
-            'plate'           => ['nullable', 'string', 'max:20'], // opsiyonel
-            'person_to_visit' => ['required', 'string'],
+            'plate'           => ['nullable', 'string', 'max:20'],
+            'department_id'   => ['required', 'integer', 'exists:departments,id'], // ✅ zorunlu
+            'person_to_visit' => ['nullable', 'string'], 
             'purpose'         => ['required', 'string'],
-            'purpose_note'    => ['nullable','string','max:500'],
+            'purpose_note'    => ['nullable', 'string', 'max:500'],
         ];
     }
 
-    /**
-     * Kullanıcı plaka alanını boş bıraktığında "" gelir.
-     * DB tarafında nullable kolona uyum için null'a çeviriyoruz.
-     */
     protected function prepareForValidation(): void
     {
         $this->merge([

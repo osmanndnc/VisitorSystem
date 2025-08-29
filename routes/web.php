@@ -1,36 +1,33 @@
 <?php
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SecurityController;
-use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\AdminReportController;
-use App\Http\Controllers\ReportExportController;
-use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\SecurityUserController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\Admin\DepartmentController;
-use App\Http\Controllers\Admin\PersonController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+use App\Http\Controllers\{
+    ProfileController,
+    SecurityController,
+    AdminController,
+    AdminReportController,
+    ReportExportController,
+    AdminUserController,
+    SecurityUserController,
+    UserController
+};
+
+use App\Http\Controllers\Admin\{
+    DepartmentController,
+    PersonController
+};
+
+// =========================== //
+//       GENEL ROUTES         //
+// =========================== //
 
 // Ana sayfa yönlendirmesi
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', fn() => redirect()->route('login'));
 
-// Çıkış (Logout) rotası
+// Çıkış (Logout)
 Route::get('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
@@ -38,57 +35,82 @@ Route::get('/logout', function () {
     return redirect('/');
 })->name('logout');
 
-// Dashboard yönlendirmesi (Role göre yönlendirme)
-Route::get('/dashboard', function () {
-    return redirect(\App\Providers\RouteServiceProvider::redirectToBasedOnRole());
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard yönlendirmesi (role bazlı)
+Route::get('/dashboard', fn() => redirect(\App\Providers\RouteServiceProvider::redirectToBasedOnRole()))
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-// Profil işlemleri
+// =========================== //
+//     PROFİL (GENEL)         //
+// =========================== //
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
 });
 
-// Güvenlik işlemleri
+// =========================== //
+//    GÜVENLİK PANELİ         //
+// =========================== //
 Route::middleware(['auth', 'role:security'])->group(function () {
     Route::get('/security/create', [SecurityController::class, 'create'])->name('security.create');
     Route::post('/security/store', [SecurityController::class, 'store'])->name('security.store');
-    // {id}' den solid'e göre {visit}' e değiştirildi.
     Route::get('/security/{visit}/edit', [SecurityController::class, 'edit'])->name('security.edit');
-    Route::put('/security/{visit}',      [SecurityController::class, 'update'])->name('security.update');
-    Route::delete('/security/{visit}',   [SecurityController::class, 'destroy'])->name('security.destroy');
+    Route::put('/security/{visit}', [SecurityController::class, 'update'])->name('security.update');
+    Route::delete('/security/{visit}', [SecurityController::class, 'destroy'])->name('security.destroy');
+
+    // AJAX: Birime bağlı kişileri getir
+    Route::get('/security/department/{id}/persons', [SecurityController::class, 'getPersonsByDepartment'])
+        ->name('security.department.persons');
+
+    // AJAX: TC ile geçmiş ziyaretçi verisi getir
+    Route::get('/security/visitor-by-tc/{tc}', [SecurityController::class, 'getVisitorData'])
+        ->name('security.visitor.by.tc');
 });
 
-// Admin işlemleri (sadece admin rolüne sahip ve giriş yapmış kullanıcılar)
+// =========================== //
+//       ADMİN PANELİ         //
+// =========================== //
 Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
+
+    // Admin giriş sayfası
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+
+    // Raporlar
+    Route::get('/admin/reports',              [AdminReportController::class, 'index'])->name('admin.reports');
+    Route::get('/admin/generate-report',      [AdminReportController::class, 'generateReport'])->name('admin.generateReport');
+    Route::get('/admin/reports/masked-pdf',   [AdminReportController::class, 'exportMaskedPdf'])->name('report.maskedPdf');
+    Route::get('/admin/export-pdf-unmasked',  [AdminController::class, 'exportPdfUnmasked'])->name('admin.exportPdfUnmasked');
+
+    // Excel export (Özel middleware hariç tutuldu)
+    Route::get('/report/export', [ReportExportController::class, 'export'])
+        ->withoutMiddleware([\App\Http\Middleware\PreventBackHistory::class])
+        ->name('report.export');
+
+    // Alan filtreleme
     Route::post('/admin/fields', [AdminController::class, 'fields'])->name('admin.fields');
-    Route::get('/admin/generate-report', [AdminReportController::class, 'generateReport'])->name('admin.generateReport');
-    Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports');
-    Route::get('/report/export', [ReportExportController::class, 'export'])->withoutMiddleware([\App\Http\Middleware\PreventBackHistory::class])->name('report.export');
-    Route::get('/admin/export-pdf-unmasked', [AdminController::class, 'exportPdfUnmasked'])->name('admin.exportPdfUnmasked');
-    Route::get('/admin/reports/masked-pdf', [AdminReportController::class, 'exportMaskedPdf'])->name('report.maskedPdf');
+
+    // Kaynak yönetimi
     Route::resource('departments', DepartmentController::class)->names('admin.departments');
     Route::resource('persons', PersonController::class)->names('admin.persons');
 });
 
+// =========================== //
+//   KULLANICI YÖNETİMİ       //
+// =========================== //
 
 // Admin kullanıcı yönetimi
 Route::middleware(['auth', 'role:admin,super_admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/admin-users', [AdminUserController::class, 'index'])->name('users.index');
-    // Route::get('/admin-users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
-    Route::put('/admin-users/{user}', [AdminUserController::class, 'update'])->name('users.update'); // <-- BURAYA TAŞINDI
-    Route::patch('/admin-users/{user}/toggle', [AdminUserController::class, 'toggleStatus'])->name('users.toggle');
+    Route::get('/admin-users',                [AdminUserController::class, 'index'])->name('users.index');
+    Route::put('/admin-users/{user}',         [AdminUserController::class, 'update'])->name('users.update');
+    Route::patch('/admin-users/{user}/toggle',[AdminUserController::class, 'toggleStatus'])->name('users.toggle');
 });
 
 // Security kullanıcı yönetimi
 Route::middleware(['auth', 'role:admin,super_admin'])->prefix('security')->name('security.')->group(function () {
-    Route::get('/security-users', [SecurityUserController::class, 'index'])->name('users.index');
-    // Route::get('/security-users/{user}/edit', [SecurityUserController::class, 'edit'])->name('users.edit');
-    Route::put('/security-users/{user}', [SecurityUserController::class, 'update'])->name('users.update');
-    Route::patch('/security-users/{user}/toggle', [SecurityUserController::class, 'toggle'])->name('users.toggle');
+    Route::get('/security-users',               [SecurityUserController::class, 'index'])->name('users.index');
+    Route::put('/security-users/{user}',        [SecurityUserController::class, 'update'])->name('users.update');
+    Route::patch('/security-users/{user}/toggle',[SecurityUserController::class, 'toggle'])->name('users.toggle');
 });
 
 // Admin kullanıcı ekleme (sadece super_admin)
@@ -96,16 +118,14 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::post('/admin-users', [AdminUserController::class, 'store'])->name('users.store');
 });
 
-// Güvenlik kullanıcı ekleme (admin + super_admin)
+// Security kullanıcı ekleme
 Route::middleware(['auth', 'role:admin,super_admin'])->prefix('security')->name('security.')->group(function () {
     Route::post('/security-users', [SecurityUserController::class, 'store'])->name('users.store');
 });
 
-
-Route::get('/security/visitor-by-tc/{tc}', [SecurityController::class, 'getVisitorData']);
-
-// Bu route json post kabul eder.
-// Tarayıcı CSP violation raporunu json olarak gönderir.
+// =========================== //
+// CSP RAPORLAMA ENDPOINTİ     //
+// =========================== //
 Route::post('/csp-report', function (Request $request) {
     Log::channel('csp')->warning('CSP violation', [
         'report' => $request->all(),
@@ -115,4 +135,3 @@ Route::post('/csp-report', function (Request $request) {
 });
 
 require __DIR__.'/auth.php';
-

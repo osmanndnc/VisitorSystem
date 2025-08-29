@@ -18,10 +18,11 @@ class VisitUpdateRequest extends FormRequest
             'tc_no'           => ['required', 'string', new ValidTcNo()],
             'name'            => ['required', 'string'],
             'phone'           => ['required', 'string'],
-            'plate'           => ['nullable', 'string', 'max:20'], // opsiyonel (kritik fark)
-            'person_to_visit' => ['required', 'string'],
+            'plate'           => ['nullable', 'string', 'max:20'],
+            'department_id'   => ['required', 'integer', 'exists:departments,id'], // ✅ zorunlu
+            'person_to_visit' => ['nullable', 'string'], 
             'purpose'         => ['required', 'string'],
-            'purpose_note'    => ['nullable','string','max:500'],
+            'purpose_note'    => ['nullable', 'string', 'max:500'],
         ];
     }
 

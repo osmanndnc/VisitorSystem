@@ -187,6 +187,7 @@
                                 <th class="px-4 py-2">Giriş Saati</th>
                                 <th class="px-4 py-2">Ziyaret Sebebi</th>
                                 <th class="px-4 py-2">Açıklama</th>
+                                <th class="px-4 py-2">Birim</th>
                                 <th class="px-4 py-2">Ziyaret Edilen</th>
                                 <th class="px-4 py-2">İşlem</th>
                             </tr>
@@ -201,6 +202,7 @@
                                     <td class="px-4 py-2">{{ \Carbon\Carbon::parse($visit->entry_time)->format('Y-m-d H:i') }}</td>
                                     <td class="px-4 py-2">{{ $visit->purpose }}</td>
                                     <td class="px-4 py-2">{{ $visit->purpose_note }}</td>
+                                    <td class="px-4 py-2">{{ $visit->department->name ?? '-' }}</td>
                                     <td class="px-4 py-2">{{ $visit->person_to_visit }}</td>
                                     <td class="px-4 py-2 text-center">
                                         <a href="{{ route('security.edit', $visit->id) }}" class="edit-button">Düzenle</a>
@@ -289,7 +291,7 @@
                                 <datalist id="plate_list"></datalist>
                             </div>
 
-                            <!-- Ziyaret Edilen -->
+                            <!-- Ziyaret Edilen
                             <div>
                                 <x-input-label for="person_to_visit" :value="'Ziyaret Edilen Kişi'" />
                                 <select name="person_to_visit" id="person_to_visit" required>
@@ -301,6 +303,41 @@
                                             {{ $pname }}
                                         </option>
                                     @endforeach
+                                </select>
+                                @error('person_to_visit') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
+                            </div> -->
+                            <!-- BİRİM SEÇ -->
+                            <div>
+                                <x-input-label for="department_id" :value="'Ziyaret Edilen Birim'" />
+                                <select name="department_id" id="department_id" required>
+                                    <option value="">Birim Seçiniz</option>
+                                    @foreach($departments as $department)
+                                        <option value="{{ $department->id }}"
+                                            @selected(old('department_id', $editVisit->department_id ?? '') == $department->id)>
+                                            {{ $department->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('department_id') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- KİŞİ SEÇ (Opsiyonel) -->
+                            <div>
+                                <x-input-label for="person_to_visit" :value="'Ziyaret Edilen Kişi (Opsiyonel)'" />
+                                <select name="person_to_visit" id="person_to_visit">
+                                    <option value="">Kişi Seçiniz</option>
+                                    @if(old('department_id') || isset($editVisit))
+                                        @php
+                                            $selectedDeptId = old('department_id', $editVisit->department_id ?? null);
+                                            $selectedPersons = \App\Models\Department::find($selectedDeptId)?->persons ?? [];
+                                        @endphp
+                                        @foreach($selectedPersons as $person)
+                                            <option value="{{ $person->name }}"
+                                                @selected(old('person_to_visit', $editVisit->person_to_visit ?? '') == $person->name)>
+                                                {{ $person->name }}
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                                 @error('person_to_visit') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
                             </div>
@@ -349,7 +386,7 @@
     <!-- ====== JS ====== -->
     <script>
     (function () {
-        const $ = (sel, ctx=document) => ctx.querySelector(sel);
+        const $ = (sel, ctx = document) => ctx.querySelector(sel);
 
         const root      = document.currentScript.closest('div.py-6');
         const isEdit    = root?.dataset.edit === '1';
@@ -358,28 +395,35 @@
         const backdrop  = $('#visit-backdrop');
         const modal     = $('#visit-modal');
         const openBtn   = $('#toggleForm');
-        const closeBtn  = $('#close-modal'); // EDIT'te <a>, CREATE'te <button>
+        const closeBtn  = $('#close-modal');
         const submitBtn = $('#submit-button');
         const form      = $('#visit-form');
 
-        function openModal(){ backdrop.classList.add('show'); modal.classList.add('show'); }
-        function closeModal(){ backdrop.classList.remove('show'); modal.classList.remove('show'); }
+        function openModal() {
+            backdrop.classList.add('show');
+            modal.classList.add('show');
+        }
 
-        // CREATE modunda X buton; EDIT modunda X zaten <a href> => İptal ile aynı
+        function closeModal() {
+            backdrop.classList.remove('show');
+            modal.classList.remove('show');
+        }
+
         if (openBtn) openBtn.addEventListener('click', openModal);
         if (!isEdit && closeBtn && closeBtn.tagName === 'BUTTON') {
             closeBtn.addEventListener('click', closeModal);
         }
 
-        // Backdrop & ESC: edit'te iptal gibi davransın, create'te sadece kapat
-        function handleCloseAmbient(){
+        function handleCloseAmbient() {
             if (isEdit) window.location.assign(cancelUrl);
             else closeModal();
         }
-        if (backdrop) backdrop.addEventListener('click', handleCloseAmbient);
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') handleCloseAmbient(); });
 
-        // Submit animasyonu + submit
+        if (backdrop) backdrop.addEventListener('click', handleCloseAmbient);
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') handleCloseAmbient();
+        });
+
         if (submitBtn && form) {
             submitBtn.addEventListener('click', () => {
                 submitBtn.focus();
@@ -387,10 +431,9 @@
             });
         }
 
-        // Açılışta gerekiyorsa modalı aç
         @if ($isEdit || $errors->any()) openModal(); @endif
 
-        // TC -> geçmiş verileri doldur
+        // ✅ TC NO girilince geçmiş verileri getir
         window.getVisitorData = function () {
             const tcInput = $('#tc_no');
             if (!tcInput) return;
@@ -410,21 +453,54 @@
                     if (phoneList) {
                         phoneList.innerHTML = '';
                         (data.phones || []).forEach(p => {
-                            const opt = document.createElement('option'); opt.value = p; phoneList.appendChild(opt);
+                            const opt = document.createElement('option');
+                            opt.value = p;
+                            phoneList.appendChild(opt);
                         });
                     }
+
                     if (plateList) {
                         plateList.innerHTML = '';
                         (data.plates || []).forEach(pl => {
-                            const opt = document.createElement('option'); opt.value = pl; plateList.appendChild(opt);
+                            const opt = document.createElement('option');
+                            opt.value = pl;
+                            plateList.appendChild(opt);
                         });
                     }
                 })
-                .catch(()=>{});
+                .catch(() => {});
         };
 
         const tcInput = $('#tc_no');
         if (tcInput) tcInput.addEventListener('change', window.getVisitorData);
+
+        // ✅ Birim seçilince o birime bağlı kişileri getir
+        const deptSelect = $('#department_id');
+        const personSelect = $('#person_to_visit');
+
+        if (deptSelect && personSelect) {
+            deptSelect.addEventListener('change', function () {
+                const deptId = this.value;
+                personSelect.innerHTML = '<option value="">Kişi Seçiniz</option>';
+
+                if (!deptId) return;
+
+                fetch(`/security/department/${deptId}/persons`)
+                    .then(response => response.json())
+                    .then(data => {
+                        (data.people || []).forEach(person => {
+                            const option = document.createElement('option');
+                            option.value = person.id; // ✅ ID olarak atanmalı!
+                            option.textContent = person.name;
+                            personSelect.appendChild(option);
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Kişiler alınamadı:", err);
+                    });
+            });
+        }
     })();
     </script>
+
 </x-app-layout>

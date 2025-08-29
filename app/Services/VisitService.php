@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Visit;
 use App\Models\Visitor;
+use App\Models\Person;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -25,9 +26,15 @@ class VisitService
 
             $plate = $this->normalizePlate($data['plate'] ?? null);
 
+            $person = $data['person_to_visit'] ?? null;
+            if ($person !== null && $person !== '' && is_numeric($person)) {
+                $data['person_to_visit'] = Person::whereKey($person)->value('name') ?? (string)$person;
+            }
+
             return Visit::create([
                 'visitor_id'      => $visitor->id,
                 'entry_time'      => now(),
+                'department_id'   => $data['department_id'], 
                 'person_to_visit' => $data['person_to_visit'],
                 'purpose'         => $data['purpose'],
                 'purpose_note'    => $data['purpose_note'] ?? null,
@@ -54,11 +61,17 @@ class VisitService
 
             $plate = $this->normalizePlate($data['plate'] ?? null);
 
+            $person = $data['person_to_visit'] ?? null;
+            if ($person !== null && $person !== '' && is_numeric($person)) {
+                $data['person_to_visit'] = Person::whereKey($person)->value('name') ?? (string)$person;
+            }
+
             $visit->update([
                 'entry_time'      => now(),
+                'department_id'   => $data['department_id'], // ✅ eklendi
                 'person_to_visit' => $data['person_to_visit'],
                 'purpose'         => $data['purpose'],
-                'purpose_note'    => $data['purpose_note'] ?? null, 
+                'purpose_note'    => $data['purpose_note'] ?? null,
                 'phone'           => $data['phone'],
                 'plate'           => $plate,
             ]);

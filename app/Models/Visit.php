@@ -1,16 +1,20 @@
 <?php
 
+// app/Models/Visit.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Person; // <— ekle
 
 class Visit extends Model
 {
     use HasFactory;
-    //entry_time'ı string değil de datetime formatında almak için.
+
+    protected $table = 'visit';
+
     protected $casts = [
-        'entry_time' => 'datetime', 
+        'entry_time' => 'datetime',
     ];
 
     protected $fillable = [
@@ -19,21 +23,25 @@ class Visit extends Model
         'plate',
         'entry_time',
         'exit_time',
-        'person_to_visit',
         'purpose',
         'purpose_note',
         'approved_by',
+        'department_id',
+        'person_to_visit',     // <— EKLE (aksi halde atama sorun çıkarır)
     ];
-    //Varsayılan olarak visits arandığı için visit olarak belirtildi
-    protected $table = 'visit';
 
-    public function visitor()
-    {
-        return $this->belongsTo(Visitor::class);
-    }
+    public function visitor(){ return $this->belongsTo(Visitor::class); }
+    public function approver(){ return $this->belongsTo(User::class, 'approved_by','id'); }
+    public function department(){ return $this->belongsTo(Department::class); }
 
-    public function approver()
+    // **ID gelirse isme çeviren okunabilir label**
+    public function getPersonToVisitLabelAttribute(): string
     {
-        return $this->belongsTo(User::class, 'approved_by','id');
+        $v = (string)($this->person_to_visit ?? '');
+        if ($v !== '' && is_numeric($v)) {
+            $p = Person::find($v);
+            return $p?->name ?? $v;
+        }
+        return $v;
     }
 }
