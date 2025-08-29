@@ -458,12 +458,45 @@
                 pageLength: 10,
                 lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "Tümü"]],
                 order: [[0, 'desc']], info: true, searching: true, ordering: true, paging: true, stateSave: false, dom: 'lfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible',
+                            modifier: {
+                                search: 'applied',
+                                order: 'applied'
+                            }
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        exportOptions: {
+                            columns: ':visible',
+                            modifier: {
+                                search: 'applied',
+                                order: 'applied'
+                            }
+                        }
+                    }
+                ],
                 columns: [
                     { "width": "120px" }, { "width": "160px" }, { "width": "130px" }, { "width": "120px" }, { "width": "100px" },
                     { "width": "140px" }, { "width": "180px" }, { "width": "160px" }, { "width": "120px" }
                 ]
             });
             
+            // Buradaki kısım güncellendi
+            $('#exportUnmaskedExcelBtn').on('click', function() {
+                // DataTables Buttons'ı manuel olarak tetikler. 0. buton excel butonudur.
+                table.button(0).trigger();
+            });
+            // Buradaki kısım Yazdır butonu için güncellendi
+            $('#printUnmaskedBtn').on('click', function() {
+                // DataTables Buttons'ı manuel olarak tetikler. 1. buton yazdırma butonudur.
+                table.button(1).trigger();
+            });
+
             document.querySelectorAll('.column-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('click', function() {
                     const columnIndex = parseInt(this.dataset.column);
@@ -471,7 +504,7 @@
                     
                     if (table) {
                         table.column(columnIndex).visible(isVisible);
-                        table.columns.adjust().draw(); // Sütun genişliklerini ayarla
+                        table.columns.adjust().draw();
                     }
                     updateActiveColumnsInfo();
                 });
@@ -632,7 +665,6 @@
         function applyCustomFilters() {
             if (!table) return;
             
-            // DataTables'in kendi arama işlevini kullanma
             table.column(1).search($('#filter_name').val() || '').draw();
             table.column(2).search($('#filter_tc_no').val() || '').draw();
             table.column(3).search($('#filter_phone').val() || '').draw();
@@ -642,12 +674,9 @@
             table.column(7).search($('#filter_person_to_visit').val() || '').draw();
             table.column(8).search($('#filter_approved_by').val() || '').draw();
             
-            // Özel filtrelemeler için title ve unit'i de arama fonksiyonuna ekleyelim.
-            // Bu iki alan için, `person_to_visit` ve `department` sütunlarını kullanıyoruz.
             const titleFilter = $('#filter_title').val()?.toLowerCase().trim();
             const unitFilter = $('#filter_unit').val()?.toLowerCase().trim();
             
-            // Hem title hem de person_to_visit filtrelerini aynı sütunda birleştirme
             table.columns(7).every(function() {
                 const personToVisitData = this.data();
                 const newSearch = personToVisitData.filter(function(value) {
@@ -658,7 +687,6 @@
                 this.search(newSearch.join('|'), true, false).draw();
             });
 
-            // Hem unit hem de department filtrelerini aynı sütunda birleştirme
             table.columns(6).every(function() {
                 const departmentData = this.data();
                 const newSearch = departmentData.filter(function(value) {
@@ -795,14 +823,20 @@
             if (![...maskParams.keys()].length) { if (!confirm('Hiçbir alan maskelenmeyecek. Devam etmek istiyor musun?')) return; }
             window.location.href = `/admin/generate-report?` + reportParams.toString();
         });
-        exportUnmaskedExcelBtn?.addEventListener('click', () => {
-            const exportParams = getCommonExportParams(false);
-            exportParams.set('unmasked', 'true');
-            window.location.href = `/report/export?` + exportParams.toString();
+        
+        // Bu kısım artık çalışıyor, çünkü DataTables'ın dahili excelHtml5 butonunu tetikliyor.
+        document.getElementById('exportUnmaskedExcelBtn')?.addEventListener('click', () => {
+            table.button(0).trigger();
         });
-        exportUnmaskedPdfBtn?.addEventListener('click', () => {
-            const pdfParams = getCommonExportParams(false);
-            window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
+        
+        // BU KISIM DÜZELTİLDİ: PDF ve Yazdır butonları eski haline döndürüldü.
+        document.getElementById('printUnmaskedBtn')?.addEventListener('click', () => { 
+            printTableLikeReport({ titleText: 'Ziyaretçi Listesi', compact: true }); 
+        });
+
+        document.getElementById('exportUnmaskedPdfBtn')?.addEventListener('click', () => {
+             const pdfParams = getCommonExportParams(false);
+             window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
         });
 
         function printTableLikeReport(opts = {}) {
@@ -844,14 +878,11 @@
             w.close();
         }
 
-        document.getElementById('printUnmaskedBtn')?.addEventListener('click', () => { printTableLikeReport({ titleText: 'Ziyaretçi Listesi', compact: true }); });
-
         function getCommonExportParams(isReportPage = false) {
             const urlParams = new URLSearchParams(window.location.search);
             const exportParams = new URLSearchParams();
             const allFields = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
 
-            // Tarih filtrelerini URL'den al ve exportParams'e ekle
             const startDateParam = urlParams.get('start_date');
             const endDateParam = urlParams.get('end_date');
             if (startDateParam) {
@@ -868,7 +899,6 @@
 
             const filterParam = urlParams.get('filter');
             let selectedFields = filterParam ? filterParam.split(',') : allFields;
-
             
             selectedFields.forEach(field => {
                 exportParams.append('fields[]', field);

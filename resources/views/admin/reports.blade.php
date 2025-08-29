@@ -1,5 +1,26 @@
 @php $pdfMode = $pdfMode ?? false; @endphp
 <x-app-layout>
+    <head>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.dataTables.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.7.0/css/select.dataTables.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+        
+        <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.dataTables.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    </head>
+
     <div class="container py-5" style="
         background-color: #ffffff;
         border-radius: 1.5rem;
@@ -14,13 +35,13 @@
             $maskFields = collect($maskInput)->map(fn ($v, $k) => is_string($k) ? $k : $v)->filter()->values()->all();
 
             $maskedList = collect($maskFields)->map(fn ($f) => match ($f) {
-                'name'            => 'Ad Soyad',
-                'tc_no'           => 'T.C. No',
-                'phone'           => 'Telefon',
-                'plate'           => 'Plaka',
-                'department'      => 'Ziyaret Edilen Birim',
-                'person_to_visit' => 'Ziyaret Edilen',
-                default           => $f,
+                'name'              => 'Ad Soyad',
+                'tc_no'             => 'T.C. No',
+                'phone'             => 'Telefon',
+                'plate'             => 'Plaka',
+                'department'        => 'Ziyaret Edilen Birim',
+                'person_to_visit'   => 'Ziyaret Edilen',
+                default             => $f,
             })->implode(', ');
             $maskSet = array_flip($maskFields);
         @endphp
@@ -33,7 +54,7 @@
         ">
             {{ $reportTitle ? $reportTitle . ' ' : '' }} Ziyaretçi Raporu
             @if ($reportRange)
-                <span class="report-range" style="display: block; font-size: 1.2rem; font-weight: normal; margin-top: 5px; color: #555;">({{ $reportRange }})</span>
+                <span class="report-range" style="display: block; font-size: 1.1rem; font-weight: normal; margin-top: 5px; color: #555;">({{ $reportRange }})</span>
             @endif
         </h2>
 
@@ -122,9 +143,9 @@
 
                 <div class="mt-5 d-flex flex-wrap justify-content-center print-hidden"
                     style="gap: 1.5rem 2rem; padding: 1rem 0;">
-                    <a href="{{ route('report.export', request()->query()) }}" class="custom-btn btn-excel">
+                    <button id="exportReportExcel" class="custom-btn btn-excel">
                         <i class="bi bi-file-earmark-excel"></i> Excel
-                    </a>
+                    </button>
                     <a href="{{ route('report.maskedPdf', request()->query()) }}" target="_blank" class="custom-btn btn-pdf">
                         <i class="bi bi-file-earmark-pdf"></i> PDF
                     </a>
@@ -137,18 +158,18 @@
                 </div>
 
                 <div id="reportChartContainer" class="mt-5" style="width: 100%; display: none; position: relative;"
-                     data-chart='@json($chartData ?? [])'
-                     data-filter="{{ $dateFilter ?? '' }}">
+                      data-chart='@json($chartData ?? [])'
+                      data-filter="{{ $dateFilter ?? '' }}">
                     <canvas id="reportChart"></canvas>
                     <button id="downloadPdfBtn" class="custom-btn btn-pdf"
-                         style="display: none; position: absolute; bottom: 20px; right: 20px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                          style="display: none; position: absolute; bottom: 20px; right: 20px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                         <i class="bi bi-file-earmark-pdf"></i> Grafik PDF İndir
                     </button>
                 </div>
             </div>
         @endif
     </div>
-
+    
     <style>
         html { zoom: 80%; height: 100%; scroll-behavior: smooth; }
         body { margin: 0; padding: 0; min-height: 100%; background: linear-gradient(to bottom right, #f8fafc, #e2e8f0); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
@@ -186,7 +207,6 @@
         .report-table td, .report-table th { vertical-align: middle; text-align: center; padding: 7px 10px; font-size: 0.85rem; line-height: 1.3; border: 1px solid #e5e7eb; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
         .report-table tbody tr:hover { background: #f8fafc; transition: background 0.15s ease; }
         .report-table th:nth-child(1), .report-table td:nth-child(1) { width: 80px; }
-        .report-table th:nth-child(2), .report-table td:nth-child(2) { width: 140px; }
         
         .custom-btn { height: 44px; min-width: 150px; padding: 0 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 12px; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; margin: 0.5rem; cursor: pointer; border: none; text-decoration: none; transition: all 0.3s ease; color: white; }
         .custom-btn i { font-size: 1.2rem; }
@@ -205,7 +225,7 @@
             padding: 2rem; 
             box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
             margin-top: 2rem;
-            width: 90%; /* Eski değerine döndürüldü */
+            width: 90%;
         }
         #downloadPdfBtn {
             bottom: 20px;
@@ -218,7 +238,7 @@
             .custom-btn { min-width: 120px; font-size: 0.9rem; }
         }
     </style>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
@@ -226,6 +246,54 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
+    document.getElementById('exportReportExcel')?.addEventListener('click', function() {
+        const table = document.querySelector('.report-table');
+        if (!table) {
+            alert('Excel\'e aktarılacak tablo bulunamadı!');
+            return;
+        }
+        
+        let csv = [];
+        // Tablo başlıklarını al
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => `"${th.innerText.trim()}"`);
+        csv.push(headers.join(';'));
+        
+        // Tablo satırlarını al
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cols = Array.from(row.querySelectorAll('td')).map((td, index) => {
+                let text = td.innerText.trim();
+                
+                // İlk sütun (Kayıt No) için özel bir işlem yapmıyoruz
+                // İkinci sütun (Giriş Tarihi) için formatı korumak amacıyla tırnak içine alıyoruz
+                if (index === 1) { // 1, "Giriş Tarihi" sütununun indeksidir
+                    return `'${text}'`;
+                }
+
+                // Virgülden dolayı sütun kaymasını engellemek için tırnak içine al
+                if (text.includes(';') || text.includes('"')) {
+                    text = `"${text.replace(/"/g, '""')}"`;
+                }
+                return text;
+            });
+            csv.push(cols.join(';'));
+        });
+
+        const today = new Date();
+        const dateStr = today.toISOString().slice(0, 10);
+        const fileName = `Ziyaretci-Raporu-${dateStr}.csv`;
+        
+        // UTF-8 BOM ekleyerek Türkçe karakter sorunlarını çözüyoruz
+        const csvFile = new Blob(["\uFEFF" + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(csvFile);
+        a.download = fileName;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+
     document.getElementById('printReportBtn')?.addEventListener('click', () => {
         const table = document.querySelector('.report-table');
         if (!table) return alert('Yazdırılacak tablo bulunamadı.');
@@ -304,7 +372,6 @@
         const rawChartData = chartContainer.dataset.chart;
         let chartData = [];
         try {
-            // Veri boş veya tanımsızsa, boş bir dizi olarak ayarla
             chartData = rawChartData && rawChartData !== '[]' ? JSON.parse(rawChartData) : [];
         } catch (e) {
             console.error("Grafik verileri JSON olarak ayrıştırılırken hata oluştu: ", e);
@@ -329,7 +396,6 @@
         } else if (dateFilter === 'monthly') {
             chartTitle = 'Aylık Ziyaretçi Sayıları (Günlere Göre)';
             xAxisLabel = 'Gün';
-            // Laravel'den gelen gün sayısı yerine anlık olarak hesaplanır.
             const daysInMonth = moment().daysInMonth();
             labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
             counts = labels.map(label => {
