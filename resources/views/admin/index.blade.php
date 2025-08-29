@@ -434,7 +434,7 @@
                 },
                 pageLength: 10,
                 lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "Tümü"]],
-                order: [[0, 'desc']], info: true, searching: true, ordering: true, paging: true, stateSave: true, dom: 'lfrtip'
+                order: [[0, 'desc']], info: true, searching: true, ordering: true, paging: true, stateSave: false, dom: 'lfrtip'
             });
             
             document.querySelectorAll('.column-checkbox').forEach(checkbox => {
