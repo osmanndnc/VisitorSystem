@@ -36,8 +36,8 @@ class AdminReportController extends Controller
             'chartData'      => [],
             'reportTitle'    => 'Tüm',
             'reportRange'    => 'Tüm zamanlar',
-            // UI başlangıcı için varsayılan maske alanları
-            'masked'         => ['name','tc_no','phone','plate','department','person_to_visit'],
+            // UI başlangıcı için varsayılan maske alanları SEÇMİYORUZ.
+            'masked'         => [],
         ]);
     }
 
@@ -56,22 +56,24 @@ class AdminReportController extends Controller
         $allFields      = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
         $selectedFields = $request->input('fields', $allFields);
 
-        // Varsayılan maske davranışı (UI ilk yüklemede hepsi seçili kabul edilir)
-        $masked = $request->input('mask', ['name','tc_no','phone','plate','department','person_to_visit']);
+        // Varsayılan maske davranışı (UI ilk yüklemede hepsi seçili olmadığı kabul edilir)
+        $maskedInput = $request->input('mask', []);
+        $masked = is_array($maskedInput) ? array_values($maskedInput) : [];
 
         // Sayfa ilk açıldığında günlük kayıtlar da gelsin
         if (!$request->has('date_filter')) {
             $request->merge(['date_filter' => 'daily']);
         }
 
-        $visitsQuery = Visit::with(['visitor.department', 'approver']);
+        $visitsQuery = Visit::with(['visitor', 'approver', 'department']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
         $visits      = $visitsQuery->orderBy('entry_time', $request->input('sort_order', 'desc'))->get();
-        $data        = MaskHelper::maskVisits($visits, $selectedFields, $masked); // Maskeyi uygula
         
-        // Burası güncellendi
+        // Veriyi doğrudan maskeleme işlemine gönderiyoruz
+        $data        = MaskHelper::maskVisits($visits, $selectedFields, $masked);
+        
         $chartData = $this->prepareChartData($visits, $request);
 
         return view('admin.reports', compact('data', 'selectedFields', 'chartData', 'reportTitle', 'reportRange'))
@@ -95,17 +97,10 @@ class AdminReportController extends Controller
         $selectedFields = $request->input('fields', $allFields);
 
         // Maske girdisini normalize et (hem map hem liste formatını kabul et)
-        $maskedInput = $request->input('mask', ['name','tc_no','phone','plate','department','person_to_visit']);
-        if (is_array($maskedInput)) {
-            $isAssoc = array_keys($maskedInput) !== range(0, count($maskedInput) - 1);
-            $masked  = $isAssoc
-                ? array_keys(array_filter($maskedInput, fn($v) => $v === 'on' || $v === 1 || $v === '1' || $v === true))
-                : $maskedInput;
-        } else {
-            $masked = ['name','tc_no','phone','plate','department','person_to_visit'];
-        }
+        $maskedInput = $request->input('mask', []);
+        $masked = is_array($maskedInput) ? array_values($maskedInput) : [];
 
-        $visitsQuery = Visit::with(['visitor.department', 'approver']);
+        $visitsQuery = Visit::with(['visitor', 'approver', 'department']);
         [$reportTitle, $reportRange] = $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request, $allFields);
 
@@ -114,6 +109,7 @@ class AdminReportController extends Controller
             return back()->with('error', 'Seçilen filtrelere uygun kayıt bulunamadı.');
         }
 
+        // Veriyi doğrudan maskeleme işlemine gönderiyoruz
         $data = MaskHelper::maskVisits($visits, $selectedFields, $masked);
 
         $pdf = Pdf::loadView('pdf.masked_pdf', [
@@ -181,8 +177,10 @@ class AdminReportController extends Controller
                 $query->whereHas('approver', fn($q) => $q->where('ad_soyad', 'like', "%{$value}%"));
             } elseif ($field === 'id') {
                 $query->where('id', 'like', "%{$value}%");
-            } elseif (in_array($field, ['phone', 'plate', 'purpose', 'person_to_visit', 'department'])) {
+            } elseif (in_array($field, ['phone', 'plate', 'purpose', 'person_to_visit'])) {
                 $query->where($field, 'like', "%{$value}%");
+            } elseif ($field === 'department') {
+                $query->whereHas('department', fn($q) => $q->where('name', 'like', "%{$value}%"));
             }
         }
     }
@@ -232,8 +230,8 @@ class AdminReportController extends Controller
 
         // Varsayılan: tüm zamanlar (yıllara göre)
         return $visits->groupBy(fn($item) => Carbon::parse($item->entry_time)->format('Y'))
-                      ->map(fn($group) => ['label' => $group->first()->entry_time->format('Y'), 'count' => $group->count()])
-                      ->values()
-                      ->toArray();
+                          ->map(fn($group) => ['label' => $group->first()->entry_time->format('Y'), 'count' => $group->count()])
+                          ->values()
+                          ->toArray();
     }
 }

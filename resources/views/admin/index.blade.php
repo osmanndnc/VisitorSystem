@@ -136,7 +136,7 @@
         .data-table .empty-cell { text-align: center; padding: 40px 8px; color: #64748b; font-style: italic; }
         @media (max-width: 1400px) { .main-content-container { flex-direction: column; } .filters-panel { position: static; margin-bottom: 2rem; } .data-table th:nth-child(7), .data-table td:nth-child(7) { width: 160px; min-width: 160px; max-width: 160px; } }
         @media (max-width: 1200px) { .data-table th:nth-child(7), .data-table td:nth-child(7) { width: 140px; min-width: 140px; max-width: 140px; } }
-        @media (max-width: 920px) { .center-box { overflow-x: hidden; width: 95%; } .data-table { table-layout: auto; min-width: auto; } .data-table thead { display: none; } .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; } .data-table tbody tr { border-radius: 14px; padding: 10px; margin-bottom: 10px; } .data-table tbody td { padding: 8px 10px; } .data-table tbody td::before { content: attr(data-label); display: block; font-weight: 700; color: #475569; margin-bottom: 2px; } }
+        @media (max-width: 920px) { .center-box { overflow-x: hidden; width: 95%; } .data-table { table-layout: auto; min-width: auto; } .data-table thead { display: none; } .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; } .data-table tbody tr { border-radius: 14px; padding: 10px; margin-bottom: 10px; } .data-table tbody td::before { content: attr(data-label); display: block; font-weight: 700; color: #475569; margin-bottom: 2px; } }
         .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); backdrop-filter:saturate(120%) blur(2px); display:flex; align-items:flex-start; justify-content:center; padding:7vh 16px; z-index:1000; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .22s ease, visibility .22s ease; }
         .modal-overlay.open{ opacity:1; visibility:visible; pointer-events:auto; }
         .modal-card{ width:100%; max-width:680px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.2); transform:translateY(-10px) scale(.98); transition:transform .22s ease; }
@@ -192,7 +192,7 @@
                         </div>
                         <button class="show-all-columns-btn" onclick="showAllColumns()">Tüm Sütunları Göster</button>
                     </div>
-                                
+                                        
                     <h3 style="margin: 20px 0 16px 0; font-size: 16px; font-weight: 700; color: #334155; text-align: center;">Filtreleme</h3>
                     
                     <div class="filter-section">
@@ -352,8 +352,8 @@
                                     <td data-label="Telefon">{{ $visit->phone ?? '-' }}</td>
                                     <td data-label="Plaka">{{ $visit->plate ?? '-' }}</td>
                                     <td data-label="Ziyaret Sebebi">{{ $visit->purpose ?? '-' }}</td>
-                                    <td data-label="Ziyaret Edilen Birim">{{ $visit->visitor->department->name ?? '-' }}</td>
-                                    <td data-label="Ziyaret Edilen Kişi">{{ $visit->person_to_visit ?? '-' }}</td>
+                                    <td data-label="Ziyaret Edilen Birim">{{ $visit->department->name ?? '-' }}</td>
+                                    <td data-label="Ziyaret Edilen Kişi">{{ $visit->personToVisitLabel ?? '-' }}</td>
                                     <td data-label="Ekleyen">{{ $visit->approver->ad_soyad ?? $visit->approved_by ?? '-' }}</td>
                                 </tr>
                             @empty
@@ -486,7 +486,6 @@
                 ]
             });
             
-            // Buradaki kısım güncellendi
             $('#exportUnmaskedExcelBtn').on('click', function() {
                 // DataTables Buttons'ı manuel olarak tetikler. 0. buton excel butonudur.
                 table.button(0).trigger();
@@ -638,7 +637,6 @@
             table.columns.adjust().draw();
             document.querySelectorAll('.column-checkbox').forEach(cb => { cb.classList.add('selected'); });
             updateActiveColumnsInfo();
-            applyCustomFilters();
         }
 
         function updateActiveColumnsInfo() {
@@ -665,6 +663,7 @@
         function applyCustomFilters() {
             if (!table) return;
             
+            // Mevcut input filtrelerini doğrudan DataTables'a uygula
             table.column(1).search($('#filter_name').val() || '').draw();
             table.column(2).search($('#filter_tc_no').val() || '').draw();
             table.column(3).search($('#filter_phone').val() || '').draw();
@@ -674,30 +673,13 @@
             table.column(7).search($('#filter_person_to_visit').val() || '').draw();
             table.column(8).search($('#filter_approved_by').val() || '').draw();
             
-            const titleFilter = $('#filter_title').val()?.toLowerCase().trim();
-            const unitFilter = $('#filter_unit').val()?.toLowerCase().trim();
+            // `filter_unit` ve `filter_title` için de DataTables'ın global aramasını kullanalım
+            const titleFilter = $('#filter_title').val()?.toLowerCase().trim() || '';
+            const unitFilter = $('#filter_unit').val()?.toLowerCase().trim() || '';
+            const globalSearchTerm = `${titleFilter} ${unitFilter}`.trim();
             
-            table.columns(7).every(function() {
-                const personToVisitData = this.data();
-                const newSearch = personToVisitData.filter(function(value) {
-                    const includesTitle = !titleFilter || (value && value.toLowerCase().includes(titleFilter));
-                    const includesPerson = !personFilter || (value && value.toLowerCase().includes(personFilter));
-                    return includesTitle && includesPerson;
-                });
-                this.search(newSearch.join('|'), true, false).draw();
-            });
+            table.search(globalSearchTerm).draw();
 
-            table.columns(6).every(function() {
-                const departmentData = this.data();
-                const newSearch = departmentData.filter(function(value) {
-                    const includesUnit = !unitFilter || (value && value.toLowerCase().includes(unitFilter));
-                    const includesDepartment = !departmentFilter || (value && value.toLowerCase().includes(departmentFilter));
-                    return includesUnit && includesDepartment;
-                });
-                this.search(newSearch.join('|'), true, false).draw();
-            });
-            
-            table.draw();
             updateActiveFilterInfo();
         }
 
@@ -725,7 +707,7 @@
         clearFiltersBtn?.addEventListener('click', () => {
             const filterInputs = document.querySelectorAll('.filter-input');
             filterInputs.forEach(input => { input.value = ''; });
-            if (table) { 
+            if (table) {
                 table.search('').columns().search('').draw();
             }
             updateActiveFilterInfo();
@@ -835,8 +817,8 @@
         });
 
         document.getElementById('exportUnmaskedPdfBtn')?.addEventListener('click', () => {
-             const pdfParams = getCommonExportParams(false);
-             window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
+              const pdfParams = getCommonExportParams(false);
+              window.location.href = `/admin/export-pdf-unmasked?` + pdfParams.toString();
         });
 
         function printTableLikeReport(opts = {}) {
@@ -881,8 +863,8 @@
         function getCommonExportParams(isReportPage = false) {
             const urlParams = new URLSearchParams(window.location.search);
             const exportParams = new URLSearchParams();
-            const allFields = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
 
+            // Tarih filtrelerini URL'den al
             const startDateParam = urlParams.get('start_date');
             const endDateParam = urlParams.get('end_date');
             if (startDateParam) {
@@ -891,25 +873,44 @@
             if (endDateParam) {
                 exportParams.set('end_date', endDateParam);
             }
-            
             const dateFilterParam = urlParams.get('date_filter');
             if (dateFilterParam) {
                 exportParams.set('date_filter', dateFilterParam);
             }
-
-            const filterParam = urlParams.get('filter');
-            let selectedFields = filterParam ? filterParam.split(',') : allFields;
             
-            selectedFields.forEach(field => {
-                exportParams.append('fields[]', field);
-                const value = urlParams.get(field + '_value');
-                if (value) exportParams.set(field + '_value', value);
+            // Filtreleri sol paneldeki inputlardan al
+            const filterMapping = {
+                'filter_name': 'name_value',
+                'filter_tc_no': 'tc_no_value',
+                'filter_phone': 'phone_value',
+                'filter_plate': 'plate_value',
+                'filter_purpose': 'purpose_value',
+                'filter_department': 'department_value',
+                'filter_person_to_visit': 'person_to_visit_value',
+                'filter_unit': 'unit_name', // Controller bu alanı böyle bekliyor
+                'filter_title': 'title_value',
+                'filter_approved_by': 'approved_by_value',
+            };
+
+            for (const id in filterMapping) {
+                const value = $(`#${id}`).val();
+                if (value) {
+                    exportParams.set(filterMapping[id], value);
+                }
+            }
+
+            // Görünen sütunları al
+            const allFieldNames = ['entry_time', 'name', 'tc_no', 'phone', 'plate', 'purpose', 'department', 'person_to_visit', 'approved_by'];
+            const visibleColumns = [...document.querySelectorAll('.column-checkbox.selected')].map(el => {
+                const index = parseInt(el.dataset.column);
+                return allFieldNames[index];
             });
+            visibleColumns.forEach(field => exportParams.append('fields[]', field));
             
             exportParams.set('sort_order', 'desc');
             return exportParams;
         }
-
+        
         document.addEventListener('click', (e) => {
             if (!reportBtn?.contains(e.target) && !reportMenu?.contains(e.target)) {
                 reportMenu?.classList.remove('active');

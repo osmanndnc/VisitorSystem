@@ -39,7 +39,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         $fields      = $this->determineFields($request);                  // Seçili alanları belirle
-        $visitsQuery = Visit::with(['approver', 'visitor.department']);   // İlişkileri dahil et
+        $visitsQuery = Visit::with(['approver', 'visitor.department','department']);   // İlişkileri dahil et
 
         $this->applyDateFilter($visitsQuery, $request);                   // Tarih filtresi
         $this->applyFieldFilters($visitsQuery, $request);                 // Alan bazlı filtreler
@@ -74,7 +74,7 @@ class AdminController extends Controller
             $selectedFields = array_diff($this->allFields, ['id']);
         }
 
-        $visitsQuery = Visit::with(['approver', 'visitor.department']);
+        $visitsQuery = Visit::with(['approver', 'visitor.department','department']);
         $this->applyDateFilter($visitsQuery, $request);
         $this->applyFieldFilters($visitsQuery, $request);
 
@@ -168,7 +168,7 @@ class AdminController extends Controller
                     'purpose'         => $visit->purpose ?? '-',
                     'person_to_visit' => $visit->person_to_visit ?? '-',
                     'approved_by'     => $visit->approver->ad_soyad ?? $visit->approved_by ?? '-',
-                    'department'      => $visit->visitor->department->name ?? '-',
+                    'department'      => $visit->department->name ?? '-',
                     default           => $visit->$field ?? '-',
                 };
             }

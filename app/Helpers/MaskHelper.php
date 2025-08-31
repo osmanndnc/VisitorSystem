@@ -79,12 +79,15 @@ class MaskHelper
     public static function maskDepartment($department)
     {
         if (!$department) return '';
-        $text = (string)$department;
-        $length = mb_strlen($text);
-        if ($length <= 2) {
-            return $text . '***';
-        }
-        return mb_substr($text, 0, 2) . '***';
+        $words = explode(' ', (string)$department);
+        $maskedWords = array_map(function ($word) {
+            $len = mb_strlen($word);
+            if ($len <= 2) {
+                return $word . '***';
+            }
+            return mb_substr($word, 0, 2) . str_repeat('*', $len - 2);
+        }, $words);
+        return implode(' ', $maskedWords);
     }
 
     // Alan adına göre uygula
@@ -120,7 +123,7 @@ class MaskHelper
                     'phone'            => $visit->phone ?? '-',
                     'plate'            => $visit->plate ?? '-',
                     'purpose'          => $visit->purpose ?? '-',
-                    'department'       => optional($visit->visitor)->department->name ?? '-',
+                    'department'      => $visit->department->name ?? '-',
                     'person_to_visit'  => $visit->person_to_visit ?? '-',
                     'approved_by'      => optional($visit->approver)->ad_soyad ?? ($visit->approved_by ?? '-'),
                     default            => $visit->$field ?? '-',

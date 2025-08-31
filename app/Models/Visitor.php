@@ -19,7 +19,7 @@ class Visitor extends Model
         'person_to_visit',
         'visit_reason',
         'approved_by',
-        'department_id', // �� Bu satırı ekleyin
+        'department_id',
     ];
 
     public function visits()

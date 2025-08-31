@@ -27,7 +27,7 @@ class Visit extends Model
         'purpose_note',
         'approved_by',
         'department_id',
-        'person_to_visit',     // <— EKLE (aksi halde atama sorun çıkarır)
+        'person_to_visit',
     ];
 
     public function visitor(){ return $this->belongsTo(Visitor::class); }
